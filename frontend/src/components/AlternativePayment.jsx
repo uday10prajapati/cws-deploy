@@ -340,7 +340,7 @@ export default function AlternativePayment() {
 
   if (verified) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
         <div className="max-w-2xl mx-auto">
           <div className="bg-green-600/20 border border-green-500/50 rounded-lg p-8 text-center">
             <FiCheck className="text-6xl text-green-400 mx-auto mb-4" />
@@ -364,7 +364,7 @@ export default function AlternativePayment() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold text-white mb-8">💳 Payment Methods</h1>
 

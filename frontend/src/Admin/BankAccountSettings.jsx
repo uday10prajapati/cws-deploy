@@ -194,7 +194,7 @@ export default function BankAccountSettings() {
           <div className="flex items-start gap-4">
             {verified ? (
               <>
-                <FiCheck className="text-green-400 text-2xl flex-shrink-0 mt-1" />
+                <FiCheck className="text-green-400 text-2xl shrink-0 mt-1" />
                 <div>
                   <p className="font-semibold text-green-300">Verified ✅</p>
                   <p className="text-green-200 text-sm mt-1">
@@ -205,7 +205,7 @@ export default function BankAccountSettings() {
               </>
             ) : (
               <>
-                <FiAlertCircle className="text-yellow-400 text-2xl flex-shrink-0 mt-1" />
+                <FiAlertCircle className="text-yellow-400 text-2xl shrink-0 mt-1" />
                 <div>
                   <p className="font-semibold text-yellow-300">
                     {bankAccount
