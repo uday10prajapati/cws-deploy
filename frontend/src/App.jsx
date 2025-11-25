@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Signup from "./page/SignUp.jsx";
 import Login from "./page/Login.jsx";
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
+import BankAccountSettings from "./Admin/BankAccountSettings.jsx";
 import CustomerDashboard from "./Customer/CustomerDashboard.jsx";
 import EmployeeSadhboard from "./Employee/EmployeeDashboard.jsx";
 import Bookings from "./Customer/Bookings.jsx";
@@ -15,6 +16,8 @@ export default function App() {
       <Route path="/" element={<Signup />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/bank-account" element={<BankAccountSettings />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/customer-dashboard" element={<CustomerDashboard />} />
       <Route path="/employee-dashboard" element={<EmployeeSadhboard />} />

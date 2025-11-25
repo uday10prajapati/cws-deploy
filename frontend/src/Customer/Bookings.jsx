@@ -428,45 +428,108 @@ export default function BookingPage() {
   // Selected car object
   const selectedCar = cars.find((c) => c.id === selectedCarId);
 
-  // Handle payment completion
-  const handlePaymentComplete = async (paymentMethod) => {
-    setSelectedPaymentMethod(paymentMethod);
-    setPaymentStep("processing");
-    setProcessingPayment(true);
+  // Initiate payment with alternative payment gateway
+  const initiateAlternativePayment = async (paymentMethod) => {
+    try {
+      const payload = {
+        amount: bookingAmount,
+        customer_id: user.id,
+        customer_email: user.email,
+        customer_name: user.user_metadata?.full_name || "Customer",
+        customer_phone: user.user_metadata?.phone || "9999999999",
+        type: "booking_payment",
+        payment_method: paymentMethod,
+        notes: `Car: ${customCarName}, Services: ${selectedServices.join(", ")}`,
+      };
 
-    // Simulate payment processing - 2.5 seconds
-    setTimeout(async () => {
-      setProcessingPayment(false);
-      
-      // Check if payment is actually received (mock: 70% success rate)
-      const isPaymentReceived = Math.random() > 0.3;
-      setPaymentReceived(isPaymentReceived);
-      
-      if (isPaymentReceived) {
-        setShowPayment(false);
-        await completeBooking();
-        setShowSuccess(true);
-        setTimeout(() => {
-          window.location.href = "/bookings";
-        }, 1800);
-      } else {
-        // Payment failed - user can retry
-        setPaymentReceived(false);
+      console.log("💳 Payment payload:", payload);
+
+      const response = await fetch("http://localhost:5000/alt-payment/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log("Payment response:", result);
+
+      if (!result.success) {
+        alert(`Payment initiation failed: ${result.error}`);
+        return null;
       }
-    }, 2500);
-  };
 
-  // Generate UPI string for payment
-  const generateUPIString = () => {
-    const upiString = `upi://pay?pa=carwash@examplebank&pn=CarWash%20India&am=${bookingAmount}&tn=Car%20Wash%20Booking`;
-    return upiString;
+      return result;
+    } catch (err) {
+      console.error("Payment error:", err);
+      alert(`Payment error: ${err.message}`);
+      return null;
+    }
   };
 
   // Generate QR code URL (using QR server API)
-  const generateQRCode = () => {
-    const upiString = generateUPIString();
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiString)}`;
+  const generateQRCode = (upiLink) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
     return qrUrl;
+  };
+
+  // Verify payment after user completes payment
+  const verifyPayment = async (transactionId, paymentMethod, verificationData) => {
+    try {
+      let endpoint = "";
+      let payload = { transaction_id: transactionId, ...verificationData };
+
+      switch (paymentMethod) {
+        case "upi":
+          endpoint = "/alt-payment/verify-upi";
+          break;
+        case "bank_transfer":
+          endpoint = "/alt-payment/verify-bank-transfer";
+          break;
+        case "net_banking":
+          endpoint = "/alt-payment/verify-net-banking";
+          break;
+        case "card":
+          endpoint = "/alt-payment/verify-card";
+          break;
+        default:
+          return false;
+      }
+
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error("Verification error:", err);
+      return false;
+    }
+  };
+
+  // Handle payment method selection
+  const handlePaymentComplete = async (paymentMethod) => {
+    setSelectedPaymentMethod(paymentMethod);
+    setProcessingPayment(true);
+
+    // Initiate payment with backend
+    const paymentData = await initiateAlternativePayment(paymentMethod);
+    if (!paymentData) {
+      setProcessingPayment(false);
+      return;
+    }
+
+    // Store transaction ID for verification
+    setPendingBookingData({
+      ...pendingBookingData,
+      transaction_id: paymentData.transaction_id,
+      paymentDetails: paymentData.paymentDetails,
+    });
+
+    setPaymentStep("processing");
+    setProcessingPayment(false);
   };
 
   // Show payment page if showPayment is true
@@ -641,43 +704,230 @@ export default function BookingPage() {
             // PAYMENT PROCESSING - SHOW METHOD SPECIFIC UI
             <div className="max-w-md mx-auto">
               {selectedPaymentMethod === "upi" ? (
-                // UPI QR CODE
+                // UPI QR CODE - REAL PAYMENT
                 <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-8 space-y-6 text-center">
                   <h2 className="text-2xl font-bold">📱 Scan to Pay with UPI</h2>
                   
-                  <div className="bg-white p-6 rounded-xl">
-                    <img 
-                      src={generateQRCode()} 
-                      alt="UPI QR Code" 
-                      className="w-64 h-64 mx-auto"
-                    />
-                  </div>
+                  {pendingBookingData?.paymentDetails?.upi_link ? (
+                    <>
+                      <div className="bg-white p-6 rounded-xl">
+                        <img 
+                          src={generateQRCode(pendingBookingData.paymentDetails.upi_link)} 
+                          alt="UPI QR Code" 
+                          className="w-64 h-64 mx-auto"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-slate-400">Pay to:</p>
+                        <p className="text-lg font-bold text-blue-300">{pendingBookingData.paymentDetails.upi_id}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-slate-400">Loading QR code...</div>
+                  )}
 
                   <div className="space-y-2">
                     <p className="text-slate-400">Scan with any UPI app:</p>
-                    <p className="text-sm text-slate-500">Google Pay • PhonePe • PayTM</p>
+                    <p className="text-sm text-slate-500">Google Pay • PhonePe • PayTM • BHIM</p>
                   </div>
 
                   <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-4">
                     <p className="text-lg font-bold text-blue-300">Amount: ₹{bookingAmount}</p>
                   </div>
 
+                  {/* UTR Input for Verification */}
                   <div className="space-y-2">
-                    <p className="text-sm text-slate-400">Waiting for payment confirmation...</p>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-slate-400">Processing</span>
-                    </div>
+                    <label className="block text-sm font-medium text-slate-300">Enter UTR / Reference ID:</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g., 412412412412 or TXN123456"
+                      id="utr-input"
+                      className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-green-500 focus:outline-none text-white"
+                    />
+                    <p className="text-xs text-slate-500">You'll receive this from your UPI app after payment</p>
                   </div>
+
+                  <button
+                    onClick={async () => {
+                      const utrInput = document.getElementById("utr-input")?.value?.trim();
+                      if (!utrInput) {
+                        alert("Please enter UTR/Reference ID");
+                        return;
+                      }
+                      
+                      const verified = await verifyPayment(
+                        pendingBookingData.transaction_id,
+                        "upi",
+                        { upi_ref_id: utrInput, payment_timestamp: new Date().toISOString() }
+                      );
+                      
+                      if (verified) {
+                        setShowPayment(false);
+                        await completeBooking();
+                        setShowSuccess(true);
+                        setTimeout(() => {
+                          window.location.href = "/bookings";
+                        }, 1800);
+                      } else {
+                        alert("Payment verification failed. Please check UTR and try again.");
+                      }
+                    }}
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
+                  >
+                    ✓ Verify Payment
+                  </button>
 
                   <button
                     onClick={() => {
                       setPaymentStep("method");
-                      setProcessingPayment(false);
                     }}
                     className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                   >
                     Use Different Method
+                  </button>
+                </div>
+              ) : selectedPaymentMethod === "bank_transfer" ? (
+                // BANK TRANSFER - MANUAL VERIFICATION
+                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-8 space-y-6">
+                  <h2 className="text-2xl font-bold text-center">🏦 Bank Transfer</h2>
+                  
+                  {pendingBookingData?.paymentDetails ? (
+                    <>
+                      <div className="bg-slate-800/50 rounded-lg p-4 space-y-3 text-left">
+                        <p className="font-semibold text-green-300">Transfer Details:</p>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Bank Name:</span>
+                            <span className="font-semibold">{pendingBookingData.paymentDetails.bank_name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Account Holder:</span>
+                            <span className="font-semibold">{pendingBookingData.paymentDetails.account_holder}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Account Number:</span>
+                            <span className="font-mono">{pendingBookingData.paymentDetails.account_number}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">IFSC Code:</span>
+                            <span className="font-mono font-semibold">{pendingBookingData.paymentDetails.ifsc_code}</span>
+                          </div>
+                          <div className="border-t border-slate-700 pt-2 mt-2 flex justify-between">
+                            <span className="text-blue-300">Amount:</span>
+                            <span className="text-lg font-bold text-blue-300">₹{bookingAmount}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-600/20 border border-amber-500/50 rounded-lg p-3 text-sm text-amber-200">
+                        ⏱️ Transfer may take 1-2 hours to reflect
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="block text-sm font-medium text-slate-300">Confirm Transfer & Enter Details:</label>
+                        <input 
+                          type="text" 
+                          placeholder="Reference / Cheque / UTR number"
+                          id="bank-ref"
+                          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-green-500 focus:outline-none text-white"
+                        />
+                        <input 
+                          type="date" 
+                          id="bank-date"
+                          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-green-500 focus:outline-none text-white"
+                        />
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          const refNumber = document.getElementById("bank-ref")?.value?.trim();
+                          const transferDate = document.getElementById("bank-date")?.value;
+                          if (!refNumber || !transferDate) {
+                            alert("Please fill all fields");
+                            return;
+                          }
+                          
+                          const verified = await verifyPayment(
+                            pendingBookingData.transaction_id,
+                            "bank_transfer",
+                            { reference_number: refNumber, transfer_date: transferDate }
+                          );
+                          
+                          if (verified) {
+                            setShowPayment(false);
+                            await completeBooking();
+                            setShowSuccess(true);
+                            setTimeout(() => {
+                              window.location.href = "/bookings";
+                            }, 1800);
+                          } else {
+                            alert("Payment verification failed. Admin will confirm manually.");
+                          }
+                        }}
+                        className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
+                      >
+                        ✓ Verify Transfer
+                      </button>
+
+                      <button
+                        onClick={() => setPaymentStep("method")}
+                        className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                      >
+                        Back
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-slate-400">Loading bank details...</p>
+                  )}
+                </div>
+              ) : selectedPaymentMethod === "net_banking" ? (
+                // NET BANKING
+                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-8 space-y-6 text-center">
+                  <h2 className="text-2xl font-bold">🏦 Net Banking</h2>
+                  
+                  <div className="space-y-3">
+                    <p className="text-slate-400">Select your bank and complete payment:</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["HDFC", "ICICI", "Axis", "SBI", "BOI", "Kotak"].map((bank) => (
+                        <button
+                          key={bank}
+                          onClick={async () => {
+                            const confirmed = window.confirm(`Complete payment via ${bank} Net Banking?`);
+                            if (confirmed) {
+                              const verified = await verifyPayment(
+                                pendingBookingData.transaction_id,
+                                "net_banking",
+                                { bank_name: bank, confirmation_number: `${bank}-${Date.now()}` }
+                              );
+                              
+                              if (verified) {
+                                setShowPayment(false);
+                                await completeBooking();
+                                setShowSuccess(true);
+                                setTimeout(() => {
+                                  window.location.href = "/bookings";
+                                }, 1800);
+                              }
+                            }
+                          }}
+                          className="py-3 bg-slate-800 hover:bg-orange-600/30 border border-slate-700 hover:border-orange-500 rounded-lg font-medium transition"
+                        >
+                          {bank}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-orange-600/20 border border-orange-500/50 rounded-lg p-4">
+                    <p className="text-lg font-bold text-orange-300">Amount: ₹{bookingAmount}</p>
+                  </div>
+
+                  <button
+                    onClick={() => setPaymentStep("method")}
+                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                  >
+                    Back
                   </button>
                 </div>
               ) : selectedPaymentMethod === "card" ? (
@@ -691,6 +941,7 @@ export default function BookingPage() {
                       <input 
                         type="text" 
                         placeholder="1234 5678 9012 3456" 
+                        id="card-number"
                         className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
                       />
                     </div>
@@ -701,6 +952,7 @@ export default function BookingPage() {
                         <input 
                           type="text" 
                           placeholder="MM/YY" 
+                          id="card-expiry"
                           className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
                         />
                       </div>
@@ -709,99 +961,67 @@ export default function BookingPage() {
                         <input 
                           type="text" 
                           placeholder="123" 
+                          id="card-cvv"
                           className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Authorization Code</label>
+                      <input 
+                        type="text" 
+                        placeholder="Received from bank"
+                        id="card-auth"
+                        className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
                   </div>
 
-                  <div className="bg-purple-600/20 border border-purple-500/50 rounded-lg p-4 text-center">
+                  <div className="purple-600/20 border border-purple-500/50 rounded-lg p-4 text-center">
                     <p className="text-lg font-bold text-purple-300">Amount: ₹{bookingAmount}</p>
                   </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setPaymentStep("method");
-                        setProcessingPayment(false);
-                      }}
-                      className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
-                    >
-                      Back
-                    </button>
-                    <button
-                      className="flex-1 py-3 bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                    >
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Processing...
-                    </button>
-                  </div>
-                </div>
-              ) : selectedPaymentMethod === "wallet" ? (
-                // WALLET PAYMENT
-                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-8 space-y-6 text-center">
-                  <h2 className="text-2xl font-bold">👛 Wallet Payment</h2>
-                  
-                  <div className="bg-green-600/20 border border-green-500/50 rounded-lg p-6 space-y-2">
-                    <p className="text-slate-400">Paying from:</p>
-                    <p className="text-2xl font-bold text-green-300">₹{bookingAmount}</p>
-                    <p className="text-sm text-slate-400">CarWash+ Wallet</p>
-                  </div>
+                  <button
+                    onClick={async () => {
+                      const last4 = document.getElementById("card-number")?.value?.slice(-4);
+                      const authCode = document.getElementById("card-auth")?.value?.trim();
+                      
+                      if (!last4 || !authCode) {
+                        alert("Please fill all fields");
+                        return;
+                      }
 
-                  <div className="space-y-2">
-                    <p className="text-sm text-slate-400">Processing wallet payment...</p>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-slate-400">Deducting funds</span>
-                    </div>
-                  </div>
+                      const verified = await verifyPayment(
+                        pendingBookingData.transaction_id,
+                        "card",
+                        { card_last4: last4, auth_code: authCode }
+                      );
+                      
+                      if (verified) {
+                        setShowPayment(false);
+                        await completeBooking();
+                        setShowSuccess(true);
+                        setTimeout(() => {
+                          window.location.href = "/bookings";
+                        }, 1800);
+                      } else {
+                        alert("Card payment verification failed");
+                      }
+                    }}
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                  >
+                    ✓ Confirm Payment
+                  </button>
 
                   <button
-                    onClick={() => {
-                      setPaymentStep("method");
-                      setProcessingPayment(false);
-                    }}
+                    onClick={() => setPaymentStep("method")}
                     className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                   >
-                    Use Different Method
+                    Back
                   </button>
                 </div>
-              ) : (
-                // NET BANKING
-                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-8 space-y-6 text-center">
-                  <h2 className="text-2xl font-bold">🏦 Net Banking</h2>
-                  
-                  <div className="space-y-3">
-                    <p className="text-slate-400">Select your bank:</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {["HDFC", "ICICI", "Axis", "SBI", "BOI", "Kotak"].map((bank) => (
-                        <button
-                          key={bank}
-                          className="py-3 bg-slate-800 hover:bg-orange-600/30 border border-slate-700 hover:border-orange-500 rounded-lg font-medium transition"
-                        >
-                          {bank}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-orange-600/20 border border-orange-500/50 rounded-lg p-4">
-                    <p className="text-lg font-bold text-orange-300">Amount: ₹{bookingAmount}</p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setPaymentStep("method");
-                        setProcessingPayment(false);
-                      }}
-                      className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>

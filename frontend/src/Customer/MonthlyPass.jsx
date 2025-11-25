@@ -39,6 +39,8 @@ export default function MonthlyPass() {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("upi");
   const [paymentStep, setPaymentStep] = useState("method"); // "method" or "processing"
+  const [paymentStatus, setPaymentStatus] = useState(null); // null, 'success', 'failed'
+  const [paymentVerified, setPaymentVerified] = useState(false); // Track if payment is verified
 
   /** Plans */
   const plans = [
@@ -223,61 +225,168 @@ export default function MonthlyPass() {
     setShowPayment(true);
   };
 
-  // Generate UPI string for payment
-  const generateUPIString = () => {
-    const upiString = `upi://pay?pa=carwash@examplebank&pn=CarWash%20India&am=${paymentAmount}&tn=Monthly%20Pass%20Purchase`;
-    return upiString;
+  // Initiate payment with alternative payment gateway
+  const initiateAlternativePayment = async (paymentMethod) => {
+    try {
+      const payload = {
+        amount: paymentAmount,
+        customer_id: user.id,
+        customer_email: user.email,
+        customer_name: user.user_metadata?.full_name || "Customer",
+        customer_phone: user.user_metadata?.phone || "9999999999",
+        type: "monthly_pass_purchase",
+        payment_method: paymentMethod,
+        notes: `${selectedPlan.name} Pass - ${selectedPlan.washes} washes`,
+      };
+
+      console.log("💳 Payment payload:", payload);
+
+      const response = await fetch("http://localhost:5000/alt-payment/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log("Payment response:", result);
+
+      if (!result.success) {
+        alert(`Payment initiation failed: ${result.error}`);
+        return null;
+      }
+
+      return result;
+    } catch (err) {
+      console.error("Payment error:", err);
+      alert(`Payment error: ${err.message}`);
+      return null;
+    }
   };
 
   // Generate QR code URL (using QR server API)
-  const generateQRCode = () => {
-    const upiString = generateUPIString();
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiString)}`;
+  const generateQRCode = (upiLink) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
     return qrUrl;
   };
 
-  // Handle payment method selection and start processing
-  const handlePaymentMethodSelected = (method) => {
-    setSelectedPaymentMethod(method);
-    setPaymentStep("processing");
+  // Verify payment after user completes payment
+  const verifyPayment = async (transactionId, paymentMethod, verificationData) => {
+    try {
+      let endpoint = "";
+      let payload = { transaction_id: transactionId, ...verificationData };
 
-    // Simulate payment processing
-    setTimeout(async () => {
-      await completePlanPurchase();
-    }, 2500);
+      switch (paymentMethod) {
+        case "upi":
+          endpoint = "/alt-payment/verify-upi";
+          break;
+        case "bank_transfer":
+          endpoint = "/alt-payment/verify-bank-transfer";
+          break;
+        case "net_banking":
+          endpoint = "/alt-payment/verify-net-banking";
+          break;
+        case "card":
+          endpoint = "/alt-payment/verify-card";
+          break;
+        default:
+          return false;
+      }
+
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error("Verification error:", err);
+      return false;
+    }
   };
 
-  /** Process payment and complete purchase */
-  const completePlanPurchase = async () => {
-    if (!user || !selectedPlan) return;
-
+  // Handle payment method selection
+  const handlePaymentMethodSelected = async (method) => {
+    setSelectedPaymentMethod(method);
+    setPaymentStep("processing");
+    setPaymentStatus(null);
+    setPaymentVerified(false);
     setLoading(true);
 
-    // Check if user already has active pass
-    const existingPass = await getActivePass(user.id);
-    let error = null;
-
-    if (!existingPass) {
-      // No pass -> create new
-      error = await createMonthlyPass(user.id, selectedPlan);
-    } else {
-      // Already has one -> upgrade / replace
-      error = await updateMonthlyPass(existingPass, selectedPlan);
-    }
-
-    setLoading(false);
-    setBuyModalOpen(false);
-    setShowPayment(false);
-    setPaymentStep("method");
-
-    if (error) {
-      alert("Something went wrong. Please try again.");
+    // Initiate payment with backend
+    const paymentData = await initiateAlternativePayment(method);
+    if (!paymentData) {
+      setLoading(false);
+      setPaymentStep("method");
       return;
     }
 
-    const latest = await getActivePass(user.id);
-    setActivePass(latest);
-    alert("Plan purchased successfully!");
+    // Store transaction ID for verification
+    setPaymentStatus("processing");
+    setLoading(false);
+  };
+
+  /** Complete purchase after payment verified */
+  const completePurchase = async (transactionId, paymentMethod, verificationData) => {
+    setLoading(true);
+
+    try {
+      // Verify payment with backend
+      const verified = await verifyPayment(transactionId, paymentMethod, verificationData);
+
+      if (!verified) {
+        setPaymentStatus("failed");
+        alert("Payment verification failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Payment verified - update pass
+      setPaymentVerified(true);
+      setPaymentStatus("success");
+
+      // Check if user already has active pass
+      const existingPass = await getActivePass(user.id);
+      let error = null;
+
+      if (!existingPass) {
+        // No pass -> create new
+        error = await createMonthlyPass(user.id, selectedPlan);
+      } else {
+        // Already has one -> upgrade / replace
+        error = await updateMonthlyPass(existingPass, selectedPlan);
+      }
+
+      setLoading(false);
+
+      if (error) {
+        alert("Something went wrong. Please try again.");
+        return;
+      }
+
+      // Close payment and show success
+      setTimeout(() => {
+        setBuyModalOpen(false);
+        setShowPayment(false);
+        setPaymentStep("method");
+        setPaymentStatus(null);
+        setPaymentVerified(false);
+
+        const getLatestPass = async () => {
+          const latest = await getActivePass(user.id);
+          setActivePass(latest);
+          alert("Plan purchased successfully!");
+        };
+
+        getLatestPass();
+      }, 2000);
+    } catch (err) {
+      console.error("Payment error:", err);
+      setPaymentStatus("failed");
+      setLoading(false);
+      alert("Payment failed. Please try again.");
+    }
   };
 
   /** Renew existing active plan */
@@ -478,64 +587,83 @@ export default function MonthlyPass() {
                       setSelectedPlan(plan);
                       setBuyModalOpen(true);
                     }}
-                    className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold"
+                    className="mt-4 w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg"
                   >
-                    Buy / Upgrade
+                    💳 Buy / Upgrade
                   </button>
                 </div>
               ))}
             </div>
 
             {/* RIGHT — ACTIVE PLAN */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl h-fit">
-              <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <FiAward className="text-amber-400" />
-                Active Pass
-              </h3>
+            <div className="space-y-4">
+              {/* ACTIVE PASS CARD */}
+              <div className="bg-linear-to-br from-amber-600/20 to-amber-900/20 border border-amber-500/30 rounded-xl p-6 shadow-xl">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <FiAward className="text-amber-400" />
+                  Active Pass
+                </h3>
 
-              {loadingPass ? (
-                <p className="text-sm text-slate-400">Loading pass...</p>
-              ) : !activePass ? (
-                <div>
-                  <p className="text-sm text-slate-400">
-                    You don't have an active pass yet.
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Choose a plan from the left to get started.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-lg font-bold text-amber-400">
-                    {activePlanName} Plan
-                  </p>
-                  <p className="text-sm text-slate-400 mt-1">
-                    {usedWashes}/{totalWashes} washes used
-                  </p>
-
-                  {/* Progress bar */}
-                  <div className="w-full bg-slate-800 rounded-full h-2 mt-3">
-                    <div
-                      className="bg-amber-500 h-2 rounded-full"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                {loadingPass ? (
+                  <p className="text-sm text-slate-400">Loading pass...</p>
+                ) : !activePass ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">
+                      You don't have an active pass yet.
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Choose a plan from the left to get started!
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-amber-300">
+                      {activePlanName} Plan
+                    </p>
+                    <p className="text-sm text-amber-200 mt-1">
+                      {usedWashes}/{totalWashes} washes used
+                    </p>
 
-                  <p className="text-sm text-slate-400 mt-3">
-                    Expires on:{" "}
-                    <span className="text-white">
-                      {activePass.valid_till || "—"}
-                    </span>
-                  </p>
+                    {/* Progress bar */}
+                    <div className="w-full bg-slate-800 rounded-full h-3 mt-4 overflow-hidden">
+                      <div
+                        className="bg-linear-to-r from-amber-500 to-amber-400 h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 text-right">{progress}% Used</p>
 
-                  <button
-                    onClick={handleRenew}
-                    className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-semibold"
-                  >
-                    {loading ? "Processing..." : "Renew Pass"}
-                  </button>
-                </>
-              )}
+                    <div className="bg-slate-800/50 rounded-lg p-3 mt-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Expires:</span>
+                        <span className="font-semibold text-amber-300">
+                          {activePass.valid_till || "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Remaining:</span>
+                        <span className="font-semibold text-green-400">{remainingWashes} washes</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleRenew}
+                      disabled={loading}
+                      className="mt-4 w-full px-4 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-lg font-semibold transition"
+                    >
+                      {loading ? "Processing..." : "🔄 Renew Pass"}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* INFO CARD */}
+              <div className="bg-blue-600/10 border border-blue-500/30 rounded-xl p-4 space-y-2">
+                <p className="text-sm font-semibold text-blue-300">💡 Pro Tip</p>
+                <p className="text-xs text-slate-400">
+                  Renew your pass before expiry to keep your benefits active without any interruption.
+                </p>
+              </div>
             </div>
           </div>
         </main>
@@ -543,29 +671,88 @@ export default function MonthlyPass() {
 
       {/* PURCHASE MODAL */}
       {buyModalOpen && selectedPlan && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-xl font-semibold mb-2">
-              Purchase {selectedPlan.name} Plan
-            </h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-6">
+            {/* Header */}
+            <div>
+              <h3 className="text-2xl font-bold">
+                Upgrade to {selectedPlan.name}
+              </h3>
+              <p className="text-slate-400 text-sm mt-1">
+                Get {selectedPlan.washes} washes per month
+              </p>
+            </div>
 
-            <p className="text-slate-400 text-sm mb-4">
-              {selectedPlan.washes} washes / month • ₹{selectedPlan.price}
-            </p>
+            {/* Plan Summary */}
+            <div className="bg-slate-800/50 rounded-lg p-4 space-y-3">
+              <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Plan Summary</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Plan Name</span>
+                  <span className="font-medium text-white">{selectedPlan.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Total Washes</span>
+                  <span className="font-medium text-white">{selectedPlan.washes}/month</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Validity</span>
+                  <span className="font-medium text-white">30 Days</span>
+                </div>
+              </div>
+            </div>
 
-            <div className="flex justify-end gap-3 mt-4">
+            {/* Price Card */}
+            <div className="bg-linear-to-r from-blue-600/20 to-blue-900/20 border border-blue-500/50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-300">Base Price:</span>
+                <span className="font-semibold">₹{Math.round(selectedPlan.price / 1.18)}</span>
+              </div>
+              <div className="flex justify-between text-sm pb-2 border-b border-blue-500/30">
+                <span className="text-slate-300">GST (18%):</span>
+                <span className="font-semibold">₹{Math.round(selectedPlan.price - selectedPlan.price / 1.18)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-blue-300 font-bold">Total:</span>
+                <span className="text-3xl font-bold text-blue-300">₹{selectedPlan.price}</span>
+              </div>
+            </div>
+
+            {/* Perks List */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">What You Get</p>
+              <div className="space-y-1 text-sm">
+                {selectedPlan.perks.map((perk) => (
+                  <div key={perk} className="flex items-center gap-2 text-slate-300">
+                    <FiCheckCircle className="text-green-400 shrink-0" />
+                    {perk}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setBuyModalOpen(false)}
-                className="px-4 py-2 rounded-lg border border-slate-600 hover:bg-slate-800"
+                className="flex-1 px-4 py-3 rounded-lg border border-slate-600 hover:bg-slate-800 font-medium transition"
               >
                 Cancel
               </button>
 
               <button
                 onClick={buyPlan}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
               >
-                {loading ? "Processing..." : "Confirm Purchase"}
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>💳 Proceed to Pay</>
+                )}
               </button>
             </div>
           </div>
@@ -575,24 +762,27 @@ export default function MonthlyPass() {
       {/* ▓▓▓ PAYMENT PAGE ▓▓▓ */}
       {showPayment && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
             {paymentStep === "method" ? (
               // PAYMENT METHOD SELECTION
               <>
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Confirm Purchase</h2>
-                  <button
-                    onClick={() => setShowPayment(false)}
-                    className="text-slate-400 hover:text-white transition"
-                  >
-                    <FiX className="text-2xl" />
-                  </button>
+                <div>
+                  <h2 className="text-2xl font-bold">🛒 Confirm Purchase</h2>
+                  <p className="text-slate-400 text-sm mt-1">Select your preferred payment method</p>
                 </div>
 
-                {/* Plan Details */}
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowPayment(false)}
+                  className="absolute top-6 right-6 text-slate-400 hover:text-white transition"
+                >
+                  <FiX className="text-2xl" />
+                </button>
+
+                {/* Plan Details Card */}
                 <div className="space-y-3 bg-slate-800/50 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-slate-300 uppercase">Plan Details</p>
+                  <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Plan Details</p>
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -610,21 +800,21 @@ export default function MonthlyPass() {
                   </div>
                 </div>
 
-                {/* Amount Breakdown */}
+                {/* Amount Breakdown Card */}
                 <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-300">Subtotal:</span>
                     <span className="font-semibold">
-                      ₹{(paymentAmount / 1.18).toFixed(0)}
+                      ₹{Math.round(paymentAmount / 1.18)}
                     </span>
                   </div>
-                  <div className="flex justify-between pb-2 border-b border-blue-500/30">
+                  <div className="flex justify-between text-sm pb-2 border-b border-blue-500/30">
                     <span className="text-slate-300">GST (18%):</span>
                     <span className="font-semibold">
-                      ₹{(paymentAmount - paymentAmount / 1.18).toFixed(0)}
+                      ₹{Math.round(paymentAmount - paymentAmount / 1.18)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-blue-300 font-bold">Total Amount:</span>
                     <span className="text-lg font-bold text-blue-300">
                       ₹{paymentAmount}
@@ -634,26 +824,28 @@ export default function MonthlyPass() {
 
                 {/* Payment Methods */}
                 <div className="space-y-3">
-                  <p className="text-sm font-medium text-slate-300">Select Payment Method</p>
+                  <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Payment Methods</p>
                   
-                  {[
-                    { id: "upi", label: "📱 UPI", desc: "Google Pay, PhonePe, PayTM" },
-                    { id: "card", label: "💳 Card", desc: "Visa, MasterCard, Rupay" },
-                    { id: "wallet", label: "👛 Wallet", desc: "CarWash+ Wallet Balance" },
-                    { id: "netbanking", label: "🏦 Net Banking", desc: "All major Indian banks" },
-                  ].map((method) => (
-                    <button
-                      key={method.id}
-                      onClick={() => handlePaymentMethodSelected(method.id)}
-                      className="w-full flex items-center justify-between gap-3 p-3 border border-slate-700 hover:border-blue-500 hover:bg-blue-600/10 rounded-lg transition text-left"
-                    >
-                      <div>
-                        <p className="font-semibold text-white">{method.label}</p>
-                        <p className="text-xs text-slate-400">{method.desc}</p>
-                      </div>
-                      <span className="text-xl">→</span>
-                    </button>
-                  ))}
+                  <div className="space-y-2">
+                    {[
+                      { id: "upi", label: "📱 UPI", desc: "Google Pay, PhonePe, PayTM" },
+                      { id: "card", label: "💳 Card", desc: "Visa, MasterCard, Rupay" },
+                      { id: "wallet", label: "👛 Wallet", desc: "CarWash+ Wallet Balance" },
+                      { id: "netbanking", label: "🏦 Net Banking", desc: "All major Indian banks" },
+                    ].map((method) => (
+                      <button
+                        key={method.id}
+                        onClick={() => handlePaymentMethodSelected(method.id)}
+                        className="w-full flex items-center justify-between gap-3 p-4 border border-slate-700 hover:border-blue-500 hover:bg-blue-600/10 rounded-lg transition text-left"
+                      >
+                        <div>
+                          <p className="font-semibold text-white">{method.label}</p>
+                          <p className="text-xs text-slate-400">{method.desc}</p>
+                        </div>
+                        <span className="text-xl">→</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Cancel Button */}
@@ -667,6 +859,50 @@ export default function MonthlyPass() {
             ) : (
               // PAYMENT PROCESSING
               <>
+                {/* SUCCESS MESSAGE - Show when payment verified */}
+                {paymentVerified && paymentStatus === "success" && (
+                  <div className="text-center space-y-6">
+                    <div className="bg-green-600/20 border border-green-500/50 rounded-xl p-6 flex flex-col items-center gap-4 animate-pulse">
+                      <div className="text-5xl">✅</div>
+                      <div>
+                        <h3 className="font-bold text-green-300 mb-1 text-xl">Payment Successful!</h3>
+                        <p className="text-sm text-green-200">Amount received in your account.</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-400">Completing your purchase...</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-slate-400">Processing</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* FAILURE MESSAGE - Show when payment fails */}
+                {paymentStatus === "failed" && (
+                  <div className="text-center space-y-6">
+                    <div className="bg-red-600/20 border border-red-500/50 rounded-xl p-6 flex flex-col items-center gap-4">
+                      <div className="text-5xl">❌</div>
+                      <div>
+                        <h3 className="font-bold text-red-300 mb-1 text-xl">Payment Failed</h3>
+                        <p className="text-sm text-red-200">Unable to verify payment. Please try again.</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setPaymentStep("method")}
+                      className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                    >
+                      Try Another Method
+                    </button>
+                  </div>
+                )}
+
+                {/* PAYMENT METHODS PROCESSING - Show only if not verified yet */}
+                {!paymentVerified && paymentStatus !== "failed" && (
+                  <>
                 {selectedPaymentMethod === "upi" ? (
                   // UPI QR CODE
                   <div className="text-center space-y-6">
@@ -698,9 +934,7 @@ export default function MonthlyPass() {
                     </div>
 
                     <button
-                      onClick={() => {
-                        setPaymentStep("method");
-                      }}
+                      onClick={() => setPaymentStep("method")}
                       className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                     >
                       Use Different Method
@@ -747,9 +981,7 @@ export default function MonthlyPass() {
 
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          setPaymentStep("method");
-                        }}
+                        onClick={() => setPaymentStep("method")}
                         className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                       >
                         Back
@@ -782,9 +1014,7 @@ export default function MonthlyPass() {
                     </div>
 
                     <button
-                      onClick={() => {
-                        setPaymentStep("method");
-                      }}
+                      onClick={() => setPaymentStep("method")}
                       className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                     >
                       Use Different Method
@@ -815,15 +1045,15 @@ export default function MonthlyPass() {
 
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          setPaymentStep("method");
-                        }}
+                        onClick={() => setPaymentStep("method")}
                         className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                       >
                         Back
                       </button>
                     </div>
                   </div>
+                )}
+                  </>
                 )}
               </>
             )}

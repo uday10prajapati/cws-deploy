@@ -12,6 +12,7 @@ import {
   FiClipboard,
   FiLogOut,
   FiChevronLeft,
+  FiCreditCard,
 } from "react-icons/fi";
 
 export default function AdminDashboard() {
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
     { name: "Users", icon: <FiUsers />, link: "/admin/users" },
     { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue" },
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics" },
+    { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account" },
     { name: "Settings", icon: <FiSettings />, link: "/admin/settings" },
   ];
 

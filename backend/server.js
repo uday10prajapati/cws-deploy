@@ -7,6 +7,9 @@ import dotenv from "dotenv";
 import passRoutes from "./routes/passRoutes.js";
 import myCarsRoutes from "./routes/myCarsRoutes.js";
 import transactions from "./routes/transactionsRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import alternativePaymentRoutes from "./routes/alternativePaymentRoutes.js";
 
 dotenv.config();
 
@@ -14,12 +17,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// auth routes
+// Routes
 app.use("/auth", authRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/pass", passRoutes);
 app.use("/cars", myCarsRoutes);
 app.use("/transactions", transactions);
+app.use("/payment", paymentRoutes);
+app.use("/alt-payment", alternativePaymentRoutes);
+app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

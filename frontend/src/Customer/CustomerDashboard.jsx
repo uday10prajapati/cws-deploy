@@ -385,6 +385,13 @@ export default function CustomerDashboard() {
               <FiCreditCard className="text-3xl mx-auto mb-2 text-pink-400 group-hover:text-pink-300" />
               <p className="text-xs font-semibold text-white">Transactions</p>
             </Link>
+            <Link
+              to="/location"
+              className="bg-linear-to-br from-pink-600/30 to-pink-900/30 border border-pink-500/50 rounded-lg p-4 text-center hover:scale-105 transition-transform group cursor-pointer"
+            >
+              <FiCreditCard className="text-3xl mx-auto mb-2 text-pink-400 group-hover:text-pink-300" />
+              <p className="text-xs font-semibold text-white">Location</p>
+            </Link>
           </div>
 
           {/* 🌈 STAT CARDS — DARK THEME */}
@@ -441,7 +448,7 @@ export default function CustomerDashboard() {
               </p>
               <div className="space-y-2">
                 <Link
-                  to="/wallet"
+                  to="/transactions"
                   className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-medium transition"
                 >
                   Add Money
