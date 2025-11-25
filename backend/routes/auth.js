@@ -16,17 +16,22 @@ const transporter = nodemailer.createTransport({
 });
 
 /* -----------------------------------------
-   SEND OTP
+   SEND OTP - EMAIL + WHATSAPP
 ----------------------------------------- */
 router.post("/send-otp", async (req, res) => {
   const { email, phone, name, password } = req.body;
 
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: "Missing fields" });
+  if (!email && !phone) {
+    return res.status(400).json({ error: "Either Email or Phone required" });
+  }
+
+  if (!name || !password) {
+    return res.status(400).json({ error: "Name & Password required" });
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+  // Store OTP in DB
   const { error: dbError } = await supabase
     .from("otp_verification")
     .insert([{ email, phone, otp }]);
@@ -36,46 +41,87 @@ router.post("/send-otp", async (req, res) => {
     return res.status(500).json({ error: "DB Insert Error" });
   }
 
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "CarWash+ OTP Verification",
-      html: `<h2>Hello ${name}</h2>
-             <p>Your OTP is:</p>
-             <h1>${otp}</h1>`,
-    });
-  } catch (mailError) {
-    console.log("Email Error:", mailError);
-    return res.status(500).json({ error: "Email Error" });
+  let emailStatus = "not_sent";
+  let whatsappStatus = "not_sent";
+
+  /* -----------------------------------------
+     1️⃣ SEND EMAIL OTP (if email exists)
+  ----------------------------------------- */
+  if (email) {
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "CarWash+ OTP Verification",
+        html: `<h2>Hello ${name}</h2>
+               <p>Your OTP is:</p>
+               <h1>${otp}</h1>`,
+      });
+
+      emailStatus = "sent";
+    } catch (mailError) {
+      console.log("Email Error:", mailError);
+      emailStatus = "failed";
+    }
   }
 
-  res.json({ success: true, message: "OTP Sent" });
+  /* -----------------------------------------
+     2️⃣ SEND WHATSAPP OTP (if phone exists)
+     - FREE: CallMeBot API
+  ----------------------------------------- */
+  if (phone) {
+    try {
+      const WA_APIKEY = process.env.WHATSAPP_API_KEY; // <-- ADD IN .env
+
+      const url =
+        `https://api.callmebot.com/whatsapp.php?` +
+        `phone=${phone}&` +
+        `text=Your OTP is ${otp}&` +
+        `apikey=${WA_APIKEY}`;
+
+      await fetch(encodeURI(url));
+
+      whatsappStatus = "sent";
+    } catch (waError) {
+      console.log("WhatsApp Error:", waError);
+      whatsappStatus = "failed";
+    }
+  }
+
+  return res.json({
+    success: true,
+    message: "OTP sent",
+    otpSentTo: { email: emailStatus, whatsapp: whatsappStatus },
+  });
 });
 
 /* -----------------------------------------
-   VERIFY OTP (fixed)
+   VERIFY OTP (unchanged)
 ----------------------------------------- */
 router.post("/verify-otp", async (req, res) => {
-  const { email, otp, name, phone, password } = req.body;
+  const { email, phone, otp, name, password } = req.body;
 
-  if (!email || !otp) {
-    return res.status(400).json({ error: "Email & OTP required" });
+  if (!otp) {
+    return res.status(400).json({ error: "OTP required" });
   }
 
-  // 1️⃣ Get OTP record
-  const { data: record, error } = await supabase
+  // Match OTP by email OR phone
+  const { data: record } = await supabase
     .from("otp_verification")
     .select("*")
-    .eq("email", email)
+    .or(`email.eq.${email},phone.eq.${phone}`)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
-  if (!record) return res.status(400).json({ error: "OTP not found" });
-  if (record.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
+  if (!record || !record.length) {
+    return res.status(400).json({ error: "OTP not found" });
+  }
 
-  // 2️⃣ Create Supabase Auth user
+  if (record[0].otp !== otp) {
+    return res.status(400).json({ error: "Invalid OTP" });
+  }
+
+  // Create Supabase Auth User
   const { data: userData, error: userError } =
     await supabase.auth.admin.createUser({
       email,
@@ -87,7 +133,7 @@ router.post("/verify-otp", async (req, res) => {
 
   const userId = userData.user.id;
 
-  // 3️⃣ Insert into profiles
+  // Insert profile
   const { error: profileError } = await supabase
     .from("profiles")
     .insert([
@@ -106,12 +152,13 @@ router.post("/verify-otp", async (req, res) => {
     return res.status(500).json({ error: "Profile insert failed" });
   }
 
-  // 4️⃣ Delete used OTP
-  await supabase.from("otp_verification").delete().eq("email", email);
+  // Delete OTP
+  await supabase
+    .from("otp_verification")
+    .delete()
+    .or(`email.eq.${email},phone.eq.${phone}`);
 
   return res.json({ success: true, message: "Account created!" });
 });
-
-
 
 export default router;
