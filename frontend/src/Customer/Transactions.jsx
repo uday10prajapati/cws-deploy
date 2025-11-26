@@ -54,11 +54,11 @@ async function fetchTransactions(customerId) {
       `${API_BASE}/transactions/customer/${customerId}`,
       { signal: AbortSignal.timeout(5000) } // 5 second timeout
     );
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const result = await response.json();
 
     if (result.success) {
@@ -99,13 +99,13 @@ async function createTransaction(transactionData) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(transactionData),
-      signal: AbortSignal.timeout(5000) // 5 second timeout
+      signal: AbortSignal.timeout(5000), // 5 second timeout
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const result = await response.json();
 
     if (result.success) {
@@ -151,26 +151,27 @@ const statusConfig = {
 };
 
 const typeLabel = {
-  booking_payment: "Booking Payment",
-  monthly_pass: "Monthly Pass",
-  wallet_topup: "Wallet Top-up",
-  refund: "Refund",
-  cashback: "Cashback",
+  booking: "Booking Payment",
+  monthly_pass_purchase: "Monthly Pass Purchase",
+  wallet: "Wallet Top-up",
+  payment: "General Payment",
+  pickup: "Pickup Fee",
+  delivery: "Delivery Fee",
+  pass: "Pass Purchase",
 };
 
 const paymentModes = [
   { id: "upi", label: "UPI", icon: <SiGooglepay /> },
-  { id: "card", label: "Credit/Debit Card", icon: <FiCreditCard /> },
+  { id: "card", label: "Card", icon: <FiCreditCard /> },
   { id: "wallet", label: "Wallet", icon: <FaWallet /> },
   { id: "netbanking", label: "Net Banking", icon: <FiPhone /> },
 ];
 
 const paymentLabel = {
   upi: "UPI",
-  card: "Card",
+  card: "Credit/Debit Card",
   wallet: "Wallet",
   netbanking: "Netbanking",
-  other: "Other",
 };
 
 // Generate QR Code Data URL for UPI
@@ -268,7 +269,15 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
           customer_id: user.id,
           booking_id: bookingId || null,
           pass_id: passId || null,
-          type,
+          type:
+            type === "booking_payment"
+              ? "booking"
+              : type === "monthly_pass"
+              ? "monthly_pass_purchase"
+              : type === "wallet_topup"
+              ? "wallet"
+              : type,
+
           direction: "debit",
           status: "success",
           amount: parseFloat(amount),
@@ -291,7 +300,9 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
           setPaymentData(null);
           setPaymentStatus(null);
           setPaymentVerified(false);
-          alert(`Payment of ₹${totalAmount} successful!\nTransaction ID: ${transaction.id}`);
+          alert(
+            `Payment of ₹${totalAmount} successful!\nTransaction ID: ${transaction.id}`
+          );
           onSuccess(transaction);
         }, 2000);
       } else {
@@ -444,7 +455,9 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
               </div>
               <div className="flex justify-between text-orange-400">
                 <span>GST (18%)</span>
-                <span className="font-semibold">+ {formatAmount(gstAmount)}</span>
+                <span className="font-semibold">
+                  + {formatAmount(gstAmount)}
+                </span>
               </div>
               <div className="border-t border-slate-700 pt-3 flex justify-between text-lg">
                 <span className="font-semibold">Total Amount</span>
@@ -460,8 +473,12 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
             <div className="bg-green-600/20 border border-green-500/50 rounded-xl p-6 mb-6 flex items-center gap-4">
               <div className="text-4xl">✅</div>
               <div>
-                <h3 className="font-bold text-green-300 mb-1">Payment Successful!</h3>
-                <p className="text-sm text-green-200">Amount received in your account. Processing your order...</p>
+                <h3 className="font-bold text-green-300 mb-1">
+                  Payment Successful!
+                </h3>
+                <p className="text-sm text-green-200">
+                  Amount received in your account. Processing your order...
+                </p>
               </div>
             </div>
           )}
@@ -472,7 +489,9 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
               <div className="text-4xl">❌</div>
               <div>
                 <h3 className="font-bold text-red-300 mb-1">Payment Failed</h3>
-                <p className="text-sm text-red-200">Unable to process your payment. Please try again.</p>
+                <p className="text-sm text-red-200">
+                  Unable to process your payment. Please try again.
+                </p>
               </div>
             </div>
           )}
@@ -502,7 +521,9 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
 
           {/* PAYMENT METHODS */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">Select Payment Method</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Select Payment Method
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {paymentModes.map((mode) => (
                 <button
@@ -513,7 +534,9 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
                     selectedPayment === mode.id
                       ? "border-blue-500 bg-blue-500/10"
                       : "border-slate-700 bg-slate-900 hover:border-slate-600"
-                  } ${paymentProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+                  } ${
+                    paymentProcessing ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">{mode.icon}</div>
@@ -536,21 +559,29 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
           <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4 mb-6 space-y-3">
             <div className="flex gap-2 text-sm">
               <span className="text-slate-400">📋 GST Number:</span>
-              <span className="font-mono text-blue-300 font-semibold">{GST_NUMBER}</span>
+              <span className="font-mono text-blue-300 font-semibold">
+                {GST_NUMBER}
+              </span>
             </div>
             <div className="flex gap-2 text-sm">
               <span className="text-slate-400">🏢 Business Name:</span>
               <span className="text-slate-300">CarWash+ Services</span>
             </div>
             <p className="text-xs text-slate-500">
-              Invoice will be generated after successful payment and can be downloaded from your transactions page
+              Invoice will be generated after successful payment and can be
+              downloaded from your transactions page
             </p>
           </div>
 
           {/* TERMS */}
           <div className="bg-slate-900/50 rounded-lg p-4 mb-6">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" defaultChecked className="rounded" disabled={paymentProcessing} />
+              <input
+                type="checkbox"
+                defaultChecked
+                className="rounded"
+                disabled={paymentProcessing}
+              />
               <span className="text-slate-300">
                 I agree to the terms & conditions and privacy policy
               </span>
@@ -639,14 +670,14 @@ export default function TransactionsPage() {
   // Auth state listener - runs once on mount
   useEffect(() => {
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_OUT" || !session?.user) {
-          console.log("🔐 Auth state changed - user logged out");
-          navigate("/login");
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        console.log("🔐 Auth state changed - user logged out");
+        navigate("/login");
       }
-    );
+    });
 
     return () => subscription?.unsubscribe();
   }, [navigate]);
@@ -656,10 +687,11 @@ export default function TransactionsPage() {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Get current user (more reliable than getSession)
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
+
         if (userError || !userData?.user) {
           console.log("⚠️ No user found, redirecting to login", userError);
           navigate("/login");
@@ -703,9 +735,9 @@ export default function TransactionsPage() {
 
       if (search.trim()) {
         const q = search.toLowerCase();
-        const haystack = `${tx.id} ${tx.bookingId ?? ""} ${
-          tx.notes ?? ""
-        } ${tx.amount}`.toLowerCase();
+        const haystack = `${tx.id} ${tx.bookingId ?? ""} ${tx.notes ?? ""} ${
+          tx.amount
+        }`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -735,158 +767,104 @@ export default function TransactionsPage() {
     setPaymentData(null);
   };
 
-  const handleAddMoneyPayment = async () => {
-    if (!user || !addMoneyAmount) return;
-
-    const amount = parseInt(addMoneyAmount);
-    if (amount < 100 || amount > 100000) {
-      alert("Amount must be between ₹100 and ₹1,00,000");
-      return;
-    }
-
-    setAddMoneyStep("processing");
-    setAddMoneyStatus(null);
-    setAddMoneyVerified(false);
-
+  // Initiate alternative payment (same as Bookings)
+  const initiateAlternativePayment = async (paymentMethod) => {
     try {
-      // Step 1: Create order on backend
-      console.log("📝 Creating payment order...");
-      const orderResponse = await fetch(`${API_BASE}/payment/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amount,
-          customer_id: user.id,
-          customer_email: user.email,
-          customer_name: user.user_metadata?.full_name || "Customer",
-          type: "wallet_topup",
-          payment_method: addMoneyPaymentMethod,
-          notes: `Wallet top-up via ${paymentLabel[addMoneyPaymentMethod]}`,
-        }),
-      });
-
-      const orderData = await orderResponse.json();
-
-      if (!orderData.success) {
-        console.error("❌ Order creation failed:", orderData.error);
-        setAddMoneyStatus("failed");
-        alert("Failed to create payment order: " + orderData.error);
-        return;
-      }
-
-      console.log("✅ Order created:", orderData.order.id);
-
-      // Step 2: Open Razorpay payment modal
-      const gstAmount = Math.round(amount * 0.18);
-      const totalAmount = amount + gstAmount;
-
-      const options = {
-        key: orderData.razorpay_key,
-        amount: totalAmount * 100, // Amount in paise
-        currency: "INR",
-        name: "CarWash+",
-        description: `Add ₹${amount} to Wallet`,
-        order_id: orderData.order.id,
+      const amount = parseInt(addMoneyAmount);
+      const payload = {
+        amount: amount,
         customer_id: user.id,
         customer_email: user.email,
         customer_name: user.user_metadata?.full_name || "Customer",
-        prefill: {
-          name: user.user_metadata?.full_name || "Customer",
-          email: user.email,
-        },
-        notes: {
-          type: "wallet_topup",
-          payment_method: addMoneyPaymentMethod,
-        },
-        theme: {
-          color: "#2563eb", // Blue color
-        },
-        // Handler function
-        handler: async (paymentResponse) => {
-          console.log("💰 Payment response received:", paymentResponse);
-
-          // Step 3: Verify payment on backend
-          try {
-            const verifyResponse = await fetch(`${API_BASE}/payment/verify`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: paymentResponse.razorpay_order_id,
-                razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                razorpay_signature: paymentResponse.razorpay_signature,
-                customer_id: user.id,
-                amount: amount,
-                gst: gstAmount,
-                total_amount: totalAmount,
-                type: "wallet_topup",
-                payment_method: addMoneyPaymentMethod,
-                notes: `Wallet top-up via ${paymentLabel[addMoneyPaymentMethod]}`,
-              }),
-            });
-
-            const verifyData = await verifyResponse.json();
-
-            if (verifyData.success) {
-              console.log("✅ Payment verified successfully!");
-              setAddMoneyVerified(true);
-              setAddMoneyStatus("success");
-
-              // Add transaction to list
-              setTransactions([verifyData.transaction, ...transactions]);
-
-              // Show success for 2 seconds then auto-close
-              setTimeout(() => {
-                setShowAddMoney(false);
-                setAddMoneyAmount("");
-                setAddMoneyStep("amount");
-                setAddMoneyStatus(null);
-                setAddMoneyVerified(false);
-                setCardNumber("");
-                setCardExpiry("");
-                setCardCVV("");
-                setCardName("");
-                alert(
-                  `💰 ₹${totalAmount} added to your wallet successfully!\nTransaction ID: ${verifyData.transaction.id}\nOrder ID: ${paymentResponse.razorpay_order_id}`
-                );
-              }, 2000);
-            } else {
-              console.error("❌ Payment verification failed:", verifyData.error);
-              setAddMoneyStatus("failed");
-              alert("Payment verification failed: " + verifyData.error);
-            }
-          } catch (verifyErr) {
-            console.error("❌ Verification error:", verifyErr);
-            setAddMoneyStatus("failed");
-            alert("Error verifying payment: " + verifyErr.message);
-          }
-        },
-        // Error handler
-        modal: {
-          ondismiss: () => {
-            console.log("❌ Payment modal closed");
-            setAddMoneyStep("confirm");
-            setAddMoneyStatus("failed");
-          },
-        },
+        customer_phone: user.user_metadata?.phone || "9999999999",
+        type: "wallet",
+        payment_method: paymentMethod,
+        notes: `Wallet top-up via ${paymentMethod.toUpperCase()}`,
       };
 
-      // Create Razorpay instance and open payment modal
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      console.log("💳 Payment payload:", payload);
 
-      // Catch payment modal errors
-      rzp.on("payment.failed", (response) => {
-        console.error("❌ Payment failed:", response.error);
-        setAddMoneyStatus("failed");
-        alert(
-          `Payment failed: ${response.error.reason}\nError code: ${response.error.code}`
-        );
+      const response = await fetch("http://localhost:5000/alt-payment/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
+      const result = await response.json();
+      console.log("Payment response:", result);
+
+      if (!result.success) {
+        alert(`Payment initiation failed: ${result.error}`);
+        return null;
+      }
+
+      return result;
     } catch (err) {
-      console.error("❌ Payment error:", err);
-      setAddMoneyStatus("failed");
-      alert(`Payment failed: ${err.message}`);
+      console.error("Payment error:", err);
+      alert(`Payment error: ${err.message}`);
+      return null;
     }
+  };
+
+  // Generate QR code URL
+  const generateQRCode = (upiLink) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
+    return qrUrl;
+  };
+
+  // Verify payment after user completes payment
+  const verifyPayment = async (transactionId, paymentMethod, verificationData) => {
+    try {
+      let endpoint = "";
+      let payload = { transaction_id: transactionId, ...verificationData };
+
+      switch (paymentMethod) {
+        case "upi":
+          endpoint = "/alt-payment/verify-upi";
+          break;
+        case "card":
+          endpoint = "/alt-payment/verify-card";
+          break;
+        case "netbanking":
+          endpoint = "/alt-payment/verify-netbanking";
+          break;
+        default:
+          return false;
+      }
+
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error("Verification error:", err);
+      return false;
+    }
+  };
+
+  const handleAddMoneyPayment = async (paymentMethod) => {
+    setAddMoneyPaymentMethod(paymentMethod);
+    setAddMoneyStep("processing");
+
+    // Initiate payment with backend
+    const paymentDataResponse = await initiateAlternativePayment(paymentMethod);
+    if (!paymentDataResponse) {
+      setAddMoneyStep("amount");
+      return;
+    }
+
+    // Store payment details for verification - keep modal open
+    setPaymentData({
+      ...paymentDataResponse,
+      type: "wallet",
+      amount: parseInt(addMoneyAmount),
+    });
+
+    // Modal stays open with QR code now showing
   };
 
   if (showPayment && paymentData) {
@@ -1018,7 +996,9 @@ export default function TransactionsPage() {
           <div className="bg-linear-to-r from-blue-600 to-blue-700 rounded-xl p-6 mb-8">
             <div className="text-slate-200 text-sm mb-2">Wallet Balance</div>
             <div className="flex items-end justify-between flex-col md:flex-row gap-4">
-              <div className="text-4xl font-bold">{formatAmount(walletBalance)}</div>
+              <div className="text-4xl font-bold">
+                {formatAmount(walletBalance)}
+              </div>
               <button
                 onClick={() => setShowAddMoney(true)}
                 className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-slate-100 transition"
@@ -1103,12 +1083,16 @@ export default function TransactionsPage() {
             {!loading && !error && filtered.length === 0 && (
               <div className="bg-slate-900/50 border-2 border-dashed border-slate-700 rounded-xl p-12 text-center">
                 <div className="text-5xl mb-4">📋</div>
-                <p className="text-lg font-semibold text-white">No Transactions Yet</p>
+                <p className="text-lg font-semibold text-white">
+                  No Transactions Yet
+                </p>
                 <p className="text-sm text-slate-400 mt-2">
                   Your transactions will appear here once you make a payment
                 </p>
                 <button
-                  onClick={() => handleInitiatePayment(399, "booking_payment", null, null)}
+                  onClick={() =>
+                    handleInitiatePayment(399, "booking_payment", null, null)
+                  }
                   className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition"
                 >
                   Make Your First Payment
@@ -1235,7 +1219,9 @@ export default function TransactionsPage() {
           <div className="bg-linear-to-b from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Transaction Details</h2>
+              <h2 className="text-2xl font-bold text-white">
+                Transaction Details
+              </h2>
               <button
                 onClick={() => setSelectedTx(null)}
                 className="text-2xl text-slate-400 hover:text-white transition hover:bg-slate-800 w-8 h-8 flex items-center justify-center rounded-lg"
@@ -1252,11 +1238,15 @@ export default function TransactionsPage() {
             <div className="space-y-4">
               {/* AMOUNT - Large Display */}
               <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-xl p-6 text-center">
-                <p className="text-sm text-slate-400 mb-2">Transaction Amount</p>
+                <p className="text-sm text-slate-400 mb-2">
+                  Transaction Amount
+                </p>
                 <div className="text-4xl font-black mb-2">
                   <span
                     className={
-                      selectedTx.direction === "credit" ? "text-green-400" : "text-white"
+                      selectedTx.direction === "credit"
+                        ? "text-green-400"
+                        : "text-white"
                     }
                   >
                     {selectedTx.direction === "debit" ? "-" : "+"}
@@ -1283,11 +1273,15 @@ export default function TransactionsPage() {
 
               {/* STATUS */}
               <div className="flex items-center gap-3 bg-slate-800/50 p-4 rounded-lg">
-                <span className="text-2xl">{statusConfig[selectedTx.status].icon}</span>
+                <span className="text-2xl">
+                  {statusConfig[selectedTx.status].icon}
+                </span>
                 <div>
                   <p className="text-xs text-slate-400">Status</p>
                   <p
-                    className={`font-bold text-lg ${statusConfig[selectedTx.status].text}`}
+                    className={`font-bold text-lg ${
+                      statusConfig[selectedTx.status].text
+                    }`}
                   >
                     {selectedTx.status.toUpperCase()}
                   </p>
@@ -1309,7 +1303,9 @@ export default function TransactionsPage() {
                   </div>
 
                   <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-                    <span className="text-sm text-slate-400">Payment Method</span>
+                    <span className="text-sm text-slate-400">
+                      Payment Method
+                    </span>
                     <span className="font-semibold text-slate-300 capitalize flex items-center gap-2">
                       💳 {paymentLabel[selectedTx.paymentMethod]}
                     </span>
@@ -1398,351 +1394,275 @@ export default function TransactionsPage() {
 
       {/* ▓▓▓ ADD MONEY MODAL ▓▓▓ */}
       {showAddMoney && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6 my-8">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl">
             {/* Header */}
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">💰 Add Money to Wallet</h2>
-              <p className="text-slate-400 text-sm">Quick & Secure Top-up</p>
+            <div className="mb-8 text-center">
+              <h1 className="text-4xl font-bold mb-2">💰 Add Money to Wallet</h1>
+              <p className="text-slate-400">Secure payment to your wallet</p>
             </div>
 
-            {/* STEP 1: AMOUNT SELECTION */}
+            {/* AMOUNT SELECTION STEP */}
             {addMoneyStep === "amount" && (
-              <>
-                {/* Amount Input */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-slate-300 uppercase tracking-wider">
-                    Enter Amount (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={addMoneyAmount}
-                    onChange={(e) => setAddMoneyAmount(e.target.value)}
-                    placeholder="Enter amount"
-                    disabled={addMoneyStep !== "amount"}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-lg font-semibold"
-                  />
-                  <p className="text-xs text-slate-500">
-                    ℹ️ Minimum: ₹100 | Maximum: ₹1,00,000
-                  </p>
-                </div>
-
-                {/* Quick Amount Buttons */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[500, 1000, 2000].map((amt) => (
-                    <button
-                      key={amt}
-                      onClick={() => setAddMoneyAmount(amt.toString())}
-                      disabled={addMoneyStep !== "amount"}
-                      className="py-2 px-3 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-500 rounded-lg text-sm font-medium transition disabled:opacity-50"
-                    >
-                      ₹{amt.toLocaleString()}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Payment Methods */}
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Select Payment Method</p>
-                  <div className="space-y-2">
-                    {paymentModes.map((method) => (
-                      <label
-                        key={method.id}
-                        className="flex items-center gap-3 p-3 border border-slate-700 hover:bg-blue-600/10 hover:border-blue-500 rounded-lg cursor-pointer transition"
-                      >
-                        <input
-                          type="radio"
-                          name="add-money-method"
-                          value={method.id}
-                          checked={addMoneyPaymentMethod === method.id}
-                          onChange={(e) => setAddMoneyPaymentMethod(e.target.value)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-lg">{method.icon}</span>
-                        <span className="text-sm font-medium text-slate-300">
-                          {method.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Total Amount Preview */}
-                {addMoneyAmount && (
-                  <div className="bg-linear-to-r from-green-600/20 to-green-900/20 border border-green-500/50 rounded-lg p-4 space-y-2">
-                    <p className="text-xs font-semibold text-green-300 uppercase tracking-wider mb-3">💳 Amount Summary</p>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-slate-300">Base Amount:</span>
-                      <span className="font-semibold">
-                        ₹{parseInt(addMoneyAmount || 0).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-green-500/30 mb-2">
-                      <span className="text-slate-300">GST (18%):</span>
-                      <span className="font-semibold">
-                        ₹
-                        {Math.round(
-                          (parseInt(addMoneyAmount || 0) * 0.18)
-                        ).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-300 font-bold">Total to Pay:</span>
-                      <span className="text-lg font-bold text-green-300">
-                        ₹
-                        {(
-                          parseInt(addMoneyAmount || 0) +
-                          Math.round(parseInt(addMoneyAmount || 0) * 0.18)
-                        ).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowAddMoney(false);
-                      setAddMoneyAmount("");
-                      setAddMoneyPaymentMethod("upi");
-                      setAddMoneyStep("amount");
-                    }}
-                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => setAddMoneyStep("confirm")}
-                    disabled={!addMoneyAmount || parseInt(addMoneyAmount) < 100}
-                    className="flex-1 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                  >
-                    💳 Next
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* STEP 2: CONFIRM & PAYMENT METHOD */}
-            {addMoneyStep === "confirm" && (
-              <>
-                {/* Payment Method Specific UI */}
-                {addMoneyPaymentMethod === "upi" && (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <p className="text-sm text-slate-400 mb-4">Scan the QR code with your UPI app</p>
-                      <img
-                        src={generateQRCode(`upi://pay?pa=merchant@axis&pn=CarWash&am=${addMoneyAmount}&tn=Add%20Money&tr=order_${Date.now()}`)}
-                        alt="UPI QR Code"
-                        className="w-40 h-40 mx-auto border-4 border-blue-500 rounded-lg"
-                      />
-                    </div>
-                    <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-3">
-                      <p className="text-xs text-blue-300 text-center">
-                        📱 Scan this QR code and complete payment on your UPI app
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {addMoneyPaymentMethod === "card" && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-slate-300 mb-4">Enter your card details</p>
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Amount Summary - Left */}
+                <div className="md:col-span-1">
+                  <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-lg font-bold">Add Money</h3>
                     
-                    {/* Card Holder Name */}
-                    <div>
-                      <label className="text-xs text-slate-400 mb-2 block">Card Holder Name</label>
+                    {addMoneyAmount && (
+                      <div className="space-y-3 bg-slate-800/50 p-4 rounded-lg">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-400">Amount</span>
+                          <span className="font-semibold">₹{parseInt(addMoneyAmount).toLocaleString("en-IN")}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Price Breakdown */}
+                    {addMoneyAmount && (
+                      <div className="border-t border-slate-700 pt-3 space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-400">Subtotal</span>
+                          <span>₹{(parseInt(addMoneyAmount) / 1.18).toFixed(0)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm pb-2 border-b border-slate-700">
+                          <span className="text-slate-400">GST (18%)</span>
+                          <span>₹{(parseInt(addMoneyAmount) - parseInt(addMoneyAmount) / 1.18).toFixed(0)}</span>
+                        </div>
+                        <div className="flex justify-between text-lg font-bold text-green-400">
+                          <span>Total</span>
+                          <span>₹{parseInt(addMoneyAmount)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-slate-500 text-center pt-2">
+                      🔒 Secure & Encrypted Payment
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Methods - Right */}
+                <div className="md:col-span-2">
+                  <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-6">
+                    {/* Amount Input */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-slate-300">
+                        Enter Amount (₹)
+                      </label>
                       <input
-                        type="text"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                        type="number"
+                        value={addMoneyAmount}
+                        onChange={(e) => setAddMoneyAmount(e.target.value)}
+                        placeholder="Enter amount (₹100 - ₹1,00,000)"
+                        className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:outline-none text-lg font-semibold"
                       />
                     </div>
 
-                    {/* Card Number */}
-                    <div>
-                      <label className="text-xs text-slate-400 mb-2 block">Card Number</label>
-                      <input
-                        type="text"
-                        value={cardNumber}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\s/g, "").slice(0, 16);
-                          const formatted = val.replace(/(\d{4})/g, "$1 ").trim();
-                          setCardNumber(formatted);
-                        }}
-                        placeholder="1234 5678 9012 3456"
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
-                      />
-                    </div>
-
-                    {/* Expiry & CVV */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs text-slate-400 mb-2 block">Expiry (MM/YY)</label>
-                        <input
-                          type="text"
-                          value={cardExpiry}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                            if (val.length >= 2) {
-                              setCardExpiry(`${val.slice(0, 2)}/${val.slice(2)}`);
-                            } else {
-                              setCardExpiry(val);
-                            }
-                          }}
-                          placeholder="MM/YY"
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-400 mb-2 block">CVV</label>
-                        <input
-                          type="text"
-                          value={cardCVV}
-                          onChange={(e) => setCardCVV(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                          placeholder="123"
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {addMoneyPaymentMethod === "wallet" && (
-                  <div className="space-y-4 bg-purple-600/20 border border-purple-500/50 rounded-lg p-4">
-                    <p className="text-sm text-slate-300">Paying from Wallet</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Amount:</span>
-                      <span className="text-lg font-bold text-purple-300">
-                        ₹{(parseInt(addMoneyAmount || 0) + Math.round(parseInt(addMoneyAmount || 0) * 0.18)).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500">You can add money to wallet to use this option</p>
-                  </div>
-                )}
-
-                {addMoneyPaymentMethod === "netbanking" && (
-                  <div className="space-y-3">
-                    <p className="text-sm text-slate-300 mb-3">Select your bank</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {["HDFC", "ICICI", "Axis", "SBI", "BOI", "Kotak"].map((bank) => (
+                    {/* Quick Amount Buttons */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {[500, 1000, 2000].map((amt) => (
                         <button
-                          key={bank}
-                          className="py-3 px-2 bg-slate-800 border border-slate-700 hover:border-blue-500 hover:bg-blue-600/10 rounded-lg text-sm font-medium text-slate-300 transition"
+                          key={amt}
+                          onClick={() => setAddMoneyAmount(amt.toString())}
+                          className="py-2 px-3 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-500 rounded-lg text-sm font-medium transition"
                         >
-                          {bank}
+                          ₹{amt.toLocaleString()}
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
 
-                {/* Amount Summary */}
-                <div className="bg-linear-to-r from-green-600/20 to-green-900/20 border border-green-500/50 rounded-lg p-4 space-y-2">
-                  <p className="text-xs font-semibold text-green-300 uppercase tracking-wider mb-3">💳 Amount Summary</p>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-slate-300">Amount:</span>
-                    <span className="font-semibold">₹{parseInt(addMoneyAmount || 0).toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-green-500/30 mb-2">
-                    <span className="text-slate-300">GST (18%):</span>
-                    <span className="font-semibold">
-                      ₹{Math.round((parseInt(addMoneyAmount || 0) * 0.18)).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-green-300 font-bold">Total:</span>
-                    <span className="text-lg font-bold text-green-300">
-                      ₹{(parseInt(addMoneyAmount || 0) + Math.round(parseInt(addMoneyAmount || 0) * 0.18)).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
+                    {/* Select Payment Method */}
+                    <h3 className="text-lg font-bold">Select Payment Method</h3>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setAddMoneyStep("amount")}
-                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleAddMoneyPayment}
-                    disabled={addMoneyPaymentMethod === "card" && (!cardNumber || !cardExpiry || !cardCVV || !cardName)}
-                    className="flex-1 py-3 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition"
-                  >
-                    Pay Now
-                  </button>
-                </div>
-              </>
-            )}
+                    <div className="space-y-3">
+                      {/* UPI */}
+                      <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-blue-500 hover:bg-blue-600/10 cursor-pointer transition">
+                        <input
+                          type="radio"
+                          name="payment-method"
+                          value="upi"
+                          checked={addMoneyPaymentMethod === "upi"}
+                          onChange={(e) => setAddMoneyPaymentMethod(e.target.value)}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">📱 UPI</p>
+                          <p className="text-sm text-slate-400">Google Pay, PhonePe, PayTM</p>
+                        </div>
+                        <span className="text-2xl text-blue-400">→</span>
+                      </label>
 
-            {/* STEP 3: PROCESSING */}
-            {addMoneyStep === "processing" && (
-              <div className="space-y-6 text-center">
-                <div className="flex justify-center">
-                  <div className="w-16 h-16 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                </div>
-                <div>
-                  <p className="text-lg font-semibold text-white mb-2">Processing Payment...</p>
-                  <p className="text-sm text-slate-400">Please wait while we verify your payment</p>
-                </div>
-                <div className="bg-blue-600/10 border border-blue-500/50 rounded-lg p-3">
-                  <p className="text-xs text-blue-300">
-                    {addMoneyPaymentMethod === "upi" && "📱 Complete payment on your UPI app"}
-                    {addMoneyPaymentMethod === "card" && "💳 Processing card payment"}
-                    {addMoneyPaymentMethod === "wallet" && "👛 Deducting from wallet"}
-                    {addMoneyPaymentMethod === "netbanking" && "🏦 Processing net banking"}
-                  </p>
+                      {/* Credit/Debit Card */}
+                      <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-purple-500 hover:bg-purple-600/10 cursor-pointer transition">
+                        <input
+                          type="radio"
+                          name="payment-method"
+                          value="card"
+                          checked={addMoneyPaymentMethod === "card"}
+                          onChange={(e) => setAddMoneyPaymentMethod(e.target.value)}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">💳 Credit/Debit Card</p>
+                          <p className="text-sm text-slate-400">Visa, MasterCard, Rupay</p>
+                        </div>
+                        <span className="text-2xl text-purple-400">→</span>
+                      </label>
+
+                      {/* Net Banking */}
+                      <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-orange-500 hover:bg-orange-600/10 cursor-pointer transition">
+                        <input
+                          type="radio"
+                          name="payment-method"
+                          value="netbanking"
+                          checked={addMoneyPaymentMethod === "netbanking"}
+                          onChange={(e) => setAddMoneyPaymentMethod(e.target.value)}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">🏦 Net Banking</p>
+                          <p className="text-sm text-slate-400">All major Indian banks</p>
+                        </div>
+                        <span className="text-2xl text-orange-400">→</span>
+                      </label>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-4 border-t border-slate-700">
+                      <button
+                        onClick={() => {
+                          setShowAddMoney(false);
+                          setAddMoneyAmount("");
+                          setAddMoneyPaymentMethod("upi");
+                          setAddMoneyStep("amount");
+                        }}
+                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleAddMoneyPayment(addMoneyPaymentMethod)}
+                        disabled={!addMoneyAmount || parseInt(addMoneyAmount) < 100 || parseInt(addMoneyAmount) > 100000}
+                        className="flex-1 py-3 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                      >
+                        <FiCreditCard /> Proceed to Pay ₹{addMoneyAmount || "0"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* SUCCESS MESSAGE */}
-            {addMoneyStep === "processing" && addMoneyVerified && addMoneyStatus === "success" && (
-              <div className="space-y-4 text-center">
-                <div className="text-5xl animate-pulse">✅</div>
-                <div>
-                  <p className="text-lg font-bold text-green-300 mb-1">Payment Successful!</p>
-                  <p className="text-sm text-green-200">₹{(parseInt(addMoneyAmount || 0) + Math.round(parseInt(addMoneyAmount || 0) * 0.18)).toLocaleString("en-IN")} added to your wallet</p>
-                </div>
-                <div className="bg-green-600/20 border border-green-500/50 rounded-lg p-3">
-                  <p className="text-xs text-green-300">Amount received in your account. Closing...</p>
+            {/* PROCESSING STEP - Show method specific UI */}
+            {addMoneyStep === "processing" && addMoneyPaymentMethod === "upi" && (
+              <div className="max-w-md mx-auto overflow-y-auto overflow-x-hidden max-h-screen px-4">
+                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-8 space-y-6 text-center">
+                  {!paymentData ? (
+                    <>
+                      <h2 className="text-2xl font-bold">⏳ Initiating Payment...</h2>
+                      <div className="flex justify-center py-8">
+                        <div className="w-12 h-12 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                      </div>
+                      <p className="text-slate-400">Setting up UPI payment...</p>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold">📱 Scan to Pay with UPI</h2>
+                      
+                      {paymentData?.paymentDetails?.upi_link ? (
+                        <>
+                          <div className="bg-white p-6 rounded-xl">
+                            <img 
+  src={generateQRCode(paymentData.paymentDetails.upi_link)}
+  alt="UPI QR Code"
+  className="w-48 h-48 sm:w-64 sm:h-64 mx-auto"
+/>
+
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="text-slate-400">Pay to:</p>
+                            <p className="text-lg font-bold text-blue-300">{paymentData.paymentDetails.upi_id}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-slate-400">Loading QR code...</div>
+                      )}
+
+                      <div className="space-y-2">
+                        <p className="text-slate-400">Scan with any UPI app:</p>
+                        <p className="text-sm text-slate-500">Google Pay • PhonePe • PayTM • BHIM</p>
+                      </div>
+
+                      <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-4">
+                        <p className="text-lg font-bold text-blue-300">Amount: ₹{addMoneyAmount}</p>
+                      </div>
+
+                      {/* UTR Input for Verification */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-slate-300">Enter UTR / Reference ID:</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g., 412412412412"
+                          id="add-money-utr"
+                          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-green-500 focus:outline-none text-white"
+                        />
+                        <p className="text-xs text-slate-500">You'll receive this from your UPI app after payment</p>
+                      </div>
+
+                      {/* Verify Button */}
+                      <button
+                        onClick={async () => {
+                          const utr = document.getElementById("add-money-utr")?.value;
+                          if (!utr) {
+                            alert("Please enter UTR");
+                            return;
+                          }
+
+                          const isVerified = await verifyPayment(paymentData.transaction_id, "upi", { utr });
+                          if (isVerified) {
+                            setAddMoneyVerified(true);
+                            setAddMoneyStatus("success");
+                            setTimeout(() => {
+                              setShowAddMoney(false);
+                              setAddMoneyAmount("");
+                              setAddMoneyStep("amount");
+                              setAddMoneyStatus(null);
+                              setAddMoneyVerified(false);
+                              alert(`✅ ₹${addMoneyAmount} added to your wallet successfully!`);
+                              window.location.reload();
+                            }, 1000);
+                          } else {
+                            alert("❌ Payment verification failed. Please try again.");
+                          }
+                        }}
+                        className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
+                      >
+                        ✅ Verify Payment
+                      </button>
+
+                      {/* Back Button */}
+                      <button
+                        onClick={() => {
+                          setShowAddMoney(false);
+                          setAddMoneyStep("amount");
+                          setPaymentData(null);
+                        }}
+                        className="w-full py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition"
+                      >
+                        Back
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
-
-            {/* FAILURE MESSAGE */}
-            {addMoneyStatus === "failed" && (
-              <div className="space-y-4 text-center">
-                <div className="text-5xl">❌</div>
-                <div>
-                  <p className="text-lg font-bold text-red-300 mb-1">Payment Failed</p>
-                  <p className="text-sm text-red-200">Unable to process your payment</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setAddMoneyStep("confirm");
-                    setAddMoneyStatus(null);
-                  }}
-                  className="w-full py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-medium transition"
-                >
-                  Try Again
-                </button>
-              </div>
-            )}
-
-            {/* Security Info */}
-            <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-              <p className="text-xs text-slate-400">
-                🔒 Your payment is encrypted and secure
-              </p>
-            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+

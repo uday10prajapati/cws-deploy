@@ -11,6 +11,7 @@ import Monthlypass from "./Customer/MonthlyPass.jsx";
 import MyCars from "./Customer/MyCars.jsx";
 import Transactions from "./Customer/Transactions.jsx";
 import Location from "./Customer/Location.jsx";
+import Profile from "./Customer/Profile.jsx";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/my-cars" element={<MyCars />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/location" element={<Location />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </NotificationProvider>
   );

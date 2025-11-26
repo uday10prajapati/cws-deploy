@@ -23,6 +23,9 @@ export default function MonthlyPass() {
   /** Sidebar + Navbar UI States */
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [transactionId, setTransactionId] = useState(null);
+const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, upi_id etc.
+
 
   /** User */
   const [user, setUser] = useState(null);
@@ -227,41 +230,43 @@ export default function MonthlyPass() {
 
   // Initiate payment with alternative payment gateway
   const initiateAlternativePayment = async (paymentMethod) => {
-    try {
-      const payload = {
-        amount: paymentAmount,
-        customer_id: user.id,
-        customer_email: user.email,
-        customer_name: user.user_metadata?.full_name || "Customer",
-        customer_phone: user.user_metadata?.phone || "9999999999",
-        type: "monthly_pass",
-        payment_method: paymentMethod,
-        notes: `${selectedPlan.name} Pass - ${selectedPlan.washes} washes`,
-      };
+  try {
+    const payload = {
+      amount: paymentAmount,
+      customer_id: user.id,
+      customer_email: user.email,
+      customer_name: user.user_metadata?.full_name || "Customer",
+      customer_phone: user.user_metadata?.phone || "9999999999",
+      type: "monthly_pass_purchase",
+      payment_method: paymentMethod,
+      notes: `${selectedPlan.name} Pass - ${selectedPlan.washes} washes`,
+    };
 
-      console.log("💳 Payment payload:", payload);
+    const response = await fetch("http://localhost:5000/alt-payment/initiate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const response = await fetch("http://localhost:5000/alt-payment/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    const result = await response.json();
 
-      const result = await response.json();
-      console.log("Payment response:", result);
-
-      if (!result.success) {
-        alert(`Payment initiation failed: ${result.error}`);
-        return null;
-      }
-
-      return result;
-    } catch (err) {
-      console.error("Payment error:", err);
-      alert(`Payment error: ${err.message}`);
+    if (!result.success) {
+      alert(`Payment initiation failed: ${result.error}`);
       return null;
     }
-  };
+
+    // SAVE transaction & details
+    setTransactionId(result.transaction_id);
+    setPaymentDetails(result.paymentDetails);
+
+    return result;
+  } catch (err) {
+    console.error("Payment error:", err);
+    alert(`Payment error: ${err.message}`);
+    return null;
+  }
+};
+
 
   // Generate QR code URL (using QR server API)
   const generateQRCode = (upiLink) => {
@@ -271,40 +276,41 @@ export default function MonthlyPass() {
 
   // Verify payment after user completes payment
   const verifyPayment = async (transactionId, paymentMethod, verificationData) => {
-    try {
-      let endpoint = "";
-      let payload = { transaction_id: transactionId, ...verificationData };
+  try {
+    let endpoint = "";
+    let payload = { transaction_id: transactionId, ...verificationData };
 
-      switch (paymentMethod) {
-        case "upi":
-          endpoint = "/alt-payment/verify-upi";
-          break;
-        case "bank_transfer":
-          endpoint = "/alt-payment/verify-bank-transfer";
-          break;
-        case "net_banking":
-          endpoint = "/alt-payment/verify-net-banking";
-          break;
-        case "card":
-          endpoint = "/alt-payment/verify-card";
-          break;
-        default:
-          return false;
-      }
-
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      return result.success;
-    } catch (err) {
-      console.error("Verification error:", err);
-      return false;
+    switch (paymentMethod) {
+      case "upi":
+        endpoint = "/alt-payment/verify-upi";
+        break;
+      case "bank_transfer":
+        endpoint = "/alt-payment/verify-bank-transfer";
+        break;
+      case "net_banking":
+        endpoint = "/alt-payment/verify-net-banking";
+        break;
+      case "card":
+        endpoint = "/alt-payment/verify-card";
+        break;
+      default:
+        return false;
     }
-  };
+
+    const response = await fetch(`http://localhost:5000${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    return result.success;
+  } catch (err) {
+    console.error("Verification error:", err);
+    return false;
+  }
+};
+
 
   // Handle payment method selection
   const handlePaymentMethodSelected = async (method) => {
@@ -329,65 +335,58 @@ export default function MonthlyPass() {
 
   /** Complete purchase after payment verified */
   const completePurchase = async (transactionId, paymentMethod, verificationData) => {
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      // Verify payment with backend
-      const verified = await verifyPayment(transactionId, paymentMethod, verificationData);
+  try {
+    const verified = await verifyPayment(transactionId, paymentMethod, verificationData);
 
-      if (!verified) {
-        setPaymentStatus("failed");
-        alert("Payment verification failed. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      // Payment verified - update pass
-      setPaymentVerified(true);
-      setPaymentStatus("success");
-
-      // Check if user already has active pass
-      const existingPass = await getActivePass(user.id);
-      let error = null;
-
-      if (!existingPass) {
-        // No pass -> create new
-        error = await createMonthlyPass(user.id, selectedPlan);
-      } else {
-        // Already has one -> upgrade / replace
-        error = await updateMonthlyPass(existingPass, selectedPlan);
-      }
-
-      setLoading(false);
-
-      if (error) {
-        alert("Something went wrong. Please try again.");
-        return;
-      }
-
-      // Close payment and show success
-      setTimeout(() => {
-        setBuyModalOpen(false);
-        setShowPayment(false);
-        setPaymentStep("method");
-        setPaymentStatus(null);
-        setPaymentVerified(false);
-
-        const getLatestPass = async () => {
-          const latest = await getActivePass(user.id);
-          setActivePass(latest);
-          alert("Plan purchased successfully!");
-        };
-
-        getLatestPass();
-      }, 2000);
-    } catch (err) {
-      console.error("Payment error:", err);
+    if (!verified) {
       setPaymentStatus("failed");
+      alert("Payment verification failed. Please try again.");
       setLoading(false);
-      alert("Payment failed. Please try again.");
+      return;
     }
-  };
+
+    setPaymentVerified(true);
+    setPaymentStatus("success");
+
+    const existingPass = await getActivePass(user.id);
+    let error = null;
+
+    if (!existingPass) {
+      error = await createMonthlyPass(user.id, selectedPlan);
+    } else {
+      error = await updateMonthlyPass(existingPass, selectedPlan);
+    }
+
+    setLoading(false);
+
+    if (error) {
+      alert("Something went wrong. Please try again.");
+      return;
+    }
+
+    setTimeout(async () => {
+      setBuyModalOpen(false);
+      setShowPayment(false);
+      setPaymentStep("method");
+      setPaymentStatus(null);
+      setPaymentVerified(false);
+
+      const latest = await getActivePass(user.id);
+      setActivePass(latest);
+
+      alert("Plan purchased successfully!");
+    }, 2000);
+
+  } catch (err) {
+    console.error("Payment error:", err);
+    setPaymentStatus("failed");
+    setLoading(false);
+    alert("Payment failed. Please try again.");
+  }
+};
+
 
   /** Renew existing active plan */
   const handleRenew = async () => {
@@ -910,7 +909,7 @@ export default function MonthlyPass() {
                     
                     <div className="bg-white p-6 rounded-xl">
                       <img 
-                        src={generateQRCode()} 
+                        src={generateQRCode(paymentDetails?.upi_link || "")} 
                         alt="UPI QR Code" 
                         className="w-64 h-64 mx-auto"
                       />
@@ -936,35 +935,34 @@ export default function MonthlyPass() {
                     </div>
 
                     <button
-                      onClick={async () => {
-                        const utr = document.getElementById("upi-utr")?.value?.trim();
-                        if (!utr) {
-                          alert("Please enter UTR number");
-                          return;
-                        }
-                        
-                        const verified = await verifyPayment(
-                          pendingBookingData?.transaction_id || `TXN_${user?.id || 'unknown'}_${Date.now()}`,
-                          "upi",
-                          { utr }
-                        );
-                        
-                        if (verified) {
-                          setPaymentVerified(true);
-                          setPaymentStatus("success");
-                          await completePurchase(
-                            pendingBookingData?.transaction_id || `TXN_${user?.id || 'unknown'}_${Date.now()}`,
-                            "upi",
-                            { utr }
-                          );
-                        } else {
-                          alert("Payment verification failed. Please check UTR and try again.");
-                        }
-                      }}
-                      className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
-                    >
-                      ✓ Verify Payment
-                    </button>
+  onClick={async () => {
+    const utr = document.getElementById("upi-utr")?.value?.trim();
+
+    if (!utr) {
+      alert("Please enter UTR number");
+      return;
+    }
+
+    const verified = await verifyPayment(
+      transactionId,
+      "upi",
+      { utr, payment_timestamp: new Date().toISOString() }
+    );
+
+    if (verified) {
+      setPaymentVerified(true);
+      setPaymentStatus("success");
+
+      await completePurchase(transactionId, "upi", { utr });
+    } else {
+      alert("Payment verification failed. Please check UTR and try again.");
+    }
+  }}
+  className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
+>
+  ✓ Verify Payment
+</button>
+
 
                     <button
                       onClick={() => {
