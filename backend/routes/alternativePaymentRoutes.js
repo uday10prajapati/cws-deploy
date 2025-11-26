@@ -51,7 +51,7 @@ router.post("/initiate", async (req, res) => {
 
     // Validate payment method
     const validMethods = ["upi", "bank_transfer", "net_banking", "card"];
-    if (!validMethods.includes(payment_method.toLowerCase())) {
+    if (!validMethods.includes(normalizedMethod)) {
       return res.status(400).json({
         success: false,
         error: `Invalid payment method. Allowed: ${validMethods.join(", ")}`,
@@ -61,19 +61,33 @@ router.post("/initiate", async (req, res) => {
     // Generate unique transaction ID
     const transaction_id = `TXN_${customer_id}_${Date.now()}`;
 
+    // Normalize payment method to lowercase
+    const normalizedMethod = payment_method.toLowerCase().trim();
+    const normalizedType = (type || "booking_payment").toLowerCase().trim();
+
+    // Map our payment methods to database allowed values
+    const paymentMethodMap = {
+      "upi": "upi",
+      "bank_transfer": "other",  // Bank transfer maps to 'other'
+      "net_banking": "netbanking",
+      "card": "card"
+    };
+
+    const dbPaymentMethod = paymentMethodMap[normalizedMethod] || "other";
+
     // Create pending transaction in database
     const transactionData = {
       customer_id,
       booking_id: booking_id || null,
       pass_id: pass_id || null,
-      type: String(type || "booking_payment").trim(),
+      type: normalizedType,
       direction: "debit",
       status: "pending",
       amount: parseFloat(amount),
       gst: 0,
       total_amount: parseFloat(amount),
       currency: "INR",
-      payment_method: String(payment_method).toLowerCase().trim(),
+      payment_method: dbPaymentMethod,
       gateway_order_id: transaction_id,
       gateway_payment_id: null,
       notes: `${notes || ""} | Initiated via alternative payment`,
@@ -98,7 +112,7 @@ router.post("/initiate", async (req, res) => {
     // Return payment method specific information
     let paymentDetails = {};
 
-    switch (payment_method.toLowerCase()) {
+    switch (normalizedMethod) {
       case "upi":
         paymentDetails = generateUPIPayment(
           amount,

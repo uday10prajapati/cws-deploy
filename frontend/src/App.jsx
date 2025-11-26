@@ -9,6 +9,7 @@ import Bookings from "./Customer/Bookings.jsx";
 import Monthlypass from "./Customer/MonthlyPass.jsx";
 import MyCars from "./Customer/MyCars.jsx";
 import Transactions from "./Customer/Transactions.jsx";
+import Location from "./Customer/Location.jsx";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/monthly-pass" element={<Monthlypass />} />
       <Route path="/my-cars" element={<MyCars />} />
       <Route path="/transactions" element={<Transactions />} />
+      <Route path="/location" element={<Location />} />
     </Routes>
   );
 }

@@ -668,6 +668,7 @@ export default function CustomerDashboard() {
                       <th className="py-3 text-left font-medium">Location</th>
                       <th className="py-3 text-left font-medium">Amount</th>
                       <th className="py-3 text-left font-medium">Status</th>
+                      <th className="py-3 text-left font-medium">Action</th>
                     </tr>
                   </thead>
 
@@ -710,6 +711,19 @@ export default function CustomerDashboard() {
                           >
                             {b.status || "Pending"}
                           </span>
+                        </td>
+                        <td className="py-3">
+                          {(b.status === "In Progress" || b.status === "Confirmed" || b.status === "Pending") ? (
+                            <Link
+                              to={`/location`}
+                              state={{ bookingId: b.id }}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium transition inline-block"
+                            >
+                              📍 Track
+                            </Link>
+                          ) : (
+                            <span className="text-slate-500 text-xs">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}

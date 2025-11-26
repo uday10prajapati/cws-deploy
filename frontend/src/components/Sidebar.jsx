@@ -59,7 +59,7 @@ export default function Sidebar() {
   const customerMenu = [
     { name: "Home", icon: <FiHome />, link: "/" },
     { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-    { name: "My Cars", icon: <FiCar />, link: "/my-cars" },
+    { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
     { name: "Profile", icon: <FiUser />, link: "/profile" },
   ];
 
