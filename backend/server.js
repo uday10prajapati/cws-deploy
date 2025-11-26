@@ -1,17 +1,17 @@
 // server.js
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import bookingRoutes from "./routes/bookingsRoutes.js";
-import dotenv from "dotenv";
 import passRoutes from "./routes/passRoutes.js";
 import myCarsRoutes from "./routes/myCarsRoutes.js";
 import transactions from "./routes/transactionsRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import alternativePaymentRoutes from "./routes/alternativePaymentRoutes.js";
-
-dotenv.config();
 
 const app = express();
 app.use(cors());

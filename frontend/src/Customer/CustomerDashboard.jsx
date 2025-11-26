@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import NotificationBell from "../components/NotificationBell";
 import {
   FiMenu,
   FiBell,
@@ -330,9 +331,7 @@ export default function CustomerDashboard() {
           <h1 className="text-2xl font-bold">My Dashboard</h1>
 
           <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
+            <NotificationBell />
 
             <img
               src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}

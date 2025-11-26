@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import { useNotifications } from "../context/NotificationContext";
 import {
   FiMenu,
   FiBell,
@@ -23,6 +24,7 @@ import { FaCar } from "react-icons/fa";
 
 export default function BookingPage() {
   const routerLocation = useLocation();
+  const { addNotification } = useNotifications();
 
 
   // Sidebar / layout
@@ -32,6 +34,10 @@ export default function BookingPage() {
   // Auth + cars
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);
+
+  // Existing bookings
+  const [bookings, setBookings] = useState([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
 
   // Booking form state
   const [selectedCarId, setSelectedCarId] = useState("");
@@ -106,7 +112,7 @@ export default function BookingPage() {
     "16:00 – 17:00",
   ];
 
-  // Load user + cars + monthly pass
+  // Load user + cars + monthly pass + bookings
   useEffect(() => {
     const load = async () => {
       const { data: auth } = await supabase.auth.getUser();
@@ -119,6 +125,17 @@ export default function BookingPage() {
         .eq("customer_id", auth.user.id);
 
       setCars(carList || []);
+
+      // Load existing bookings
+      setLoadingBookings(true);
+      const { data: bookingList } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("customer_id", auth.user.id)
+        .order("created_at", { ascending: false });
+      
+      setBookings(bookingList || []);
+      setLoadingBookings(false);
 
       // Load active monthly pass
       try {
@@ -391,14 +408,20 @@ export default function BookingPage() {
             }
           );
 
-          const updateResult = await updateRes.json();
-          if (updateResult.success) {
+      if (updateResult.success) {
             console.log("✅ Wash deducted from pass");
             // Update local state
             setActivePass({
               ...activePass,
               remaining_washes: activePass.remaining_washes - 1,
             });
+            // Send notification for pass usage
+            await addNotification(
+              "pass",
+              "Monthly Pass Used",
+              `1 wash deducted. ${activePass.remaining_washes - 1} remaining washes.`,
+              { passId: activePass.id }
+            );
           }
         } catch (err) {
           console.error("Error deducting wash:", err);
@@ -410,6 +433,14 @@ export default function BookingPage() {
       setLoading(false);
       return;
     }
+
+    // Send booking confirmation notification
+    await addNotification(
+      "booking",
+      "✓ Booking Confirmed!",
+      `Your ${usePass ? "pass" : "car wash"} booking is confirmed. Booking ID: ${result.data?.id}`,
+      { bookingId: result.data?.id }
+    );
 
     setLoading(false);
     setShowSuccess(true);
@@ -764,6 +795,13 @@ export default function BookingPage() {
                       
                       if (verified) {
                         setShowPayment(false);
+                        // Send payment notification
+                        await addNotification(
+                          "payment",
+                          "💳 Payment Successful!",
+                          `Payment of ₹${bookingAmount} received via UPI (UTR: ${utrInput})`,
+                          { amount: bookingAmount, method: "UPI", utr: utrInput }
+                        );
                         await completeBooking();
                         setShowSuccess(true);
                         setTimeout(() => {
@@ -1153,6 +1191,45 @@ export default function BookingPage() {
               via SMS / WhatsApp.
             </p>
           </div>
+
+          {/* EXISTING BOOKINGS SECTION */}
+          {bookings.length > 0 && (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FiClipboard className="text-amber-400" />
+                Your Bookings ({bookings.length})
+              </h3>
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {bookings.map((booking) => (
+                  <Link
+                    key={booking.id}
+                    to={`/location/${booking.id}`}
+                    className="block p-4 bg-slate-900/60 border border-slate-700 rounded-lg hover:border-blue-500 hover:bg-slate-900/80 transition"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-semibold text-blue-300">
+                        {booking.car_name || "Unknown Car"}
+                      </p>
+                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                        booking.status === 'completed' ? 'bg-green-600/30 text-green-300' :
+                        booking.status === 'in_wash' ? 'bg-blue-600/30 text-blue-300' :
+                        booking.status === 'pending' ? 'bg-yellow-600/30 text-yellow-300' :
+                        'bg-slate-600/30 text-slate-300'
+                      }`}>
+                        {booking.status || 'Pending'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-2">
+                      📅 {booking.date} at {booking.time} • 📍 {booking.location}
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      Amount: <span className="font-semibold text-blue-300">₹{booking.amount}</span>
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             {/* LEFT: FORM CARD */}

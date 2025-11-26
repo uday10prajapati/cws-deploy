@@ -49,6 +49,10 @@ router.post("/initiate", async (req, res) => {
       });
     }
 
+    // Normalize payment method to lowercase FIRST (before validation)
+    const normalizedMethod = payment_method.toLowerCase().trim();
+    const normalizedType = (type || "booking_payment").toLowerCase().trim();
+
     // Validate payment method
     const validMethods = ["upi", "bank_transfer", "net_banking", "card"];
     if (!validMethods.includes(normalizedMethod)) {
@@ -60,10 +64,6 @@ router.post("/initiate", async (req, res) => {
 
     // Generate unique transaction ID
     const transaction_id = `TXN_${customer_id}_${Date.now()}`;
-
-    // Normalize payment method to lowercase
-    const normalizedMethod = payment_method.toLowerCase().trim();
-    const normalizedType = (type || "booking_payment").toLowerCase().trim();
 
     // Map our payment methods to database allowed values
     const paymentMethodMap = {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation as useLocationHook, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { useNotifications } from "../context/NotificationContext";
 
 import {
   FiMapPin,
@@ -25,6 +26,7 @@ import { FaCar } from "react-icons/fa";
 export default function Location() {
   const navigate = useNavigate();
   const locationHook = useLocationHook();
+  const { addNotification } = useNotifications();
 
   // State
   const [booking, setBooking] = useState(null);
@@ -65,6 +67,59 @@ export default function Location() {
     };
     loadUser();
   }, []);
+
+  // Monitor status changes and send notifications
+  useEffect(() => {
+    if (!booking) return;
+
+    const checkStatusUpdates = async () => {
+      const { data } = await supabase
+        .from("bookings")
+        .select("status")
+        .eq("id", booking.id)
+        .single();
+
+      if (data && data.status !== status) {
+        const newStatus = data.status;
+        setStatus(newStatus);
+
+        // Send appropriate notifications based on new status
+        if (newStatus === "pickup_in_progress") {
+          await addNotification(
+            "pickup",
+            "🚗 Pickup Started!",
+            "Your car pickup is on the way. Driver is heading to your location.",
+            { bookingId: booking.id }
+          );
+        } else if (newStatus === "in_wash") {
+          await addNotification(
+            "booking",
+            "🧼 Car in Wash",
+            "Your car has arrived at our wash center and cleaning has started.",
+            { bookingId: booking.id }
+          );
+        } else if (newStatus === "delivery_in_progress") {
+          await addNotification(
+            "delivery",
+            "📦 Delivery Started!",
+            "Your car is on the way back to you. Driver will arrive soon!",
+            { bookingId: booking.id }
+          );
+        } else if (newStatus === "completed") {
+          await addNotification(
+            "booking",
+            "✓ Delivery Complete!",
+            "Your car has been successfully delivered. Thank you for using CarWash+!",
+            { bookingId: booking.id }
+          );
+        }
+      }
+    };
+
+    // Check for status updates every 5 seconds
+    const interval = setInterval(checkStatusUpdates, 5000);
+    return () => clearInterval(interval);
+  }, [booking, status, addNotification]);
 
   /* ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
       LOAD BOOKING DATA

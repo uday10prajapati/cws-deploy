@@ -234,7 +234,7 @@ export default function MonthlyPass() {
         customer_email: user.email,
         customer_name: user.user_metadata?.full_name || "Customer",
         customer_phone: user.user_metadata?.phone || "9999999999",
-        type: "monthly_pass_purchase",
+        type: "monthly_pass",
         payment_method: paymentMethod,
         notes: `${selectedPlan.name} Pass - ${selectedPlan.washes} washes`,
       };
@@ -925,16 +925,51 @@ export default function MonthlyPass() {
                       <p className="text-lg font-bold text-blue-300">Amount: ₹{paymentAmount}</p>
                     </div>
 
-                    <div className="space-y-2">
-                      <p className="text-sm text-slate-400">Waiting for payment confirmation...</p>
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-slate-400">Processing</span>
-                      </div>
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-slate-300">Enter UTR Number after payment:</label>
+                      <input 
+                        type="text" 
+                        placeholder="UTR / Reference number (e.g., 123456789012)"
+                        id="upi-utr"
+                        className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-green-500 focus:outline-none text-white"
+                      />
                     </div>
 
                     <button
-                      onClick={() => setPaymentStep("method")}
+                      onClick={async () => {
+                        const utr = document.getElementById("upi-utr")?.value?.trim();
+                        if (!utr) {
+                          alert("Please enter UTR number");
+                          return;
+                        }
+                        
+                        const verified = await verifyPayment(
+                          pendingBookingData?.transaction_id || `TXN_${user?.id || 'unknown'}_${Date.now()}`,
+                          "upi",
+                          { utr }
+                        );
+                        
+                        if (verified) {
+                          setPaymentVerified(true);
+                          setPaymentStatus("success");
+                          await completePurchase(
+                            pendingBookingData?.transaction_id || `TXN_${user?.id || 'unknown'}_${Date.now()}`,
+                            "upi",
+                            { utr }
+                          );
+                        } else {
+                          alert("Payment verification failed. Please check UTR and try again.");
+                        }
+                      }}
+                      className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
+                    >
+                      ✓ Verify Payment
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setPaymentStep("method");
+                      }}
                       className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
                     >
                       Use Different Method

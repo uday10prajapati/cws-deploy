@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { NotificationProvider } from "./context/NotificationContext";
 import Signup from "./page/SignUp.jsx";
 import Login from "./page/Login.jsx";
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
@@ -13,20 +14,22 @@ import Location from "./Customer/Location.jsx";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Signup />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/bank-account" element={<BankAccountSettings />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-      <Route path="/employee-dashboard" element={<EmployeeSadhboard />} />
-      <Route path="/bookings" element={<Bookings />} />
-      <Route path="/monthly-pass" element={<Monthlypass />} />
-      <Route path="/my-cars" element={<MyCars />} />
-      <Route path="/transactions" element={<Transactions />} />
-      <Route path="/location" element={<Location />} />
-    </Routes>
+    <NotificationProvider>
+      <Routes>
+        <Route path="/" element={<Signup />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/bank-account" element={<BankAccountSettings />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+        <Route path="/employee-dashboard" element={<EmployeeSadhboard />} />
+        <Route path="/bookings" element={<Bookings />} />
+        <Route path="/monthly-pass" element={<Monthlypass />} />
+        <Route path="/my-cars" element={<MyCars />} />
+        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/location" element={<Location />} />
+      </Routes>
+    </NotificationProvider>
   );
 }
