@@ -233,6 +233,103 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// ADD/UPDATE BOOKING RATING
+router.post("/add-rating", async (req, res) => {
+  try {
+    const { booking_id, customer_id, rating, comment } = req.body;
+
+    // Validate required fields
+    if (!booking_id || !customer_id || !rating) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields. Please provide: booking_id, customer_id, rating"
+      });
+    }
+
+    // Validate rating is between 1-5
+    if (rating < 1 || rating > 5 || !Number.isInteger(rating)) {
+      return res.status(400).json({
+        success: false,
+        error: "Rating must be an integer between 1 and 5"
+      });
+    }
+
+    console.log("⭐ Adding rating to booking:", { booking_id, customer_id, rating });
+
+    // Update booking with rating
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({
+        rating: rating,
+        rating_comment: comment || null,
+        has_rated: true,
+        rated_at: new Date().toISOString()
+      })
+      .eq("id", booking_id)
+      .eq("customer_id", customer_id)
+      .select();
+
+    if (error) {
+      console.error("❌ Supabase Error:", error);
+      return res.status(400).json({
+        success: false,
+        error: `Database error: ${error.message}`
+      });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Booking not found or does not belong to this customer"
+      });
+    }
+
+    console.log("✅ Rating added successfully:", data[0]);
+    return res.status(200).json({
+      success: true,
+      booking: data[0],
+      message: "Rating submitted successfully"
+    });
+
+  } catch (err) {
+    console.error("❌ SERVER ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error: " + err.message
+    });
+  }
+});
+
+// GET BOOKING RATINGS (ADMIN)
+router.get("/ratings/all", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id, customer_id, car_name, rating, rating_comment, rated_at, date")
+      .not("rating", "is", null)
+      .order("rated_at", { ascending: false });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      ratings: data || []
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error: " + err.message
+    });
+  }
+});
+
 // DELETE BOOKING
 router.delete("/:id", async (req, res) => {
   try {

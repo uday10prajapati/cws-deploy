@@ -34,6 +34,14 @@ export default function CustomerDashboard() {
   const [totalSpent, setTotalSpent] = useState(0);
   const [completedBookings, setCompletedBookings] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  
+  // Rating modal state
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -153,6 +161,70 @@ export default function CustomerDashboard() {
       }
     } catch (err) {
       console.error("❌ Error refreshing pass:", err);
+    }
+  };
+
+  // Submit rating to backend
+  const submitRating = async () => {
+    if (!selectedBooking || rating === 0) {
+      alert("Please select a rating");
+      return;
+    }
+
+    setSubmittingRating(true);
+    try {
+      const ratingData = {
+        booking_id: selectedBooking.id,
+        customer_id: user.id,
+        rating: rating,
+        comment: ratingComment,
+        car_name: selectedBooking.car_name,
+        service_date: selectedBooking.date,
+      };
+
+      const response = await fetch(
+        "http://localhost:5000/bookings/add-rating",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ratingData),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("✅ Rating submitted successfully!");
+        
+        // Update booking status to include rating
+        const updatedBookings = bookings.map((b) =>
+          b.id === selectedBooking.id ? { ...b, has_rated: true } : b
+        );
+        setBookings(updatedBookings);
+
+        // Close modal and reset
+        setShowRatingModal(false);
+        setSelectedBooking(null);
+        setRating(0);
+        setRatingComment("");
+      } else {
+        alert(`❌ Error: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("❌ Rating submission error:", err);
+      alert(`Error submitting rating: ${err.message}`);
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  // Open rating modal for completed booking
+  const openRatingModal = (booking) => {
+    if (booking.status === "Completed" && !booking.has_rated) {
+      setSelectedBooking(booking);
+      setRating(0);
+      setRatingComment("");
+      setShowRatingModal(true);
     }
   };
 
@@ -713,7 +785,16 @@ export default function CustomerDashboard() {
                           </span>
                         </td>
                         <td className="py-3">
-                          {(b.status === "In Progress" || b.status === "Confirmed" || b.status === "Pending") ? (
+                          {b.status === "Completed" && !b.has_rated ? (
+                            <button
+                              onClick={() => openRatingModal(b)}
+                              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-xs font-medium transition flex items-center gap-1"
+                            >
+                              ⭐ Rate
+                            </button>
+                          ) : b.status === "Completed" && b.has_rated ? (
+                            <span className="text-xs text-green-400 font-medium">✅ Rated</span>
+                          ) : (b.status === "In Progress" || b.status === "Confirmed" || b.status === "Pending") ? (
                             <Link
                               to={`/location`}
                               state={{ bookingId: b.id }}
@@ -733,6 +814,111 @@ export default function CustomerDashboard() {
             )}
           </div>
         </main>
+
+        {/* ⭐ RATING MODAL */}
+        {showRatingModal && selectedBooking && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-linear-to-b from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Rate Your Service</h2>
+                <button
+                  onClick={() => setShowRatingModal(false)}
+                  className="text-2xl text-slate-400 hover:text-white transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Service Details */}
+              <div className="bg-slate-800/50 rounded-lg p-4 mb-6 space-y-2">
+                <p className="text-sm text-slate-400">
+                  <span className="font-semibold text-white">{selectedBooking.car_name}</span>
+                </p>
+                <p className="text-xs text-slate-500">
+                  Completed on {selectedBooking.date}
+                </p>
+              </div>
+
+              {/* Rating Stars */}
+              <div className="mb-6">
+                <p className="text-sm font-semibold text-slate-300 mb-4">
+                  How was your experience?
+                </p>
+                <div className="flex justify-center gap-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="transition transform hover:scale-125"
+                    >
+                      <FaStar
+                        size={40}
+                        className={`${
+                          star <= (hoverRating || rating)
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-slate-600"
+                        } transition`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {rating > 0 && (
+                  <p className="text-center mt-3 text-yellow-400 font-semibold">
+                    {rating} out of 5 stars
+                  </p>
+                )}
+              </div>
+
+              {/* Comment (Optional) */}
+              <div className="mb-6">
+                <label className="text-sm font-semibold text-slate-300 block mb-2">
+                  Comments (Optional)
+                </label>
+                <textarea
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  placeholder="Share your feedback about the service..."
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+                  rows="3"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRatingModal(false)}
+                  className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitRating}
+                  disabled={rating === 0 || submittingRating}
+                  className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                >
+                  {submittingRating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      ⭐ Submit Rating
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Rating Info */}
+              <p className="text-center text-xs text-slate-500 mt-4">
+                Your rating helps us improve our service
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
