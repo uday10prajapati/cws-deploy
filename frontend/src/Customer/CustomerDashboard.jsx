@@ -385,12 +385,13 @@ export default function CustomerDashboard() {
               <p className="text-xs font-semibold text-white">Transactions</p>
             </Link>
             <Link
-              to="/location"
-              className="bg-linear-to-br from-pink-600/30 to-pink-900/30 border border-pink-500/50 rounded-lg p-4 text-center hover:scale-105 transition-transform group cursor-pointer"
-            >
-              <FiCreditCard className="text-3xl mx-auto mb-2 text-pink-400 group-hover:text-pink-300" />
-              <p className="text-xs font-semibold text-white">Location</p>
-            </Link>
+  to="/location"
+  className="bg-slate-900/60 backdrop-blur border border-slate-700 rounded-xl p-4 text-center hover:bg-slate-800 hover:scale-[1.03] transition-all cursor-pointer group"
+>
+  <FiMapPin className="text-3xl mx-auto mb-2 text-blue-400 group-hover:text-blue-300" />
+  <p className="text-sm font-semibold text-blue-200">Location</p>
+</Link>
+
           </div>
 
           {/* 🌈 STAT CARDS — DARK THEME */}
