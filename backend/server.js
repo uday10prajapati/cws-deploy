@@ -12,6 +12,7 @@ import transactions from "./routes/transactionsRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import alternativePaymentRoutes from "./routes/alternativePaymentRoutes.js";
+import myJobs from "./routes/myJobs.js";
 
 const app = express();
 app.use(cors());
@@ -26,6 +27,7 @@ app.use("/transactions", transactions);
 app.use("/payment", paymentRoutes);
 app.use("/alt-payment", alternativePaymentRoutes);
 app.use("/admin", adminRoutes);
+app.use("/employee", myJobs);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

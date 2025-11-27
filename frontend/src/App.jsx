@@ -12,12 +12,14 @@ import MyCars from "./Customer/MyCars.jsx";
 import Transactions from "./Customer/Transactions.jsx";
 import Location from "./Customer/Location.jsx";
 import Profile from "./Customer/Profile.jsx";
+import MyJobs from "./Employee/MyJobs.jsx";
+import Visit from "./Visit.jsx";
 
 export default function App() {
   return (
     <NotificationProvider>
       <Routes>
-        <Route path="/" element={<Signup />} />
+        <Route path="/" element={<Visit />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -31,6 +33,7 @@ export default function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/location" element={<Location />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/employee/jobs" element={<MyJobs />} />
       </Routes>
     </NotificationProvider>
   );

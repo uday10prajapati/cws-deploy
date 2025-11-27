@@ -17,7 +17,7 @@ export default function Signup() {
   const [otpMode, setOtpMode] = useState(false);
   const [otp, setOtp] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false); // NEW: For dropdown
+  
 
   // NEW → for animation
   const [successAnim, setSuccessAnim] = useState(false);
@@ -25,11 +25,7 @@ export default function Signup() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  // NEW: Handle role selection
-  const handleRoleSelect = (selectedRole) => {
-    setForm({ ...form, role: selectedRole });
-    setRoleDropdownOpen(false);
-  };
+ 
 
   // ----------------------------
   // STEP 1 → SEND OTP
@@ -180,63 +176,7 @@ export default function Signup() {
 
             {/* FORM INPUTS */}
             <div className="mt-6 space-y-4">
-              {/* ROLE DROPDOWN */}
-              <div className="relative">
-                <label className="block text-sm text-slate-300 mb-2 font-medium">Select Role</label>
-                <button
-                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 text-white text-left flex items-center justify-between hover:bg-white/10 transition-all focus:ring-2 focus:ring-blue-500/40 outline-none"
-                >
-                  <span className="capitalize">{form.role}</span>
-                  <svg
-                    className={`w-5 h-5 transition-transform ${
-                      roleDropdownOpen ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
-                  </svg>
-                </button>
-
-                {roleDropdownOpen && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-slate-800 border border-white/15 rounded-2xl shadow-lg overflow-hidden">
-                    <button
-                      onClick={() => handleRoleSelect("admin")}
-                      className={`w-full px-4 py-3 text-left hover:bg-blue-600/50 transition-all flex items-center gap-2 ${
-                        form.role === "admin" ? "bg-blue-600 text-blue-100" : "text-slate-300"
-                      }`}
-                    >
-                      <span className="text-lg">👨‍💼</span>
-                      Admin
-                    </button>
-                    <button
-                      onClick={() => handleRoleSelect("employee")}
-                      className={`w-full px-4 py-3 text-left hover:bg-blue-600/50 transition-all flex items-center gap-2 border-t border-white/10 ${
-                        form.role === "employee" ? "bg-blue-600 text-blue-100" : "text-slate-300"
-                      }`}
-                    >
-                      <span className="text-lg">👷</span>
-                      Employee
-                    </button>
-                    <button
-                      onClick={() => handleRoleSelect("customer")}
-                      className={`w-full px-4 py-3 text-left hover:bg-blue-600/50 transition-all flex items-center gap-2 border-t border-white/10 ${
-                        form.role === "customer" ? "bg-blue-600 text-blue-100" : "text-slate-300"
-                      }`}
-                    >
-                      <span className="text-lg">👤</span>
-                      Customer
-                    </button>
-                  </div>
-                )}
-              </div>
+              
 
               <div className="relative">
                 <input
