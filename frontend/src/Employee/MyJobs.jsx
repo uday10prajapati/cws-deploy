@@ -13,6 +13,7 @@ import {
   FiMapPin,
   FiCheckCircle,
   FiXCircle,
+  FiStar,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -22,6 +23,8 @@ export default function MyJobs() {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
+  const [todayJobs, setTodayJobs] = useState(0);
+  const [monthCompleted, setMonthCompleted] = useState(0);
 
   /* LOAD LOGGED-IN EMPLOYEE + JOBS */
   useEffect(() => {
@@ -38,6 +41,18 @@ export default function MyJobs() {
         .order("created_at", { ascending: false });
 
       setJobs(data || []);
+
+      // Calculate today's jobs
+      const today = new Date().toISOString().split('T')[0];
+      const todayCount = (data || []).filter(job => job.date === today && job.status !== "Completed").length;
+      setTodayJobs(todayCount);
+
+      // Calculate completed jobs this month
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      const monthCount = (data || []).filter(job => job.date >= monthStart && job.date <= monthEnd && job.status === "Completed").length;
+      setMonthCompleted(monthCount);
     };
 
     loadData();
@@ -50,10 +65,23 @@ export default function MyJobs() {
 
   /* UPDATE JOB STATUS */
   const updateJobStatus = async (jobId, status) => {
-    await supabase.from("bookings").update({ status }).eq("id", jobId);
-    setJobs((prev) =>
-      prev.map((job) => (job.id === jobId ? { ...job, status } : job))
-    );
+    try {
+      const now = new Date().toISOString();
+      await supabase
+        .from("bookings")
+        .update({ 
+          status,
+          updated_at: now,
+          status_changed_at: now
+        })
+        .eq("id", jobId);
+      
+      setJobs((prev) =>
+        prev.map((job) => (job.id === jobId ? { ...job, status, updated_at: now, status_changed_at: now } : job))
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
   };
 
   /* EMPLOYEE MENU */
@@ -61,7 +89,23 @@ export default function MyJobs() {
     { name: "Dashboard", icon: <FiHome />, link: "/employee/dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+    { name: "Ratings", icon: <FiStar />, link: "/employee/ratings" },
+    { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
+    { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
   ];
+
+  // Status workflow
+  const getNextStatus = (currentStatus) => {
+    const workflow = {
+      "Pending": "Confirmed",
+      "Confirmed": "In Progress",
+      "In Progress": "Completed",
+    };
+    return workflow[currentStatus];
+  };
+
+  const statusSteps = ["Pending", "Confirmed", "In Progress", "Completed"];
+  const getStatusIndex = (status) => statusSteps.indexOf(status);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
@@ -161,6 +205,20 @@ export default function MyJobs() {
         {/* ▓▓ PAGE CONTENT ▓▓ */}
         <main className="p-4 md:p-8 space-y-6">
 
+          {/* STATISTICS CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-900/80 border border-blue-500/30 rounded-xl p-6 shadow-lg">
+              <p className="text-slate-400 text-sm font-medium mb-2">Today's Jobs</p>
+              <p className="text-4xl font-bold text-blue-400">{todayJobs}</p>
+              <p className="text-slate-500 text-xs mt-2">Active assignments for today</p>
+            </div>
+            <div className="bg-slate-900/80 border border-green-500/30 rounded-xl p-6 shadow-lg">
+              <p className="text-slate-400 text-sm font-medium mb-2">Completed This Month</p>
+              <p className="text-4xl font-bold text-green-400">{monthCompleted}</p>
+              <p className="text-slate-500 text-xs mt-2">Successfully finished jobs</p>
+            </div>
+          </div>
+
           {/* JOBS LIST */}
           {jobs.length === 0 ? (
             <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-slate-700">
@@ -194,6 +252,45 @@ export default function MyJobs() {
                     </span>
                   </div>
 
+                  {/* STATUS TIMELINE */}
+                  <div className="mb-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <div className="flex justify-between items-center">
+                      {statusSteps.map((step, idx) => {
+                        const currentIdx = getStatusIndex(job.status);
+                        const isCompleted = idx < currentIdx;
+                        const isCurrent = idx === currentIdx;
+                        
+                        return (
+                          <div key={step} className="flex flex-col items-center flex-1">
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm mb-1 transition ${
+                                isCompleted
+                                  ? "bg-green-600 text-white"
+                                  : isCurrent
+                                  ? "bg-blue-600 text-white ring-2 ring-blue-400"
+                                  : "bg-slate-700 text-slate-400"
+                              }`}
+                            >
+                              {idx + 1}
+                            </div>
+                            <p className={`text-xs text-center font-medium ${
+                              isCompleted || isCurrent ? "text-white" : "text-slate-500"
+                            }`}>
+                              {step}
+                            </p>
+                            {idx < statusSteps.length - 1 && (
+                              <div
+                                className={`h-1 w-8 mt-1 ${
+                                  isCompleted ? "bg-green-600" : "bg-slate-600"
+                                }`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* JOB DETAILS */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-300 mb-4">
                     <div className="flex items-center gap-2">
@@ -214,39 +311,27 @@ export default function MyJobs() {
 
                   {/* ACTION BUTTONS */}
                   <div className="flex gap-3 flex-wrap">
-                    {job.status === "Pending" && (
-                      <>
-                        <button
-                          onClick={() => updateJobStatus(job.id, "Accepted")}
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"
-                        >
-                          Accept
-                        </button>
-
-                        <button
-                          onClick={() => updateJobStatus(job.id, "Rejected")}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-
-                    {job.status === "Accepted" && (
+                    {job.status !== "Completed" && (
                       <button
-                        onClick={() => updateJobStatus(job.id, "In Progress")}
-                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm"
+                        onClick={() => updateJobStatus(job.id, getNextStatus(job.status))}
+                        className="flex-1 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 rounded-lg text-sm font-semibold transition shadow-lg"
                       >
-                        Start Job
+                        ✓ {getNextStatus(job.status)}
                       </button>
                     )}
 
-                    {job.status === "In Progress" && (
+                    {job.status === "Completed" && (
+                      <div className="flex-1 px-4 py-2 bg-green-600/20 rounded-lg text-sm font-semibold text-green-300 flex items-center justify-center gap-2 border border-green-600/30">
+                        <FiCheckCircle /> Job Completed
+                      </div>
+                    )}
+
+                    {job.status !== "Completed" && job.status !== "Pending" && (
                       <button
-                        onClick={() => updateJobStatus(job.id, "Completed")}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm flex items-center gap-2"
+                        onClick={() => updateJobStatus(job.id, "Pending")}
+                        className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-sm font-semibold text-red-300 border border-red-600/30 transition"
                       >
-                        <FiCheckCircle /> Complete
+                        Revert
                       </button>
                     )}
                   </div>

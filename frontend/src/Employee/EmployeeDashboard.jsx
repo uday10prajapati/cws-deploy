@@ -11,6 +11,8 @@ export default function EmployeeDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
 
   /* LOAD LOGGED-IN EMPLOYEE + ASSIGNMENTS */
   useEffect(() => {
@@ -26,6 +28,14 @@ export default function EmployeeDashboard() {
         .eq("assigned_to", auth.user.id);
 
       setAssignments(data || []);
+
+      // Calculate average rating from completed bookings
+      const completedJobs = (data || []).filter(b => b.status === "Completed" && b.rating);
+      if (completedJobs.length > 0) {
+        const avgRating = (completedJobs.reduce((sum, b) => sum + (b.rating || 0), 0) / completedJobs.length).toFixed(1);
+        setAverageRating(parseFloat(avgRating));
+        setRatingCount(completedJobs.length);
+      }
     };
 
     load();
@@ -41,14 +51,20 @@ export default function EmployeeDashboard() {
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
-    { name: "Cars", icon: <FaCar />, link: "/my-cars" },
+    { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
+    { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
   ];
 
   const stats = [
     { title: "Today's Jobs", value: assignments.filter(a => a.status !== "Completed").length, icon: <FiClock />, change: "Active" },
     { title: "Completed", value: assignments.filter(a => a.status === "Completed").length, icon: <FiCheckCircle />, change: "This month" },
-    { title: "Earnings Today", value: "₹2,450", icon: <FiDollarSign />, change: "+12% vs yesterday" },
-    { title: "Rating", value: "4.8", icon: <FaStar />, change: "92 reviews" },
+    { title: "Earnings This Month", value: "₹" + assignments.filter(a => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const aDate = new Date(a.date || new Date());
+      return a.status === "Completed" && aDate >= monthStart;
+    }).reduce((sum, a) => sum + (a.amount || 0), 0).toLocaleString(), icon: <FiDollarSign />, change: "+12% vs last month" },
+    { title: "Average Rating", value: averageRating > 0 ? averageRating.toFixed(1) : "N/A", icon: <FaStar />, change: ratingCount > 0 ? `${ratingCount} ratings` : "No ratings yet" },
   ];
 
   return (

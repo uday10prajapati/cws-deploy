@@ -14,6 +14,10 @@ import Location from "./Customer/Location.jsx";
 import Profile from "./Customer/Profile.jsx";
 import MyJobs from "./Employee/MyJobs.jsx";
 import Visit from "./Visit.jsx";
+import Earnings from "./Employee/Earnings.jsx";
+import Ratings from "./Employee/Ratings.jsx";
+import Cars from "./Employee/Cars.jsx";
+import CarLocation from "./Employee/CarLocation.jsx";
 
 export default function App() {
   return (
@@ -34,6 +38,11 @@ export default function App() {
         <Route path="/location" element={<Location />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/employee/jobs" element={<MyJobs />} />
+        <Route path="/employee/earnings" element={<Earnings />} />
+        <Route path="/employee/ratings" element={<Ratings />} />
+        <Route path="/employee/location" element={<CarLocation />} />
+        <Route path="/my-cars" element={<Cars />} />
+        <Route path="/employee/cars" element={<Cars />} />
       </Routes>
     </NotificationProvider>
   );

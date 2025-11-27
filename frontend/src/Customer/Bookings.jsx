@@ -1200,33 +1200,65 @@ export default function BookingPage() {
                 Your Bookings ({bookings.length})
               </h3>
               <div className="space-y-3 max-h-80 overflow-y-auto">
-                {bookings.map((booking) => (
-                  <Link
-                    key={booking.id}
-                    to={`/location/${booking.id}`}
-                    className="block p-4 bg-slate-900/60 border border-slate-700 rounded-lg hover:border-blue-500 hover:bg-slate-900/80 transition"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-blue-300">
-                        {booking.car_name || "Unknown Car"}
+                {bookings.map((booking) => {
+                  const statusSteps = ["Pending", "Confirmed", "In Progress", "Completed"];
+                  const currentStatusIdx = statusSteps.findIndex(s => s.toLowerCase() === (booking.status || "pending").toLowerCase());
+                  
+                  return (
+                    <div
+                      key={booking.id}
+                      className="p-4 bg-slate-900/60 border border-slate-700 rounded-lg hover:border-blue-500 hover:bg-slate-900/80 transition"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-semibold text-blue-300">
+                          {booking.car_name || "Unknown Car"}
+                        </p>
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold border ${
+                          booking.status === 'Completed' ? 'bg-green-600/30 text-green-300 border-green-500/30' :
+                          booking.status === 'In Progress' ? 'bg-blue-600/30 text-blue-300 border-blue-500/30' :
+                          booking.status === 'Confirmed' ? 'bg-yellow-600/30 text-yellow-300 border-yellow-500/30' :
+                          'bg-slate-600/30 text-slate-300 border-slate-500/30'
+                        }`}>
+                          {booking.status || 'Pending'}
+                        </span>
+                      </div>
+
+                      {/* Status Timeline */}
+                      <div className="mb-3 p-3 bg-slate-800/50 rounded border border-slate-700">
+                        <div className="flex justify-between items-center gap-1">
+                          {statusSteps.map((step, idx) => (
+                            <div key={step} className="flex flex-col items-center flex-1">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                  idx < currentStatusIdx
+                                    ? "bg-green-600 text-white"
+                                    : idx === currentStatusIdx
+                                    ? "bg-blue-600 text-white ring-2 ring-blue-400"
+                                    : "bg-slate-700 text-slate-400"
+                                }`}
+                              >
+                                {idx + 1}
+                              </div>
+                              <p className="text-[10px] text-center mt-1 text-slate-400">{step}</p>
+                              {idx < statusSteps.length - 1 && (
+                                <div className={`h-1 w-2 mt-1 ${idx < currentStatusIdx ? "bg-green-600" : "bg-slate-600"}`} />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Booking Info */}
+                      <p className="text-xs text-slate-400 mb-2">
+                        📅 {booking.date} at {booking.time} • 📍 {booking.location}
                       </p>
-                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                        booking.status === 'completed' ? 'bg-green-600/30 text-green-300' :
-                        booking.status === 'in_wash' ? 'bg-blue-600/30 text-blue-300' :
-                        booking.status === 'pending' ? 'bg-yellow-600/30 text-yellow-300' :
-                        'bg-slate-600/30 text-slate-300'
-                      }`}>
-                        {booking.status || 'Pending'}
-                      </span>
+                      <p className="text-sm text-slate-300">
+                        Amount: <span className="font-semibold text-blue-300">₹{booking.amount}</span>
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-400 mb-2">
-                      📅 {booking.date} at {booking.time} • 📍 {booking.location}
-                    </p>
-                    <p className="text-sm text-slate-300">
-                      Amount: <span className="font-semibold text-blue-300">₹{booking.amount}</span>
-                    </p>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
