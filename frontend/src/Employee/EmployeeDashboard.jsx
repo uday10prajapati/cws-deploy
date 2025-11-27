@@ -24,15 +24,33 @@ export default function EmployeeDashboard() {
 
       setUser(auth.user);
 
-      const { data } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("assigned_to", auth.user.id);
+      try {
+        // Fetch bookings from backend API
+        const response = await fetch(`http://localhost:5000/employee/bookings/${auth.user.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Bookings fetched successfully:", result.bookings?.length || 0);
+          setAssignments(result.bookings || []);
+        } else {
+          console.error("Backend error fetching bookings");
+          setAssignments([]);
+        }
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+        setAssignments([]);
+      }
 
-      setAssignments(data || []);
+      // Calculate average rating from completed bookings (will update after assignments are set)
+    };
 
+    load();
+  }, []);
+
+  /* CALCULATE RATINGS AND LOAD NOTIFICATIONS */
+  useEffect(() => {
+    if (assignments.length > 0 && user?.id) {
       // Calculate average rating from completed bookings
-      const completedJobs = (data || []).filter(b => b.status === "Completed" && b.rating);
+      const completedJobs = assignments.filter(b => b.status === "Completed" && b.rating);
       if (completedJobs.length > 0) {
         const avgRating = (completedJobs.reduce((sum, b) => sum + (b.rating || 0), 0) / completedJobs.length).toFixed(1);
         setAverageRating(parseFloat(avgRating));
@@ -40,13 +58,9 @@ export default function EmployeeDashboard() {
       }
 
       // Load notifications
-      if (auth?.user?.id) {
-        loadNotifications(auth.user.id);
-      }
-    };
-
-    load();
-  }, []);
+      loadNotifications(user.id);
+    }
+  }, [assignments, user]);
 
   /* LOAD NOTIFICATIONS FOR EMPLOYEE */
   const loadNotifications = async (userId) => {
@@ -98,7 +112,7 @@ export default function EmployeeDashboard() {
   };
 
   const employeeMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/employee/dashboard" },
+    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },

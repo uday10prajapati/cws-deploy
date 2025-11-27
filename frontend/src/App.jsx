@@ -23,6 +23,7 @@ import AllRevenue from "./Admin/AllRevenue.jsx";
 import AllUser from "./Admin/AllUser.jsx";
 import Analytics from "./Admin/Analytics.jsx";
 import Settings from "./Admin/Settings.jsx";
+import AllCars from "./Admin/AllCars.jsx";
 
 export default function App() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/admin/users" element={<AllUser />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/settings" element={<Settings />} />
+        <Route path="/admin/cars" element={<AllCars />} />
       </Routes>
     </NotificationProvider>
   );

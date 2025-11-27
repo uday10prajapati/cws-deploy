@@ -23,6 +23,7 @@ export default function Cars() {
   const [cars, setCars] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCars, setFilteredCars] = useState([]);
+  const [viewMode, setViewMode] = useState("all"); // "all" or "my-services"
 
   /* LOAD CARS DATA */
   useEffect(() => {
@@ -32,60 +33,66 @@ export default function Cars() {
 
       setUser(auth.user);
 
-      // Get all bookings for this employee
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("assigned_to", auth.user.id)
-        .order("created_at", { ascending: false });
+      try {
+        // Fetch ALL cars from the database
+        const { data: allCarsData } = await supabase
+          .from("cars")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-      if (!bookings || bookings.length === 0) {
-        setCars([]);
-        setFilteredCars([]);
-        return;
+        if (!allCarsData || allCarsData.length === 0) {
+          setCars([]);
+          setFilteredCars([]);
+          return;
+        }
+
+        // Get all car IDs for booking stats
+        const carIds = allCarsData.map(c => c.id);
+
+        // Fetch all bookings (not filtered by employee)
+        const { data: allBookings } = await supabase
+          .from("bookings")
+          .select("*");
+
+        // Enrich car data with booking information
+        const enrichedCars = allCarsData.map(car => {
+          // Get all bookings for this car
+          const carBookings = (allBookings || []).filter(b => b.car_id === car.id);
+          
+          // Get only this employee's services for this car (if assigned_to exists)
+          const myServices = carBookings.filter(b => b.assigned_to === auth.user.id);
+
+          return {
+            id: car.id,
+            car_name: `${car.brand} ${car.model}`.trim() || "Unknown Car",
+            brand: car.brand,
+            model: car.model,
+            number_plate: car.number_plate,
+            image_url: car.image_url,
+            customer_id: car.customer_id,
+            customer_name: car.customer_name,
+            customer_phone: car.customer_phone,
+            customer_email: car.customer_email,
+            // Total stats (all bookings for this car)
+            total_services: carBookings.length,
+            completed_services: carBookings.filter(b => b.status === "Completed").length,
+            last_service: carBookings.length > 0 ? carBookings[0]?.date : null,
+            services: [...new Set(carBookings.flatMap(b => Array.isArray(b.services) ? b.services : []))],
+            total_amount: carBookings.reduce((sum, b) => sum + (b.amount || 0), 0),
+            locations: [...new Set(carBookings.map(b => b.location).filter(Boolean))],
+            bookings: carBookings,
+            // My services only
+            my_services_count: myServices.length,
+            my_completed: myServices.filter(b => b.status === "Completed").length,
+            my_total_amount: myServices.reduce((sum, b) => sum + (b.amount || 0), 0),
+          };
+        });
+
+        setCars(enrichedCars);
+        setFilteredCars(enrichedCars);
+      } catch (error) {
+        console.error("Error loading cars:", error);
       }
-
-      // Get all unique car IDs from bookings
-      const carIds = [...new Set(bookings.map(b => b.car_id).filter(Boolean))];
-
-      if (carIds.length === 0) {
-        setCars([]);
-        setFilteredCars([]);
-        return;
-      }
-
-      // Fetch car details from cars table
-      const { data: carsData } = await supabase
-        .from("cars")
-        .select("*")
-        .in("id", carIds);
-
-      // Enrich car data with booking information
-      const enrichedCars = (carsData || []).map(car => {
-        const carBookings = bookings.filter(b => b.car_id === car.id);
-        return {
-          id: car.id,
-          car_name: `${car.brand} ${car.model}`.trim() || "Unknown Car",
-          brand: car.brand,
-          model: car.model,
-          number_plate: car.number_plate,
-          image_url: car.image_url,
-          customer_id: car.customer_id,
-          customer_name: car.customer_name,
-          customer_phone: car.customer_phone,
-          customer_email: car.customer_email,
-          total_services: carBookings.length,
-          completed_services: carBookings.filter(b => b.status === "Completed").length,
-          last_service: carBookings[0]?.date,
-          services: [...new Set(carBookings.flatMap(b => Array.isArray(b.services) ? b.services : []))],
-          total_amount: carBookings.reduce((sum, b) => sum + (b.amount || 0), 0),
-          locations: [...new Set(carBookings.map(b => b.location).filter(Boolean))],
-          bookings: carBookings,
-        };
-      });
-
-      setCars(enrichedCars);
-      setFilteredCars(enrichedCars);
     };
 
     loadData();
@@ -215,26 +222,57 @@ export default function Cars() {
 
         {/* ▓▓ PAGE CONTENT ▓▓ */}
         <main className="p-4 md:p-8 space-y-6">
+          {/* VIEW MODE TABS */}
+          <div className="flex gap-4 border-b border-slate-800 mb-6">
+            <button
+              onClick={() => setViewMode("all")}
+              className={`px-6 py-3 font-semibold transition-all ${
+                viewMode === "all"
+                  ? "text-blue-400 border-b-2 border-blue-400"
+                  : "text-slate-400 hover:text-slate-300"
+              }`}
+            >
+              All Cars ({cars.length})
+            </button>
+            <button
+              onClick={() => setViewMode("my-services")}
+              className={`px-6 py-3 font-semibold transition-all ${
+                viewMode === "my-services"
+                  ? "text-blue-400 border-b-2 border-blue-400"
+                  : "text-slate-400 hover:text-slate-300"
+              }`}
+            >
+              My Services ({cars.filter(c => c.my_services_count > 0).length})
+            </button>
+          </div>
+
           {/* SUMMARY CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-slate-400 text-sm font-medium">Total Cars</p>
+                <p className="text-slate-400 text-sm font-medium">{viewMode === "all" ? "Total Cars" : "Cars Serviced"}</p>
                 <FaCar className="text-blue-400 text-2xl" />
               </div>
-              <p className="text-4xl font-bold text-blue-400">{cars.length}</p>
-              <p className="text-slate-500 text-xs mt-2">unique vehicles serviced</p>
+              <p className="text-4xl font-bold text-blue-400">
+                {viewMode === "all" ? cars.length : cars.filter(c => c.my_services_count > 0).length}
+              </p>
+              <p className="text-slate-500 text-xs mt-2">{viewMode === "all" ? "in system" : "by you"}</p>
             </div>
 
             <div className="bg-linear-to-br from-green-600/20 to-green-900/20 border border-green-500/30 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-slate-400 text-sm font-medium">Total Services</p>
+                <p className="text-slate-400 text-sm font-medium">
+                  {viewMode === "all" ? "Total Services" : "Your Services"}
+                </p>
                 <span className="text-green-400 text-2xl">✓</span>
               </div>
               <p className="text-4xl font-bold text-green-400">
-                {cars.reduce((sum, car) => sum + car.total_services, 0)}
+                {viewMode === "all"
+                  ? cars.reduce((sum, car) => sum + car.total_services, 0)
+                  : cars.reduce((sum, car) => sum + car.my_services_count, 0)
+                }
               </p>
-              <p className="text-slate-500 text-xs mt-2">across all cars</p>
+              <p className="text-slate-500 text-xs mt-2">{viewMode === "all" ? "across all cars" : "completed jobs"}</p>
             </div>
 
             <div className="bg-linear-to-br from-purple-600/20 to-purple-900/20 border border-purple-500/30 rounded-xl p-6 shadow-lg">
@@ -243,9 +281,12 @@ export default function Cars() {
                 <span className="text-purple-400 text-2xl">💰</span>
               </div>
               <p className="text-4xl font-bold text-purple-400">
-                ₹{cars.reduce((sum, car) => sum + car.total_amount, 0).toLocaleString()}
+                ₹{(viewMode === "all"
+                  ? cars.reduce((sum, car) => sum + car.total_amount, 0)
+                  : cars.reduce((sum, car) => sum + car.my_total_amount, 0)
+                ).toLocaleString()}
               </p>
-              <p className="text-slate-500 text-xs mt-2">total from cars</p>
+              <p className="text-slate-500 text-xs mt-2">{viewMode === "all" ? "total from cars" : "your earnings"}</p>
             </div>
           </div>
 
@@ -266,12 +307,14 @@ export default function Cars() {
             <div className="text-center py-12 bg-slate-900/80 border border-slate-800 rounded-xl">
               <FaCar className="text-5xl text-slate-600 mx-auto mb-4" />
               <p className="text-slate-400">
-                {searchTerm ? "No cars found matching your search." : "No cars serviced yet."}
+                {searchTerm ? "No cars found matching your search." : "No cars available."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-              {filteredCars.map((car) => (
+              {filteredCars
+                .filter(car => viewMode === "all" || car.my_services_count > 0)
+                .map((car) => (
                 <div
                   key={car.id}
                   className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-lg hover:border-blue-500/50 transition"
@@ -299,9 +342,12 @@ export default function Cars() {
 
                     <div className="text-right">
                       <p className="text-sm font-semibold text-green-400">
-                        {car.completed_services}/{car.total_services}
+                        {viewMode === "all" 
+                          ? `${car.completed_services}/${car.total_services}`
+                          : `${car.my_completed}/${car.my_services_count}`
+                        }
                       </p>
-                      <p className="text-xs text-slate-500">completed</p>
+                      <p className="text-xs text-slate-500">{viewMode === "all" ? "completed" : "by you"}</p>
                     </div>
                   </div>
 
@@ -320,16 +366,22 @@ export default function Cars() {
                   {/* DETAILS GRID */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg">
                     <div>
-                      <p className="text-xs text-slate-500 mb-1">Services</p>
-                      <p className="font-bold text-blue-400">{car.total_services}</p>
+                      <p className="text-xs text-slate-500 mb-1">{viewMode === "all" ? "Services" : "My Services"}</p>
+                      <p className="font-bold text-blue-400">
+                        {viewMode === "all" ? car.total_services : car.my_services_count}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-500 mb-1">Completed</p>
-                      <p className="font-bold text-green-400">{car.completed_services}</p>
+                      <p className="font-bold text-green-400">
+                        {viewMode === "all" ? car.completed_services : car.my_completed}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-500 mb-1">Total Amount</p>
-                      <p className="font-bold text-purple-400">₹{car.total_amount.toLocaleString()}</p>
+                      <p className="text-xs text-slate-500 mb-1">{viewMode === "all" ? "Total Amount" : "Your Earnings"}</p>
+                      <p className="font-bold text-purple-400">
+                        ₹{(viewMode === "all" ? car.total_amount : car.my_total_amount).toLocaleString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-500 mb-1">Last Service</p>
