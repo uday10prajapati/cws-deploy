@@ -32,48 +32,20 @@ export default function Earnings() {
 
       setUser(auth.user);
 
-      // Fetch completed bookings with payment info
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("assigned_to", auth.user.id)
-        .eq("status", "Completed")
-        .order("created_at", { ascending: false });
+      try {
+        // Fetch earnings from backend API
+        const response = await fetch(`http://localhost:5000/earnings/employee/${auth.user.id}`);
+        const result = await response.json();
 
-      setEarnings(bookings || []);
-
-      // Calculate monthly total
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
-
-      const monthlyBookings = (bookings || []).filter(
-        (b) => b.date >= monthStart && b.date <= monthEnd
-      );
-      const monthTotal = monthlyBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
-      setMonthlyTotal(monthTotal);
-
-      // Calculate total earnings
-      const total = (bookings || []).reduce((sum, b) => sum + (b.amount || 0), 0);
-      setTotalEarnings(total);
-
-      // Calculate daily earnings for chart
-      const dailyMap = {};
-      (bookings || []).forEach((booking) => {
-        const date = booking.date || new Date().toISOString().split("T")[0];
-        dailyMap[date] = (dailyMap[date] || 0) + (booking.amount || 0);
-      });
-
-      const sortedDaily = Object.entries(dailyMap)
-        .map(([date, amount]) => ({ date, amount }))
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .slice(-30); // Last 30 days
-
-      setDailyEarnings(sortedDaily);
+        if (result.success) {
+          setEarnings(result.data.earnings);
+          setMonthlyTotal(result.data.statistics.monthlyTotal);
+          setTotalEarnings(result.data.statistics.totalEarnings);
+          setDailyEarnings(result.data.statistics.dailyEarnings);
+        }
+      } catch (error) {
+        console.error("Error fetching earnings:", error);
+      }
     };
 
     loadData();

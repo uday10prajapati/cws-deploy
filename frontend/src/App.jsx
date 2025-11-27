@@ -18,6 +18,11 @@ import Earnings from "./Employee/Earnings.jsx";
 import Ratings from "./Employee/Ratings.jsx";
 import Cars from "./Employee/Cars.jsx";
 import CarLocation from "./Employee/CarLocation.jsx";
+import AllBookings from "./Admin/AllBookings.jsx";
+import AllRevenue from "./Admin/AllRevenue.jsx";
+import AllUser from "./Admin/AllUser.jsx";
+import Analytics from "./Admin/Analytics.jsx";
+import Settings from "./Admin/Settings.jsx";
 
 export default function App() {
   return (
@@ -43,6 +48,11 @@ export default function App() {
         <Route path="/employee/location" element={<CarLocation />} />
         <Route path="/my-cars" element={<Cars />} />
         <Route path="/employee/cars" element={<Cars />} />
+        <Route path="/admin/all-bookings" element={<AllBookings />} />
+        <Route path="/admin/all-revenue" element={<AllRevenue />} />
+        <Route path="/admin/all-users" element={<AllUser />} />
+        <Route path="/admin/analytics" element={<Analytics />} />
+        <Route path="/admin/settings" element={<Settings />} />
       </Routes>
     </NotificationProvider>
   );

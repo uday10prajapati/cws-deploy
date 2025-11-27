@@ -14,6 +14,8 @@ import adminRoutes from "./routes/adminRoutes.js";
 import alternativePaymentRoutes from "./routes/alternativePaymentRoutes.js";
 import myJobs from "./routes/myJobs.js";
 import carLocationRoutes from "./routes/carLocation.js";
+import ratingsRoutes from "./routes/ratingsRoutes.js";
+import earningsRoutes from "./routes/earningsRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -30,6 +32,8 @@ app.use("/payment", paymentRoutes);
 app.use("/alt-payment", alternativePaymentRoutes);
 app.use("/admin", adminRoutes);
 app.use("/employee", myJobs);
+app.use("/ratings", ratingsRoutes);
+app.use("/earnings", earningsRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

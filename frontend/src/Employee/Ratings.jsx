@@ -29,21 +29,17 @@ export default function Ratings() {
 
       setUser(auth.user);
 
-      // Fetch all bookings for this employee with ratings
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("assigned_to", auth.user.id)
-        .order("rated_at", { ascending: false });
+      try {
+        // Fetch ratings from backend API
+        const response = await fetch(`http://localhost:5000/ratings/employee/${auth.user.id}`);
+        const result = await response.json();
 
-      // Filter only rated bookings
-      const ratedBookings = (bookings || []).filter(b => b.rating && b.rating > 0);
-      setRatings(ratedBookings);
-
-      // Calculate average rating
-      if (ratedBookings.length > 0) {
-        const avg = (ratedBookings.reduce((sum, b) => sum + (b.rating || 0), 0) / ratedBookings.length).toFixed(1);
-        setAverageRating(parseFloat(avg));
+        if (result.success) {
+          setRatings(result.data.ratings);
+          setAverageRating(result.data.statistics.averageRating);
+        }
+      } catch (error) {
+        console.error("Error fetching ratings:", error);
       }
     };
 
