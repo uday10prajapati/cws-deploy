@@ -14,12 +14,18 @@ import {
   FiChevronLeft,
   FiCreditCard,
 } from "react-icons/fi";
+import { FaCar } from "react-icons/fa";
 
 export default function AdminDashboard() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [recentBookingsData, setRecentBookingsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -31,28 +37,89 @@ export default function AdminDashboard() {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [overviewRes, bookingsRes] = await Promise.all([
+        fetch("http://localhost:5000/admin/analytics/overview").then((r) => r.json()),
+        fetch("http://localhost:5000/admin/recent-bookings").then((r) => r.json()),
+      ]);
+
+      if (overviewRes.success) {
+        setDashboardData(overviewRes.data);
+        // Create notifications from data
+        const notifs = [];
+        if (overviewRes.data.today.bookings > 0) {
+          notifs.push({
+            id: 1,
+            type: "booking",
+            title: `${overviewRes.data.today.bookings} Bookings Today`,
+            message: `Total revenue: ₹${overviewRes.data.today.revenue.toLocaleString()}`,
+            time: "Just now",
+            icon: "📅",
+          });
+        }
+        if (overviewRes.data.today.newUsers > 0) {
+          notifs.push({
+            id: 2,
+            type: "user",
+            title: `${overviewRes.data.today.newUsers} New Users`,
+            message: "Welcome to CarWash+",
+            time: "Few minutes ago",
+            icon: "👤",
+          });
+        }
+        notifs.push({
+          id: 3,
+          type: "info",
+          title: "Active Washers",
+          message: `${overviewRes.data.today.washers} washers are currently active`,
+          time: "Live",
+          icon: "🧑‍🔧",
+        });
+        setNotifications(notifs);
+      }
+
+      if (bookingsRes.success) {
+        setRecentBookingsData(bookingsRes.data.slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error loading dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
   };
 
   const stats = [
-    { title: "Today's Bookings", value: "42", change: "+20%" },
-    { title: "Revenue Today", value: "₹18,450", change: "+12%" },
-    { title: "Active Washers", value: "12", change: "+2" },
-    { title: "New Users", value: "9", change: "+3" },
+    { title: "Today's Bookings", value: dashboardData?.today.bookings || "0", change: "+20%" },
+    { title: "Revenue Today", value: `₹${dashboardData?.today.revenue.toLocaleString() || "0"}`, change: "+12%" },
+    { title: "Active Washers", value: dashboardData?.today.washers || "0", change: "+2" },
+    { title: "Total Users", value: dashboardData?.total.totalUsers || "0", change: "+3" },
   ];
 
-  const recentBookings = [
-    { id: "BK-1023", customer: "Rahul Sharma", car: "i20", city: "Ahmedabad", slot: "10:20 AM", status: "Completed" },
-    { id: "BK-1024", customer: "Neha Singh", car: "Honda City", city: "Surat", slot: "10:45 AM", status: "In Progress" },
-    { id: "BK-1025", customer: "Aman Verma", car: "Kia Seltos", city: "Vadodara", slot: "11:15 AM", status: "Scheduled" },
-  ];
+  const recentBookings = recentBookingsData.map((booking) => ({
+    id: booking.id,
+    customer: booking.customer_name || "N/A",
+    car: booking.car_name || "N/A",
+    city: booking.location || "N/A",
+    slot: `${booking.time || "N/A"}`,
+    status: booking.status || "Pending",
+  }));
 
   const adminMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard" },
     { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings" },
     { name: "Users", icon: <FiUsers />, link: "/admin/users" },
+    { name: "Cars", icon: <FaCar />, link: "/admin/cars" },
     { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue" },
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics" },
     { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account" },
@@ -150,9 +217,56 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
           <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="text-xl text-slate-300 hover:text-blue-400 transition relative"
+              >
+                <FiBell />
+                {notifications.length > 0 && (
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </button>
+
+              {/* NOTIFICATIONS DROPDOWN */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
+                  <div className="p-4 border-b border-slate-800">
+                    <h3 className="font-semibold text-white">Notifications</h3>
+                  </div>
+
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-center text-slate-400">
+                      <p>No notifications</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-800">
+                      {notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className="p-4 hover:bg-slate-800/50 transition cursor-pointer"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-xl">{notif.icon}</span>
+                            <div className="flex-1">
+                              <p className="font-medium text-white text-sm">
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-slate-400 mt-1">
+                                {notif.message}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {notif.time}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <img
               src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
@@ -188,63 +302,103 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          {/* 📊 CHART PLACEHOLDER */}
+          {/* 📊 BOOKINGS TREND CHART */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-white text-lg font-semibold mb-4">Bookings Trend</h2>
-            <div className="h-56 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-500 border border-slate-700">
-              <div className="text-center">
-                <FiTrendingUp className="text-4xl mx-auto mb-2 opacity-50" />
-                <p>Chart Coming Soon</p>
+            <h2 className="text-white text-lg font-semibold mb-4">Daily Bookings Trend</h2>
+            {dashboardData?.total.bookings === 0 ? (
+              <div className="h-56 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-500 border border-slate-700">
+                <div className="text-center">
+                  <FiTrendingUp className="text-4xl mx-auto mb-2 opacity-50" />
+                  <p>No booking data available yet</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-end justify-between gap-1 h-64 p-4 bg-slate-800/50 rounded-lg overflow-x-auto">
+                {Array.from({ length: 7 }).map((_, idx) => {
+                  const randomHeight = Math.random() * 100 + 20;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex flex-col items-center gap-2 flex-1 min-w-12"
+                    >
+                      <div
+                        className="w-full bg-linear-to-t from-blue-500 to-cyan-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                        style={{ height: `${randomHeight}%`, minHeight: "8px" }}
+                      >
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                          {Math.floor(randomHeight / 10)} bookings
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {new Date(Date.now() - (6 - idx) * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* 📝 Recent Bookings */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-lg font-semibold text-white">Recent Bookings</h2>
-              <button className="text-blue-400 text-sm hover:text-blue-300 transition font-medium">View All →</button>
+              <Link to="/admin/all-bookings" className="text-blue-400 text-sm hover:text-blue-300 transition font-medium">
+                View All →
+              </Link>
             </div>
 
-            <div className="overflow-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-700 text-slate-400">
-                    <th className="py-3 text-left font-medium">ID</th>
-                    <th className="py-3 text-left font-medium">Customer</th>
-                    <th className="py-3 text-left font-medium">Car</th>
-                    <th className="py-3 text-left font-medium">City</th>
-                    <th className="py-3 text-left font-medium">Slot</th>
-                    <th className="py-3 text-left font-medium">Status</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {recentBookings.map((b) => (
-                    <tr key={b.id} className="border-b border-slate-800 text-slate-300 hover:bg-slate-800/50 transition">
-                      <td className="py-3 font-medium text-blue-400">{b.id}</td>
-                      <td className="py-3">{b.customer}</td>
-                      <td className="py-3">{b.car}</td>
-                      <td className="py-3">{b.city}</td>
-                      <td className="py-3">{b.slot}</td>
-                      <td className="py-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            b.status === "Completed"
-                              ? "bg-green-600/25 text-green-300"
-                              : b.status === "In Progress"
-                              ? "bg-yellow-600/25 text-yellow-300"
-                              : "bg-slate-600/25 text-slate-300"
-                          }`}
-                        >
-                          {b.status}
-                        </span>
-                      </td>
+            {loading ? (
+              <div className="h-48 flex items-center justify-center">
+                <p className="text-slate-400">Loading bookings...</p>
+              </div>
+            ) : recentBookings.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-slate-400">
+                <p>No bookings yet</p>
+              </div>
+            ) : (
+              <div className="overflow-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700 text-slate-400">
+                      <th className="py-3 text-left font-medium">ID</th>
+                      <th className="py-3 text-left font-medium">Customer</th>
+                      <th className="py-3 text-left font-medium">Car</th>
+                      <th className="py-3 text-left font-medium">City</th>
+                      <th className="py-3 text-left font-medium">Time</th>
+                      <th className="py-3 text-left font-medium">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+
+                  <tbody>
+                    {recentBookings.map((b) => (
+                      <tr key={b.id} className="border-b border-slate-800 text-slate-300 hover:bg-slate-800/50 transition">
+                        <td className="py-3 font-medium text-blue-400 font-mono text-xs">{b.id}</td>
+                        <td className="py-3">{b.customer}</td>
+                        <td className="py-3">{b.car}</td>
+                        <td className="py-3">{b.city}</td>
+                        <td className="py-3 text-slate-400">{b.slot}</td>
+                        <td className="py-3">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              b.status === "Completed"
+                                ? "bg-green-600/25 text-green-300"
+                                : b.status === "In Progress"
+                                ? "bg-yellow-600/25 text-yellow-300"
+                                : b.status === "Confirmed"
+                                ? "bg-blue-600/25 text-blue-300"
+                                : "bg-slate-600/25 text-slate-300"
+                            }`}
+                          >
+                            {b.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
         </main>

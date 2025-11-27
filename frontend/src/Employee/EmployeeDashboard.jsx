@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
-import { FiMenu, FiBell, FiCalendar, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiChevronLeft, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard } from "react-icons/fi";
+import { FiMenu, FiBell, FiCalendar, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiChevronLeft, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiX } from "react-icons/fi";
 import { FaCar, FaStar, FaPhone } from "react-icons/fa";
 
 
@@ -13,6 +13,8 @@ export default function EmployeeDashboard() {
   const [assignments, setAssignments] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   /* LOAD LOGGED-IN EMPLOYEE + ASSIGNMENTS */
   useEffect(() => {
@@ -36,10 +38,59 @@ export default function EmployeeDashboard() {
         setAverageRating(parseFloat(avgRating));
         setRatingCount(completedJobs.length);
       }
+
+      // Load notifications
+      if (auth?.user?.id) {
+        loadNotifications(auth.user.id);
+      }
     };
 
     load();
   }, []);
+
+  /* LOAD NOTIFICATIONS FOR EMPLOYEE */
+  const loadNotifications = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/notifications/user/${userId}`);
+      const data = await response.json();
+      
+      if (data.success && data.notifications) {
+        // Map notifications to include display format
+        const formattedNotifications = data.notifications.map((notif) => ({
+          ...notif,
+          icon: getNotificationIcon(notif.type),
+          time: getTimeAgo(notif.created_at || new Date()),
+        }));
+        setNotifications(formattedNotifications);
+      }
+    } catch (error) {
+      console.error("Failed to load notifications:", error);
+    }
+  };
+
+  /* GET NOTIFICATION ICON BASED ON TYPE */
+  const getNotificationIcon = (type) => {
+    const icons = {
+      rating: "⭐",
+      upcoming: "🚗",
+      completed: "✅",
+      payment: "💰",
+      rating_needed: "⭐",
+      new_job: "📋",
+    };
+    return icons[type] || "📢";
+  };
+
+  /* FORMAT TIME AGO */
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -157,10 +208,59 @@ export default function EmployeeDashboard() {
 
           <h1 className="text-2xl font-bold">My Dashboard</h1>
 
-          <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
+          <div className="flex items-center gap-8 relative">
+            {/* NOTIFICATIONS BELL */}
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="text-xl text-slate-300 hover:text-blue-400 transition relative group"
+            >
               <FiBell />
+              {notifications.length > 0 && (
+                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+              <span className="absolute -bottom-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                Notifications ({notifications.length})
+              </span>
             </button>
+
+            {/* NOTIFICATIONS DROPDOWN */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-96 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto top-12">
+                {/* Header */}
+                <div className="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
+                  <h3 className="font-semibold text-white text-sm">Notifications</h3>
+                  <button 
+                    onClick={() => setShowNotifications(false)}
+                    className="text-slate-400 hover:text-white transition"
+                  >
+                    <FiX />
+                  </button>
+                </div>
+
+                {/* Notifications List */}
+                {notifications.length > 0 ? (
+                  notifications.map((notif, idx) => (
+                    <div 
+                      key={idx} 
+                      className="p-4 border-b border-slate-800 hover:bg-slate-800/50 transition cursor-pointer last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl">{notif.icon}</span>
+                        <div className="flex-1">
+                          <p className="font-medium text-white text-sm">{notif.title}</p>
+                          <p className="text-xs text-slate-400 mt-1">{notif.message}</p>
+                          <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center">
+                    <p className="text-slate-400 text-sm">No notifications yet</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <img
               src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}

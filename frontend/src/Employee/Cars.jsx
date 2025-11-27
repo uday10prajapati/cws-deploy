@@ -71,6 +71,9 @@ export default function Cars() {
           number_plate: car.number_plate,
           image_url: car.image_url,
           customer_id: car.customer_id,
+          customer_name: car.customer_name,
+          customer_phone: car.customer_phone,
+          customer_email: car.customer_email,
           total_services: carBookings.length,
           completed_services: carBookings.filter(b => b.status === "Completed").length,
           last_service: carBookings[0]?.date,
@@ -301,6 +304,18 @@ export default function Cars() {
                       <p className="text-xs text-slate-500">completed</p>
                     </div>
                   </div>
+
+                  {/* CUSTOMER INFO */}
+                  {(car.customer_name || car.customer_phone || car.customer_email) && (
+                    <div className="mb-4 p-3 bg-purple-600/10 border border-purple-500/30 rounded-lg">
+                      <p className="text-xs text-purple-400 font-semibold mb-2">👤 Customer Details</p>
+                      <div className="space-y-1 text-sm">
+                        {car.customer_name && <p className="text-white"><span className="text-slate-400">Name:</span> {car.customer_name}</p>}
+                        {car.customer_phone && <p className="text-white"><span className="text-slate-400">Phone:</span> {car.customer_phone}</p>}
+                        {car.customer_email && <p className="text-white"><span className="text-slate-400">Email:</span> {car.customer_email}</p>}
+                      </div>
+                    </div>
+                  )}
 
                   {/* DETAILS GRID */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg">

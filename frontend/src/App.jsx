@@ -48,9 +48,9 @@ export default function App() {
         <Route path="/employee/location" element={<CarLocation />} />
         <Route path="/my-cars" element={<Cars />} />
         <Route path="/employee/cars" element={<Cars />} />
-        <Route path="/admin/all-bookings" element={<AllBookings />} />
-        <Route path="/admin/all-revenue" element={<AllRevenue />} />
-        <Route path="/admin/all-users" element={<AllUser />} />
+        <Route path="/admin/bookings" element={<AllBookings />} />
+        <Route path="/admin/revenue" element={<AllRevenue />} />
+        <Route path="/admin/users" element={<AllUser />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/settings" element={<Settings />} />
       </Routes>
