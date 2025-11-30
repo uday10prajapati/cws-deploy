@@ -3,6 +3,35 @@ import { supabase } from "../supabase.js";
 
 const router = express.Router();
 
+/* GET ALL CARS (ADMIN & EMPLOYEE VIEW) */
+router.get("/", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("cars")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      cars: data || [],
+      count: data?.length || 0,
+    });
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error: " + err.message,
+    });
+  }
+});
+
 /* DELETE must come BEFORE GET */
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;

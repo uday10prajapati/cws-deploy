@@ -34,13 +34,19 @@ export default function Cars() {
       setUser(auth.user);
 
       try {
-        // Fetch ALL cars from the database
-        const { data: allCarsData } = await supabase
-          .from("cars")
-          .select("*")
-          .order("created_at", { ascending: false });
+        // Fetch ALL cars from backend API
+        const response = await fetch("http://localhost:5000/cars");
+        const result = await response.json();
 
-        if (!allCarsData || allCarsData.length === 0) {
+        if (!result.success || !result.cars) {
+          setCars([]);
+          setFilteredCars([]);
+          return;
+        }
+
+        const allCarsData = result.cars;
+
+        if (allCarsData.length === 0) {
           setCars([]);
           setFilteredCars([]);
           return;

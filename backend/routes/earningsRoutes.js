@@ -270,4 +270,255 @@ router.get("/breakdown/:employee_id", async (req, res) => {
   }
 });
 
+/**
+ * GET /earnings/transactions/:customer_id
+ * Fetch all successful transactions from transactions table
+ * All employees and admins can see all system transactions
+ */
+router.get("/transactions/:customer_id", async (req, res) => {
+  try {
+    // Fetch ALL successful transactions (visible to all employees/admins)
+    const { data: transactions, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("status", "success")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching transactions:", error);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to fetch transactions",
+      });
+    }
+
+    // Transactions fetched successfully
+
+    // Calculate total earnings from all transactions
+    const totalEarnings = (transactions || []).reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+    // Calculate this month's earnings
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const thisMonthTransactions = (transactions || []).filter(t => {
+      const tDate = new Date(t.created_at);
+      return tDate >= monthStart && tDate <= monthEnd;
+    });
+
+    const thisMonthEarnings = thisMonthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalEarnings: parseFloat(totalEarnings).toFixed(2),
+        thisMonthEarnings: parseFloat(thisMonthEarnings).toFixed(2),
+        totalTransactions: (transactions || []).length,
+        thisMonthTransactions: thisMonthTransactions.length,
+        transactions: transactions || [],
+        userType: "admin"  // All can see as admin level view
+      }
+    });
+  } catch (error) {
+    console.error("Transactions fetch error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+/**
+ * GET /earnings/dashboard-summary/:customer_id
+ * Quick dashboard summary for earnings
+ * Shows all system transactions (visible to all employees/admins)
+ */
+router.get("/dashboard-summary/:customer_id", async (req, res) => {
+  try {
+    // Fetch ALL successful transactions (visible to all employees/admins)
+    const { data: transactions, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("status", "success")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching transactions:", error);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to fetch transactions",
+      });
+    }
+
+    // Dashboard transactions fetched
+
+    // Calculate this month's earnings
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const thisMonthTransactions = (transactions || []).filter(t => {
+      const tDate = new Date(t.created_at);
+      return tDate >= monthStart && tDate <= monthEnd;
+    });
+
+    const thisMonthEarnings = thisMonthTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    const totalEarnings = (transactions || []).reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        thisMonthEarnings: parseFloat(thisMonthEarnings).toFixed(2),
+        thisMonthTransactionCount: thisMonthTransactions.length,
+        totalEarnings: parseFloat(totalEarnings).toFixed(2),
+        userType: "admin"  // All can see as admin level view
+      }
+    });
+  } catch (error) {
+    console.error("Dashboard summary fetch error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+/**
+ * POST /earnings/record-transaction
+ * Record a new transaction after successful payment
+ */
+router.post("/record-transaction", async (req, res) => {
+  try {
+    const {
+      customer_id,
+      booking_id,
+      pass_id,
+      type,
+      direction,
+      amount,
+      gst,
+      payment_method,
+      gateway_order_id,
+      gateway_payment_id,
+      invoice_url,
+      notes
+    } = req.body;
+
+    // Validate required fields
+    if (!customer_id || !type || !direction || !amount) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: customer_id, type, direction, amount"
+      });
+    }
+
+    const total_amount = gst ? (parseFloat(amount) + parseFloat(gst)).toFixed(2) : parseFloat(amount).toFixed(2);
+
+    const transactionData = {
+      customer_id,
+      booking_id: booking_id || null,
+      pass_id: pass_id || null,
+      type,
+      direction,
+      status: "success",
+      amount: parseFloat(amount),
+      gst: gst ? parseFloat(gst) : null,
+      total_amount: parseFloat(total_amount),
+      currency: "INR",
+      payment_method: payment_method || null,
+      gateway_order_id: gateway_order_id || null,
+      gateway_payment_id: gateway_payment_id || null,
+      invoice_url: invoice_url || null,
+      notes: notes || null
+    };
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert([transactionData])
+      .select();
+
+    if (error) {
+      console.error("Error recording transaction:", error);
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      transaction: data[0],
+      message: "Transaction recorded successfully"
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error: " + err.message
+    });
+  }
+});
+
+/**
+ * POST /earnings/create-sample-transaction
+ * Create sample transaction for testing (DEVELOPMENT ONLY)
+ */
+router.post("/create-sample-transaction", async (req, res) => {
+  try {
+    const { employee_id, booking_id, amount = 500 } = req.body;
+
+    if (!employee_id || !booking_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing employee_id or booking_id"
+      });
+    }
+
+    // Create a sample transaction linked to the booking
+    const transactionData = {
+      customer_id: employee_id, // For employee earnings tracking
+      booking_id: booking_id,
+      type: "booking",
+      direction: "credit",
+      status: "success",
+      amount: parseFloat(amount),
+      gst: parseFloat((amount * 0.18).toFixed(2)),
+      total_amount: parseFloat((amount * 1.18).toFixed(2)),
+      currency: "INR",
+      payment_method: "upi",
+      gateway_order_id: `order_${Date.now()}`,
+      gateway_payment_id: `pay_${Date.now()}`,
+      notes: `Sample transaction for testing`
+    };
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert([transactionData])
+      .select();
+
+    if (error) {
+      console.error("Error creating sample transaction:", error);
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      transaction: data[0],
+      message: "Sample transaction created successfully"
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error: " + err.message
+    });
+  }
+});
+
 export default router;

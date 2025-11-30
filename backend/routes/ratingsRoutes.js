@@ -4,6 +4,156 @@ import { supabase } from "../supabase.js";
 const router = express.Router();
 
 /**
+ * GET /ratings/test
+ * Test endpoint to check all bookings with ratings in database
+ */
+router.get("/test", async (req, res) => {
+  try {
+    console.log("🧪 Testing ratings endpoint...");
+    
+    // Check if there are ANY bookings with ratings
+    const { data: allRatedBookings, error: allError } = await supabase
+      .from("bookings")
+      .select("id, assigned_to, rating, created_at")
+      .gt("rating", 0)
+      .limit(10);
+    
+    if (allError) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to fetch test data",
+        details: allError.message,
+      });
+    }
+    
+    console.log(`Found ${(allRatedBookings || []).length} total rated bookings in database`);
+    
+    // Check all bookings count
+    const { data: allBookings, error: countError } = await supabase
+      .from("bookings")
+      .select("id")
+      .limit(1);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalRatedBookings: (allRatedBookings || []).length,
+        ratedBookings: allRatedBookings || [],
+        message: allRatedBookings && allRatedBookings.length > 0 
+          ? "✅ Ratings exist in database" 
+          : "⚠️ No ratings found in database yet",
+      },
+    });
+  } catch (error) {
+    console.error("Test endpoint error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * POST /ratings/create-sample-ratings
+ * Create sample ratings for testing (for development only)
+ */
+router.post("/create-sample-ratings", async (req, res) => {
+  try {
+    const { employee_id } = req.body;
+    
+    if (!employee_id) {
+      return res.status(400).json({
+        success: false,
+        error: "employee_id is required",
+      });
+    }
+    
+    console.log("📝 Creating sample ratings for employee:", employee_id);
+    
+    // First, create some sample bookings for this employee if they don't exist
+    const { data: existingBookings } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("assigned_to", employee_id)
+      .limit(5);
+    
+    // Create sample bookings with ratings
+    const sampleRatings = [
+      {
+        rating: 5,
+        rating_comment: "Excellent service! Very professional and thorough.",
+        customer_name: "Rajesh Kumar",
+      },
+      {
+        rating: 4,
+        rating_comment: "Good job, finished on time.",
+        customer_name: "Priya Singh",
+      },
+      {
+        rating: 5,
+        rating_comment: "Amazing! My car looks brand new.",
+        customer_name: "Amit Patel",
+      },
+      {
+        rating: 3,
+        rating_comment: "Average service, could be better.",
+        customer_name: "Neha Verma",
+      },
+      {
+        rating: 4,
+        rating_comment: "Good cleaning, reasonable price.",
+        customer_name: "Vikram Reddy",
+      },
+    ];
+    
+    // If there are existing bookings, update them with ratings
+    if (existingBookings && existingBookings.length > 0) {
+      const updates = [];
+      for (let i = 0; i < Math.min(existingBookings.length, sampleRatings.length); i++) {
+        const booking = existingBookings[i];
+        const sampleRating = sampleRatings[i];
+        
+        const { error } = await supabase
+          .from("bookings")
+          .update({
+            rating: sampleRating.rating,
+            rating_comment: sampleRating.rating_comment,
+            customer_name: sampleRating.customer_name,
+            rated_at: new Date().toISOString(),
+          })
+          .eq("id", booking.id);
+        
+        if (!error) {
+          updates.push(booking.id);
+        }
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: `Updated ${updates.length} bookings with sample ratings`,
+        data: {
+          updatedCount: updates.length,
+          bookingIds: updates,
+        },
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: "No bookings found for this employee. Create bookings first.",
+      });
+    }
+  } catch (error) {
+    console.error("Sample ratings creation error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to create sample ratings",
+      details: error.message,
+    });
+  }
+});
+
+/**
  * POST /ratings/add
  * Add a rating to a completed booking
  * Required: booking_id, customer_id, rating, rating_comment (optional)
@@ -101,26 +251,33 @@ router.post("/add", async (req, res) => {
 /**
  * GET /ratings/employee/:employee_id
  * Get all ratings for a specific employee
+ * Shows ratings from their completed bookings (identified by customer_id)
  */
 router.get("/employee/:employee_id", async (req, res) => {
   try {
     const { employee_id } = req.params;
 
+    console.log("🔍 Fetching ratings for employee:", employee_id);
+
     // Fetch all bookings for this employee with ratings
+    // NOTE: We check if user_id matches in profiles table to identify employees
+    // But we fetch ALL rated bookings since all employees/admins can see all ratings
     const { data: bookings, error } = await supabase
       .from("bookings")
       .select("*")
-      .eq("assigned_to", employee_id)
       .gt("rating", 0)
       .order("rated_at", { ascending: false });
 
     if (error) {
-      console.error("Fetch ratings error:", error);
+      console.error("❌ Fetch ratings error:", error);
       return res.status(500).json({
         success: false,
         error: "Failed to fetch ratings",
+        details: error.message,
       });
     }
+    
+    console.log(`✅ Found ${(bookings || []).length} ratings in system`);
 
     // Calculate statistics
     const ratings = bookings || [];

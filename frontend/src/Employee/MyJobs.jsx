@@ -53,17 +53,13 @@ export default function MyJobs() {
         console.log("Fetched bookings:", data);
         setJobs(data);
 
-        // Calculate today's jobs
-        const today = new Date().toISOString().split('T')[0];
-        const todayCount = data.filter(job => job.date === today && job.status !== "Completed").length;
-        setTodayJobs(todayCount);
+        // Calculate pending jobs
+        const pendingCount = data.filter(job => job.status !== "Completed").length;
+        setTodayJobs(pendingCount);
 
-        // Calculate completed jobs this month
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-        const monthCount = data.filter(job => job.date >= monthStart && job.date <= monthEnd && job.status === "Completed").length;
-        setMonthCompleted(monthCount);
+        // Calculate completed jobs
+        const completedCount = data.filter(job => job.status === "Completed").length;
+        setMonthCompleted(completedCount);
       } catch (err) {
         console.error("Error loading jobs:", err);
       } finally {
@@ -229,15 +225,15 @@ export default function MyJobs() {
 
           {/* STATISTICS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-900/80 border border-blue-500/30 rounded-xl p-6 shadow-lg">
-              <p className="text-slate-400 text-sm font-medium mb-2">Today's Jobs</p>
-              <p className="text-4xl font-bold text-blue-400">{todayJobs}</p>
-              <p className="text-slate-500 text-xs mt-2">Active assignments for today</p>
+            <div className="bg-slate-900/80 border border-orange-500/30 rounded-xl p-6 shadow-lg">
+              <p className="text-slate-400 text-sm font-medium mb-2">Pending Bookings</p>
+              <p className="text-4xl font-bold text-orange-400">{jobs.filter(j => j.status !== "Completed").length}</p>
+              <p className="text-slate-500 text-xs mt-2">Awaiting completion</p>
             </div>
             <div className="bg-slate-900/80 border border-green-500/30 rounded-xl p-6 shadow-lg">
-              <p className="text-slate-400 text-sm font-medium mb-2">Completed This Month</p>
-              <p className="text-4xl font-bold text-green-400">{monthCompleted}</p>
-              <p className="text-slate-500 text-xs mt-2">Successfully finished jobs</p>
+              <p className="text-slate-400 text-sm font-medium mb-2">Completed Bookings</p>
+              <p className="text-4xl font-bold text-green-400">{jobs.filter(j => j.status === "Completed").length}</p>
+              <p className="text-slate-500 text-xs mt-2">Successfully finished</p>
             </div>
           </div>
 
@@ -247,31 +243,31 @@ export default function MyJobs() {
               onClick={() => setActiveTab("current")}
               className={`px-6 py-3 font-semibold transition-all ${
                 activeTab === "current"
-                  ? "text-blue-400 border-b-2 border-blue-400"
+                  ? "text-orange-400 border-b-2 border-orange-400"
                   : "text-slate-400 hover:text-slate-300"
               }`}
             >
-              Current Jobs ({jobs.filter(j => j.status !== "Completed").length})
+              Pending Bookings ({jobs.filter(j => j.status !== "Completed").length})
             </button>
             <button
               onClick={() => setActiveTab("history")}
               className={`px-6 py-3 font-semibold transition-all ${
                 activeTab === "history"
-                  ? "text-blue-400 border-b-2 border-blue-400"
+                  ? "text-green-400 border-b-2 border-green-400"
                   : "text-slate-400 hover:text-slate-300"
               }`}
             >
-              Job History ({jobs.filter(j => j.status === "Completed").length})
+              Completed Bookings ({jobs.filter(j => j.status === "Completed").length})
             </button>
           </div>
 
-          {/* JOBS LIST - CURRENT JOBS TAB */}
+          {/* JOBS LIST - PENDING BOOKINGS TAB */}
           {activeTab === "current" && (
             <>
               {jobs.filter(j => j.status !== "Completed").length === 0 ? (
                 <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-slate-700">
                   <FaCar className="text-5xl text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400">No active jobs assigned.</p>
+                  <p className="text-slate-400">No pending bookings. All caught up! ✨</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -407,13 +403,13 @@ export default function MyJobs() {
             </>
           )}
 
-          {/* JOBS LIST - HISTORY TAB */}
+          {/* JOBS LIST - COMPLETED BOOKINGS TAB */}
           {activeTab === "history" && (
             <>
               {jobs.filter(j => j.status === "Completed").length === 0 ? (
                 <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-slate-700">
                   <FiCheckCircle className="text-5xl text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400">No completed jobs yet.</p>
+                  <p className="text-slate-400">No completed bookings yet. Start accepting jobs to get started!</p>
                 </div>
               ) : (
                 <div className="space-y-4">

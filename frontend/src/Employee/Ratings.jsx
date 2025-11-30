@@ -20,6 +20,8 @@ export default function Ratings() {
   const [user, setUser] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   /* LOAD RATINGS DATA */
   useEffect(() => {
@@ -30,6 +32,9 @@ export default function Ratings() {
       setUser(auth.user);
 
       try {
+        setLoading(true);
+        setError(null);
+        
         // Fetch ratings from backend API
         const response = await fetch(`http://localhost:5000/ratings/employee/${auth.user.id}`);
         const result = await response.json();
@@ -37,9 +42,15 @@ export default function Ratings() {
         if (result.success) {
           setRatings(result.data.ratings);
           setAverageRating(result.data.statistics.averageRating);
+        } else {
+          console.error("Error from backend:", result.error);
+          setError(result.error);
         }
       } catch (error) {
         console.error("Error fetching ratings:", error);
+        setError("Failed to load ratings. Make sure backend is running.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -49,6 +60,40 @@ export default function Ratings() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
+  };
+
+  const handleCreateSampleRatings = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/ratings/create-sample-ratings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employee_id: user.id }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`✅ ${result.message}`);
+        // Reload ratings
+        const ratingResponse = await fetch(`http://localhost:5000/ratings/employee/${user.id}`);
+        const ratingResult = await ratingResponse.json();
+        
+        if (ratingResult.success) {
+          setRatings(ratingResult.data.ratings);
+          setAverageRating(ratingResult.data.statistics.averageRating);
+        }
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error creating sample ratings:", error);
+      alert("Failed to create sample ratings");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const employeeMenu = [
@@ -234,7 +279,19 @@ export default function Ratings() {
             {ratings.length === 0 ? (
               <div className="text-center py-12">
                 <FiStar className="text-5xl text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400">No ratings yet. Complete more jobs to earn ratings!</p>
+                <p className="text-slate-400 mb-6">
+                  {error ? `⚠️ ${error}` : "No ratings yet. Complete more jobs to earn ratings!"}
+                </p>
+                
+                {!error && (
+                  <button
+                    onClick={handleCreateSampleRatings}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900 px-6 py-2 rounded-lg font-semibold transition"
+                  >
+                    {loading ? "Creating..." : "📝 Create Sample Ratings (Dev)"}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

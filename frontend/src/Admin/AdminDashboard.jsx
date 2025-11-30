@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [recentBookingsData, setRecentBookingsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
@@ -44,9 +45,10 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [overviewRes, bookingsRes] = await Promise.all([
+      const [overviewRes, bookingsRes, earningsRes] = await Promise.all([
         fetch("http://localhost:5000/admin/analytics/overview").then((r) => r.json()),
         fetch("http://localhost:5000/admin/recent-bookings").then((r) => r.json()),
+        fetch("http://localhost:5000/earnings/transactions/admin").then((r) => r.json()),
       ]);
 
       if (overviewRes.success) {
@@ -87,6 +89,11 @@ export default function AdminDashboard() {
       if (bookingsRes.success) {
         setRecentBookingsData(bookingsRes.data.slice(0, 5));
       }
+
+      // Fetch lifetime earnings from successful transactions
+      if (earningsRes.success) {
+        setLifetimeEarnings(parseFloat(earningsRes.data.totalEarnings) || 0);
+      }
     } catch (error) {
       console.error("Error loading dashboard:", error);
     } finally {
@@ -103,7 +110,7 @@ export default function AdminDashboard() {
     { title: "Today's Bookings", value: dashboardData?.today.bookings || "0", change: "+20%" },
     { title: "Revenue Today", value: `₹${dashboardData?.today.revenue.toLocaleString() || "0"}`, change: "+12%" },
     { title: "Active Washers", value: dashboardData?.today.washers || "0", change: "+2" },
-    { title: "Total Users", value: dashboardData?.total.totalUsers || "0", change: "+3" },
+    { title: "Lifetime Earnings", value: `₹${lifetimeEarnings.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`, change: "All time" },
   ];
 
   const recentBookings = recentBookingsData.map((booking) => ({

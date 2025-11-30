@@ -11,8 +11,8 @@ const supabase = createClient(
 
 /*  
   GET /employee/bookings/:userId
-  Fetch all bookings assigned to employee (by user ID)
-  Since assigned_to column may not exist, we fetch all bookings
+  Fetch all bookings assigned to employee (by user ID) - both pending and completed
+  Falls back to unassigned pending bookings if none are assigned
 */
 router.get("/bookings/:userId", async (req, res) => {
   try {
@@ -22,36 +22,33 @@ router.get("/bookings/:userId", async (req, res) => {
       return res.status(400).json({ success: false, error: "User ID is required" });
     }
 
-    // First, try to fetch with assigned_to column (if it exists)
-    let data, error;
-    
-    // Try primary query with assigned_to
+    // First, try to fetch all bookings assigned to this employee (both pending and completed)
     const { data: assignedBookings, error: assignedError } = await supabase
       .from("bookings")
       .select("*")
       .eq("assigned_to", userId)
       .order("created_at", { ascending: false });
 
-    if (!assignedError) {
-      data = assignedBookings;
-    } else if (assignedError.code === '42703') {
-      // Column doesn't exist, fallback to fetching all bookings (admin view) or customer bookings
-      console.log("assigned_to column not found, fetching all bookings for admin view");
-      
-      const { data: allBookings, error: allError } = await supabase
-        .from("bookings")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (allError) {
-        throw allError;
-      }
-      data = allBookings || [];
-    } else {
-      throw assignedError;
+    if (!assignedError && assignedBookings && assignedBookings.length > 0) {
+      return res.json({ success: true, bookings: assignedBookings });
     }
 
-    return res.json({ success: true, bookings: data || [] });
+    // If no assigned bookings, fallback to fetching unassigned pending bookings
+    // This allows employees to see available work
+    
+    const { data: unassignedBookings, error: unassignedError } = await supabase
+      .from("bookings")
+      .select("*")
+      .is("assigned_to", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    
+    if (unassignedError) {
+      console.error("Error fetching unassigned bookings:", unassignedError);
+      return res.json({ success: true, bookings: [] });
+    }
+
+    return res.json({ success: true, bookings: unassignedBookings || [] });
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return res.status(500).json({ success: false, error: error.message });

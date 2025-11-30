@@ -11,6 +11,7 @@ export default function EmployeeDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [earnings, setEarnings] = useState({ thisMonthEarnings: 0, totalEarnings: 0 });
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -57,6 +58,9 @@ export default function EmployeeDashboard() {
         setRatingCount(completedJobs.length);
       }
 
+      // Fetch earnings from transactions
+      fetchEarnings(user.id);
+
       // Load notifications
       loadNotifications(user.id);
     }
@@ -79,6 +83,23 @@ export default function EmployeeDashboard() {
       }
     } catch (error) {
       console.error("Failed to load notifications:", error);
+    }
+  };
+
+  /* FETCH EARNINGS FROM TRANSACTIONS */
+  const fetchEarnings = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/earnings/dashboard-summary/${userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setEarnings({
+          thisMonthEarnings: data.data.thisMonthEarnings || 0,
+          totalEarnings: data.data.thisMonthEarnings || 0 // Using this month for display
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load earnings:", error);
     }
   };
 
@@ -120,15 +141,14 @@ export default function EmployeeDashboard() {
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
   ];
 
+  // Filter pending and completed bookings
+  const pendingBookings = assignments.filter(a => a.status !== "Completed");
+  const completedBookings = assignments.filter(a => a.status === "Completed");
+
   const stats = [
-    { title: "Today's Jobs", value: assignments.filter(a => a.status !== "Completed").length, icon: <FiClock />, change: "Active" },
-    { title: "Completed", value: assignments.filter(a => a.status === "Completed").length, icon: <FiCheckCircle />, change: "This month" },
-    { title: "Earnings This Month", value: "₹" + assignments.filter(a => {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const aDate = new Date(a.date || new Date());
-      return a.status === "Completed" && aDate >= monthStart;
-    }).reduce((sum, a) => sum + (a.amount || 0), 0).toLocaleString(), icon: <FiDollarSign />, change: "+12% vs last month" },
+    { title: "Today's Pending Jobs", value: pendingBookings.length, icon: <FiClock />, change: "Awaiting action" },
+    { title: "Completed", value: completedBookings.length, icon: <FiCheckCircle />, change: "Total completed" },
+    { title: "Earnings This Month", value: "₹" + parseFloat(earnings.thisMonthEarnings).toLocaleString('en-IN', { maximumFractionDigits: 2 }), icon: <FiDollarSign />, change: "From transactions" },
     { title: "Average Rating", value: averageRating > 0 ? averageRating.toFixed(1) : "N/A", icon: <FaStar />, change: ratingCount > 0 ? `${ratingCount} ratings` : "No ratings yet" },
   ];
 
@@ -333,13 +353,10 @@ export default function EmployeeDashboard() {
               </Link>
             </div>
 
-            {assignments.length === 0 ? (
+            {pendingBookings.length === 0 ? (
               <div className="py-12 text-center">
                 <FaCar className="text-4xl text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400">No jobs assigned yet. Check back soon!</p>
-                <button className="inline-block mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition">
-                  Refresh Jobs
-                </button>
+                <p className="text-slate-400">All jobs completed! Great work! 🎉</p>
               </div>
             ) : (
               <div className="overflow-auto">
@@ -356,7 +373,7 @@ export default function EmployeeDashboard() {
                   </thead>
 
                   <tbody>
-                    {assignments.slice(0, 5).map((job, idx) => (
+                    {pendingBookings.slice(0, 5).map((job, idx) => (
                       <tr key={job.id || idx} className="border-b border-slate-800 text-slate-300 hover:bg-slate-800/50 transition">
                         <td className="py-3 flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold">

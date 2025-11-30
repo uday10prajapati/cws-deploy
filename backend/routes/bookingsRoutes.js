@@ -368,4 +368,75 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// ASSIGN BOOKING TO EMPLOYEE
+router.post("/assign/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { employee_id } = req.body;
+
+    if (!id || !employee_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Booking ID and Employee ID are required" 
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ assigned_to: employee_id })
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      return res.status(400).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      booking: data[0],
+      message: "Booking assigned to employee successfully"
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({ 
+      success: false, 
+      error: "Server error: " + err.message 
+    });
+  }
+});
+
+// GET UNASSIGNED BOOKINGS (For admin to assign)
+router.get("/unassigned/list", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("*")
+      .is("assigned_to", null)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      bookings: data || [] 
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    return res.status(500).json({ 
+      success: false, 
+      error: "Server error: " + err.message 
+    });
+  }
+});
+
 export default router;

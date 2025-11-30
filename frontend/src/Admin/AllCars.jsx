@@ -44,19 +44,17 @@ export default function AllCars() {
   useEffect(() => {
     const loadCars = async () => {
       try {
-        // Fetch all cars with customer info
-        const { data: carsData } = await supabase
-          .from("cars")
-          .select("*, customer:customer_id(id, email, name)")
-          .order("created_at", { ascending: false });
+        // Fetch all cars from backend API (all customer cars)
+        const response = await fetch("http://localhost:5000/cars");
+        const result = await response.json();
 
-        if (!carsData) {
+        if (!result.success || !result.cars) {
           setCars([]);
           setFilteredCars([]);
           return;
         }
 
-        // Get car IDs for booking stats
+        const carsData = result.cars;
         const carIds = carsData.map(c => c.id);
 
         if (carIds.length === 0) {
@@ -71,14 +69,27 @@ export default function AllCars() {
           .select("id, car_id, status, amount, date, location, services")
           .in("car_id", carIds);
 
+        // Fetch customer info
+        const customerIds = [...new Set(carsData.map(c => c.customer_id))];
+        const { data: customersData } = await supabase
+          .from("profiles")
+          .select("id, email, name")
+          .in("id", customerIds);
+
+        const customerMap = {};
+        (customersData || []).forEach(cust => {
+          customerMap[cust.id] = cust;
+        });
+
         // Enrich car data with stats
         const enrichedCars = carsData.map(car => {
           const carBookings = (bookingsData || []).filter(b => b.car_id === car.id);
+          const customer = customerMap[car.customer_id] || {};
           return {
             ...car,
             car_name: `${car.brand} ${car.model}`.trim() || "Unknown Car",
-            owner_name: car.customer?.name || car.customer?.email || "Unknown",
-            owner_email: car.customer?.email || "N/A",
+            owner_name: customer.name || customer.email || "Unknown",
+            owner_email: customer.email || "N/A",
             total_bookings: carBookings.length,
             completed_bookings: carBookings.filter(b => b.status === "Completed").length,
             total_revenue: carBookings.reduce((sum, b) => sum + (b.amount || 0), 0),
