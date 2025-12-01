@@ -127,11 +127,13 @@ export default function Cars() {
   };
 
   const employeeMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/employee/dashboard" },
-    { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-    { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
-    { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
-  ];
+    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
+        { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
+        { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+        { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
+        { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
+        { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
+      ];
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">

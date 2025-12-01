@@ -417,13 +417,14 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
   /** Sidebar menu items */
   const menu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
-    { name: "My Jobs", icon: <FiClipboard />, link: "/employee-jobs" },
-    { name: "Earnings", icon: <FiCreditCard />, link: "/employee-earnings" },
-    { name: "Ratings", icon: <FiAward />, link: "/employee-ratings" },
-    { name: "Cars", icon: <FaCar />, link: "/employee-cars" },
-    { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" }
-  ];
+        { name: "Home", icon: <FiHome />, link: "/" },
+        { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
+        { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
+        { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+        { name: "Profile", icon: <FiUser />, link: "/profile" },
+        { name: "Location", icon: <FiMapPin />, link: "/location" },
+        { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+      ];
 
   /** Derived values from activePass */
   const totalWashes = activePass?.total_washes ?? 0;

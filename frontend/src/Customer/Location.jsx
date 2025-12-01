@@ -77,11 +77,14 @@ export default function Location() {
 
   // Menu items
   const customerMenu = [
-    { name: "Home", icon: <FiHome />, link: "/customer-dashboard" },
-    { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-    { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-    { name: "Profile", icon: <FiUser />, link: "/profile" },
-  ];
+        { name: "Home", icon: <FiHome />, link: "/" },
+        { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
+        { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
+        { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+        { name: "Profile", icon: <FiUser />, link: "/profile" },
+        { name: "Location", icon: <FiMapPin />, link: "/location" },
+        { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+      ];
 
   // Get booking ID from state or URL
   const bookingId = locationHook.state?.bookingId;

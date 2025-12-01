@@ -3,17 +3,19 @@ import { supabase } from "../supabaseClient";
 import NotificationBell from "../components/NotificationBell";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { FiUser, FiMail, FiPhone, FiClock, FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell } from "react-icons/fi";
+import { FiUser, FiMail, FiPhone, FiClock, FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell, FiMapPin } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import { FiAward } from "react-icons/fi";
 
 const customerMenu = [
-  { name: "Dashboard", link: "/dashboard", icon: <FiHome /> },
-  { name: "Bookings", link: "/bookings", icon: <FiClipboard /> },
-  { name: "Profile", link: "/profile", icon: <FiUser /> },
-  { name: "Monthly Pass", link: "/monthly-pass", icon: <FiAward /> },
-  { name: "Transactions", link: "/transactions", icon: <FiCreditCard /> },
-];
+  { name: "Home", icon: <FiHome />, link: "/" },
+      { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
+      { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
+      { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+      { name: "Profile", icon: <FiUser />, link: "/profile" },
+      { name: "Location", icon: <FiMapPin />, link: "/location" },
+      { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+  ];
 
 export default function ProfilePage() {
   const location = useLocation();
