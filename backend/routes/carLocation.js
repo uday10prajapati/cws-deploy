@@ -3,7 +3,370 @@ import { supabase } from "../supabase.js";
 
 const router = express.Router();
 
-// GET ALL ACTIVE BOOKINGS WITH LOCATIONS FOR EMPLOYEE
+// GET LOCATION FOR PARTICULAR CUSTOMER
+router.get("/customer/:customer_id", async (req, res) => {
+  try {
+    const { customer_id } = req.params;
+
+    if (!customer_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Customer ID is required"
+      });
+    }
+
+    // Get latest active booking for customer
+    const { data: booking, error } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("customer_id", customer_id)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !booking) {
+      return res.status(404).json({
+        success: false,
+        error: "No active booking found"
+      });
+    }
+
+    // Get driver info if assigned
+    let driver = null;
+    if (booking.assigned_to) {
+      const { data: driverInfo } = await supabase
+        .from("profiles")
+        .select("id, email, name")
+        .eq("id", booking.assigned_to)
+        .single();
+      driver = driverInfo;
+    }
+
+    // Get customer info
+    const { data: customer } = await supabase
+      .from("profiles")
+      .select("id, email, name")
+      .eq("id", customer_id)
+      .single();
+
+    res.json({
+      success: true,
+      data: {
+        booking_id: booking.id,
+        customer_id: booking.customer_id,
+        customer_name: customer?.name || "N/A",
+        customer_email: customer?.email || "N/A",
+        service_location: booking.location || "Main Outlet",
+        booking_date: booking.date,
+        booking_time: booking.time,
+        status: booking.status,
+        car_name: booking.car_name,
+        amount: booking.amount,
+        pickup_required: booking.pickup || false,
+        driver: driver || null
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error fetching customer location:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET ALL CUSTOMER LOCATIONS (For Admin/Employee)
+router.get("/all-customers/locations", async (req, res) => {
+  try {
+    // Get all active bookings
+    const { data: bookings, error } = await supabase
+      .from("bookings")
+      .select("*")
+      .neq("status", "cancelled")
+      .neq("status", "completed")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+
+    // Enrich with customer and driver info
+    const enrichedData = await Promise.all(
+      (bookings || []).map(async (booking) => {
+        let customer = null;
+        if (booking.customer_id) {
+          const { data: customerInfo } = await supabase
+            .from("profiles")
+            .select("id, email, name")
+            .eq("id", booking.customer_id)
+            .single();
+          customer = customerInfo;
+        }
+
+        let driver = null;
+        if (booking.assigned_to) {
+          const { data: driverInfo } = await supabase
+            .from("profiles")
+            .select("id, email, name")
+            .eq("id", booking.assigned_to)
+            .single();
+          driver = driverInfo;
+        }
+
+        return {
+          booking_id: booking.id,
+          customer: customer,
+          service_location: booking.location || "Main Outlet",
+          booking_date: booking.date,
+          booking_time: booking.time,
+          status: booking.status,
+          car_name: booking.car_name,
+          amount: booking.amount,
+          driver: driver,
+          pickup_required: booking.pickup
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      total: enrichedData.length,
+      data: enrichedData
+    });
+  } catch (err) {
+    console.error("❌ Error fetching all customer locations:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// TEST: Check if live_tracking table has any data
+router.get("/test/tracking-data", async (req, res) => {
+  try {
+    const { data: allTracking, error } = await supabase
+      .from("live_tracking")
+      .select("*", { count: "exact" });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+        details: "Error querying live_tracking table"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Live tracking table status",
+      total_records: allTracking?.length || 0,
+      data: allTracking || [],
+      table_status: allTracking && allTracking.length > 0 ? "✅ Data exists" : "⚠️ No data in table"
+    });
+  } catch (err) {
+    console.error("❌ Error checking tracking data:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET TRACKING DATA BY DATE FOR BOOKING (With fallback)
+router.get("/tracking-history/:booking_id", async (req, res) => {
+  try {
+    const { booking_id } = req.params;
+    const { date } = req.query;
+
+    if (!booking_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Booking ID is required"
+      });
+    }
+
+    // First check if table has any data for this booking
+    const { data: checkData, error: checkError } = await supabase
+      .from("live_tracking")
+      .select("*", { count: "exact" })
+      .eq("booking_id", booking_id);
+
+    if (checkError) {
+      return res.status(400).json({
+        success: false,
+        error: checkError.message,
+        booking_id,
+        table_check: "Error querying table"
+      });
+    }
+
+    let query = supabase
+      .from("live_tracking")
+      .select("*")
+      .eq("booking_id", booking_id)
+      .order("updated_at", { ascending: true });
+
+    // Filter by date if provided
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      query = query
+        .gte("updated_at", startDate.toISOString())
+        .lt("updated_at", endDate.toISOString());
+
+    }
+
+    const { data: trackingData, error } = await query;
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+        booking_id,
+        query_info: "Error fetching filtered data"
+      });
+    }
+
+    // Group by status
+    const pickupData = trackingData?.filter(t => t.status === "pickup_in_progress") || [];
+    const deliveryData = trackingData?.filter(t => t.status === "delivery_in_progress") || [];
+    const washData = trackingData?.filter(t => t.status === "in_wash") || [];
+    const completedData = trackingData?.filter(t => t.status === "completed") || [];
+
+    res.json({
+      success: true,
+      data: {
+        booking_id,
+        date: date || new Date().toISOString().split("T")[0],
+        summary: {
+          total_points: trackingData?.length || 0,
+          pickup_points: pickupData.length,
+          wash_points: washData.length,
+          delivery_points: deliveryData.length,
+          completed_points: completedData.length
+        },
+        all_tracking: trackingData || [],
+        grouped: {
+          pickup: pickupData,
+          wash: washData,
+          delivery: deliveryData,
+          completed: completedData
+        },
+        date_range: {
+          from: trackingData && trackingData.length > 0 ? trackingData[0].updated_at : null,
+          to: trackingData && trackingData.length > 0 ? trackingData[trackingData.length - 1].updated_at : null
+        }
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error fetching tracking history:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// SAVE LIVE TRACKING DATA (Called by employee app)
+router.post("/tracking/save", async (req, res) => {
+  try {
+    const { booking_id, employee_id, latitude, longitude, status } = req.body;
+
+    if (!booking_id || !employee_id || latitude === undefined || longitude === undefined || !status) {
+      return res.status(400).json({
+        success: false,
+        error: "booking_id, employee_id, latitude, longitude, and status are required"
+      });
+    }
+
+    // Insert tracking data
+    const { data, error } = await supabase
+      .from("live_tracking")
+      .insert([
+        {
+          booking_id,
+          employee_id,
+          latitude,
+          longitude,
+          status,
+          tracking_type: "live"
+        }
+      ])
+      .select();
+
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+
+    res.json({
+      success: true,
+      message: "Tracking data saved",
+      data: data[0]
+    });
+  } catch (err) {
+    console.error("❌ Error saving tracking data:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET LATEST LIVE LOCATION FOR BOOKING
+router.get("/live/:booking_id", async (req, res) => {
+  try {
+    const { booking_id } = req.params;
+
+    if (!booking_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Booking ID is required"
+      });
+    }
+
+    // Get latest tracking point
+    const { data: latestTracking, error } = await supabase
+      .from("live_tracking")
+      .select("*")
+      .eq("booking_id", booking_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !latestTracking) {
+      return res.status(404).json({
+        success: false,
+        error: "No tracking data found"
+      });
+    }
+
+    // Get booking and employee details
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", booking_id)
+      .single();
+
+    const { data: employee } = await supabase
+      .from("profiles")
+      .select("id, email, name")
+      .eq("id", latestTracking.employee_id)
+      .single();
+
+    res.json({
+      success: true,
+      data: {
+        location: {
+          latitude: latestTracking.latitude,
+          longitude: latestTracking.longitude
+        },
+        status: latestTracking.status,
+        tracking_type: latestTracking.tracking_type,
+        employee: employee,
+        booking: {
+          id: booking?.id,
+          car_name: booking?.car_name,
+          customer_id: booking?.customer_id
+        },
+        timestamp: latestTracking.updated_at
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error fetching live location:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
 router.get("/active/:employee_id", async (req, res) => {
   try {
     const { employee_id } = req.params;
@@ -357,6 +720,117 @@ router.get("/history/:employee_id", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Error fetching delivery history:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET TRACKING DATA BY DATE FOR BOOKING
+router.get("/tracking-history/:booking_id", async (req, res) => {
+  try {
+    const { booking_id } = req.params;
+    const { date } = req.query;
+
+    if (!booking_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Booking ID is required"
+      });
+    }
+
+    let query = supabase
+      .from("live_tracking")
+      .select("*")
+      .eq("booking_id", booking_id)
+      .order("updated_at", { ascending: true });
+
+    // Filter by date if provided (use updated_at instead of created_at)
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      query = query
+        .gte("updated_at", startDate.toISOString())
+        .lt("updated_at", endDate.toISOString());
+    }
+
+    const { data: trackingData, error } = await query;
+
+    if (error) {
+      console.error("❌ Query error:", error);
+      console.error("❌ Error details:", error.message);
+      return res.status(400).json({ 
+        success: false, 
+        error: error.message,
+        details: "Could not query live_tracking table"
+      });
+    }
+
+    // Group by status
+    const pickupData = trackingData?.filter(t => 
+      t.status === "pickup_in_progress" || t.status === "pickup_movement" || t.status === "pickup_started"
+    ) || [];
+    const deliveryData = trackingData?.filter(t => 
+      t.status === "delivery_in_progress" || t.status === "delivery_movement"
+    ) || [];
+    const washData = trackingData?.filter(t => t.status === "in_wash" || t.status === "car_washing") || [];
+    const completedData = trackingData?.filter(t => t.status === "completed") || [];
+
+    res.json({
+      success: true,
+      data: {
+        booking_id,
+        date: date || new Date().toISOString().split("T")[0],
+        summary: {
+          total_points: trackingData?.length || 0,
+          pickup_points: pickupData.length,
+          wash_points: washData.length,
+          delivery_points: deliveryData.length,
+          completed_points: completedData.length
+        },
+        all_tracking: trackingData || [],
+        grouped: {
+          pickup: pickupData,
+          wash: washData,
+          delivery: deliveryData,
+          completed: completedData
+        }
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error fetching tracking history:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET LIVE LOCATION FOR BOOKING
+router.get("/live/:booking_id", async (req, res) => {
+  try {
+    const { booking_id } = req.params;
+
+    const { data: latestTracking, error } = await supabase
+      .from("live_tracking")
+      .select("*")
+      .eq("booking_id", booking_id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      return res.status(400).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        latest_coordinate: latestTracking
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error fetching live location:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
