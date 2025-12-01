@@ -17,6 +17,8 @@ import {
   FiClipboard,
   FiUser,
   FiMenu,
+  FiAward,
+  FiMapPin
 } from "react-icons/fi";
 
 import { FaWallet, FaCar } from "react-icons/fa";

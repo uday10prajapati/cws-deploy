@@ -14,6 +14,7 @@ import {
   FiAward,
   FiCheckCircle,
   FiX,
+  FiMapPin
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 

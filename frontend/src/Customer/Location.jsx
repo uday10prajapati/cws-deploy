@@ -19,10 +19,12 @@ import {
   FiNavigation,
   FiMenu,
   FiBell,
+  FiAward,
   FiLogOut,
   FiChevronLeft,
   FiClipboard,
   FiUser,
+  FiCreditCard
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
