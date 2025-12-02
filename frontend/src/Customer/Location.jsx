@@ -3,6 +3,7 @@ import { useNavigate, useLocation as useLocationHook, Link } from "react-router-
 import { supabase } from "../supabaseClient";
 import { useNotifications } from "../context/NotificationContext";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -60,6 +61,7 @@ export default function Location() {
   const locationHook = useLocationHook();
   const { addNotification } = useNotifications();
 
+    useRoleBasedRedirect("customer");
   // State
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);

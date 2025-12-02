@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useNotifications } from "../context/NotificationContext";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import {
   FiMenu,
   FiBell,
@@ -27,6 +28,7 @@ export default function BookingPage() {
   const routerLocation = useLocation();
   const { addNotification } = useNotifications();
 
+    useRoleBasedRedirect("customer");
 
   // Sidebar / layout
   const [sidebarOpen, setSidebarOpen] = useState(false);

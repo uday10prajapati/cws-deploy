@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import {
   FiMenu,
   FiLogOut,
@@ -20,6 +21,8 @@ export default function MyCars() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+    useRoleBasedRedirect("customer");
 
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);

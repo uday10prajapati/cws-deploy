@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import {
   FiCreditCard,
   FiCheck,
@@ -51,6 +52,8 @@ export default function BankAccountSettings() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useRoleBasedRedirect("admin");
 
   // Fetch current bank account on load
   useEffect(() => {

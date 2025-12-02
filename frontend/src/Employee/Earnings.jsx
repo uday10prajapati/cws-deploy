@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import { FaCar, FaStar } from "react-icons/fa";
 import { generateTransactionPDF, viewTransactionPDF } from "../utils/pdfGenerator";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function Earnings() {
   const location = useLocation();
@@ -27,6 +28,8 @@ export default function Earnings() {
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  useRoleBasedRedirect("employee");
 
   /* LOAD EARNINGS DATA FROM TRANSACTIONS */
   useEffect(() => {

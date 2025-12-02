@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { FiMapPin, FiNavigation, FiMap, FiClock, FiAlertCircle, FiCheckCircle, FiPhone, FiUser, FiTruck, FiArrowRight, FiRefreshCw, FiChevronDown, FiChevronUp, FiMenu, FiLogOut, FiChevronLeft, FiHome, FiClipboard, FiDollarSign, FiBell } from "react-icons/fi";
 import { FaCar, FaRoute, FaStar } from "react-icons/fa";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function CarLocation() {
   const location = useLocation();
@@ -17,7 +18,7 @@ export default function CarLocation() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [expandedLocation, setExpandedLocation] = useState(null);
   const [activeTab, setActiveTab] = useState("active"); // active, pending, route, history
-
+  useRoleBasedRedirect("employee");
   // Real-time location updates
   useEffect(() => {
     const loadData = async () => {
@@ -73,7 +74,7 @@ export default function CarLocation() {
 
   /* EMPLOYEE MENU */
   const employeeMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/employee/dashboard" },
+    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },

@@ -14,6 +14,8 @@ import {
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import { FaStar } from "react-icons/fa"
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+
 
 export default function Ratings() {
   const location = useLocation();
@@ -25,6 +27,7 @@ export default function Ratings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  useRoleBasedRedirect("employee");
   /* LOAD RATINGS DATA */
   useEffect(() => {
     const loadData = async () => {

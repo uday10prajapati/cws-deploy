@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { FiTrendingUp, FiBarChart2, FiPieChart, FiRefreshCw, FiMenu, FiLogOut, FiChevronLeft, FiHome, FiClipboard, FiUsers, FiDollarSign, FiBell, FiSettings, FiCreditCard, FiX } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function Analytics() {
   const location = useLocation();
@@ -14,6 +15,8 @@ export default function Analytics() {
   const [earningsData, setEarningsData] = useState(null);
   const [ratingsData, setRatingsData] = useState(null);
   const [overviewData, setOverviewData] = useState(null);
+
+  useRoleBasedRedirect("admin");
 
   useEffect(() => {
     const loadUser = async () => {

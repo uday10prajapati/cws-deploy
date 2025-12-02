@@ -15,6 +15,8 @@ import {
 } from "react-icons/fi";
 import { FaCar, FaUser } from "react-icons/fa";
 import { FaStar } from "react-icons/fa"
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+
 
 export default function Cars() {
   const location = useLocation();
@@ -25,7 +27,7 @@ export default function Cars() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCars, setFilteredCars] = useState([]);
   const [viewMode, setViewMode] = useState("all"); // "all" or "my-services"
-
+  useRoleBasedRedirect("employee");
   /* LOAD CARS DATA */
   useEffect(() => {
     const loadData = async () => {

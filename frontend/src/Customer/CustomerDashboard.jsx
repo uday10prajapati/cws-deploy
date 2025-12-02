@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import NotificationBell from "../components/NotificationBell";
 import {
   FiMenu,
@@ -28,6 +29,10 @@ export default function CustomerDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
+
+  /* 🔥 USE ROLE-BASED REDIRECT HOOK */
+  useRoleBasedRedirect("customer");
+
   const [bookings, setBookings] = useState([]);
   const [currentPass, setCurrentPass] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);

@@ -16,6 +16,8 @@ import {
   FiStar,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+
 
 export default function MyJobs() {
   const location = useLocation();
@@ -27,7 +29,7 @@ export default function MyJobs() {
   const [todayJobs, setTodayJobs] = useState(0);
   const [monthCompleted, setMonthCompleted] = useState(0);
   const [loading, setLoading] = useState(false);
-
+  useRoleBasedRedirect("employee");
   /* LOAD LOGGED-IN EMPLOYEE + JOBS */
   useEffect(() => {
     const loadData = async () => {
@@ -104,7 +106,7 @@ export default function MyJobs() {
 
   /* EMPLOYEE MENU */
   const employeeMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/employee/dashboard" },
+    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FiStar />, link: "/employee/ratings" },

@@ -4,6 +4,8 @@ import { FaCar } from "react-icons/fa";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import supabase from "../supabaseClient";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+
 
 export default function AllCars() {
   const [cars, setCars] = useState([]);
@@ -12,7 +14,7 @@ export default function AllCars() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCars, setFilteredCars] = useState([]);
-
+  useRoleBasedRedirect("employee");
   useEffect(() => {
     fetchAllCars();
   }, []);

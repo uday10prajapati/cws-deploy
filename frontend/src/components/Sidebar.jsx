@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { clearUserData, getUserRole } from "../utils/roleBasedRedirect";
 
 import {
   FiHome,
@@ -20,30 +21,24 @@ import { FaCar } from "react-icons/fa";
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [role, setRole] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   /* ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-      FETCH USER ROLE
+      FETCH USER ROLE FROM LOCAL STORAGE
   ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ */
   useEffect(() => {
-    const loadRole = async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth?.user) return;
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", auth.user.id)
-        .single();
-
-      setRole(data?.role || "customer");
-    };
-
-    loadRole();
-  }, []);
+    const userRole = getUserRole();
+    if (userRole) {
+      setRole(userRole);
+    } else {
+      // If no role in local storage, redirect to login
+      navigate("/login");
+    }
+  }, [navigate]);
 
   /* ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
       MENUS
@@ -69,9 +64,27 @@ export default function Sidebar() {
       LOGOUT
   ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ */
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+  const handleLogout = () => {
+    console.log("Logout clicked");
+    
+    // 🔥 Clear ALL user data from local storage
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("sb-cjaufvqninknntiukxka-auth-token");
+    
+    // Verify clearing
+    console.log("Cleared localStorage:", {
+      userDetails: localStorage.getItem("userDetails"),
+      userId: localStorage.getItem("userId"),
+      userRole: localStorage.getItem("userRole")
+    });
+    
+    // Sign out from Supabase (non-blocking)
+    supabase.auth.signOut().catch(err => console.error("Supabase signout error:", err));
+    
+    // Redirect to login
+    navigate("/login");
   };
 
   /* ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
@@ -113,7 +126,7 @@ export default function Sidebar() {
         </div>
 
         {/* Menu Items */}
-        <nav className="mt-4 px-3 pb-24">
+        <nav className="mt-4 px-3 pb-32">
           {menu.map((item) => (
             <Link
               key={item.name}
@@ -136,17 +149,22 @@ export default function Sidebar() {
         </nav>
 
         {/* Logout Button */}
-        <div
-          onClick={handleLogout}
-          className={`absolute bottom-6 left-3 right-3 flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer 
-            bg-red-600 hover:bg-red-700 text-white font-semibold transition-all shadow-lg
+        <button
+          type="button"
+          onClick={() => {
+            console.log("Logout button clicked!");
+            handleLogout();
+          }}
+          className={`absolute bottom-6 left-3 right-3 flex items-center gap-4 px-4 py-3 rounded-lg 
+            bg-red-600 hover:bg-red-700 text-white font-semibold transition-all shadow-lg border-none
+            cursor-pointer active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500
             ${collapsed ? "justify-center" : ""}
           `}
           title={collapsed ? "Logout" : ""}
         >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
+          <FiLogOut className="text-lg flex-shrink-0" />
+          {!collapsed && <span className="text-sm flex-shrink-0">Logout</span>}
+        </button>
       </aside>
 
       {/* CONTENT PADDING */}

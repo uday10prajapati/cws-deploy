@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 import {
   FiMenu,
@@ -21,6 +22,7 @@ import { FaCar } from "react-icons/fa";
 export default function MonthlyPass() {
   const location = useLocation();
 
+    useRoleBasedRedirect("customer");
   /** Sidebar + Navbar UI States */
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);

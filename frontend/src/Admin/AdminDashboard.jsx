@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import {
   FiHome,
   FiUsers,
@@ -21,6 +22,9 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
+
+  /* 🔥 USE ROLE-BASED REDIRECT HOOK */
+  useRoleBasedRedirect("admin");
   const [dashboardData, setDashboardData] = useState(null);
   const [recentBookingsData, setRecentBookingsData] = useState([]);
   const [loading, setLoading] = useState(true);

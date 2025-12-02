@@ -3,6 +3,7 @@ import { FiTrendingUp, FiDollarSign, FiRefreshCw, FiMenu, FiLogOut, FiChevronLef
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { FaCar } from "react-icons/fa";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function AllRevenue() {
   const location = useLocation();
@@ -13,6 +14,8 @@ export default function AllRevenue() {
   const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  useRoleBasedRedirect("admin");
 
   useEffect(() => {
     const loadUser = async () => {

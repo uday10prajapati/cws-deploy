@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { FaCar } from "react-icons/fa";
 import { generateTransactionPDF, viewTransactionPDF } from "../utils/pdfGenerator";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function Earnings() {
   const location = useLocation();
@@ -18,6 +19,8 @@ export default function Earnings() {
   const [notifications, setNotifications] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("all"); // all, today, week, month
+
+  useRoleBasedRedirect("admin");
 
   useEffect(() => {
     const loadUser = async () => {

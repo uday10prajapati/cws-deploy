@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import {
   FiCreditCard,
   FiDollarSign,
@@ -654,6 +655,9 @@ export default function TransactionsPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  /* 🔥 CHECK USER ROLE AND REDIRECT IF NOT CUSTOMER */
+  useRoleBasedRedirect("customer");
 
   const customerMenu = [
     { name: "Home", icon: <FiHome />, link: "/" },

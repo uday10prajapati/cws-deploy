@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import {
   FiMenu,
   FiBell,
@@ -29,6 +30,8 @@ export default function AllCars() {
   const [filteredCars, setFilteredCars] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  useRoleBasedRedirect("admin");
 
   useEffect(() => {
     const loadUser = async () => {

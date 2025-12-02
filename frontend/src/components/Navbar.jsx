@@ -1,33 +1,33 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { clearUserData, getUserRole } from "../utils/roleBasedRedirect";
 import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [role, setRole] = useState(null);
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   /* ---------------------------
-     LOAD LOGGED-IN USER + ROLE
+     LOAD LOGGED-IN USER + ROLE FROM LOCAL STORAGE
   ----------------------------*/
   useEffect(() => {
+    const userRole = getUserRole();
+    if (userRole) {
+      setRole(userRole);
+    }
+
+    // Also get user from Supabase for display purposes
     const loadUser = async () => {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth?.user) return;
-
-      setUser(auth.user);
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", auth.user.id)
-        .single();
-
-      setRole(data?.role || "customer");
+      if (auth?.user) {
+        setUser(auth.user);
+      }
     };
 
     loadUser();
@@ -36,9 +36,26 @@ export default function Navbar() {
   /* ---------------------------
       LOGOUT
   ----------------------------*/
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+  const handleLogout = () => {
+    console.log("Logout clicked");
+    
+    // 🔥 Clear ALL user data from local storage
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
+    
+    // Verify clearing
+    console.log("Cleared localStorage:", {
+      userDetails: localStorage.getItem("userDetails"),
+      userId: localStorage.getItem("userId"),
+      userRole: localStorage.getItem("userRole")
+    });
+    
+    // Sign out from Supabase (non-blocking)
+    supabase.auth.signOut().catch(err => console.error("Supabase signout error:", err));
+    
+    // Redirect to login
+    navigate("/login");
   };
 
   /* ---------------------------
@@ -127,6 +144,7 @@ export default function Navbar() {
                   </div>
                   <button
                     onClick={() => {
+                      console.log("Dropdown logout button clicked!");
                       handleLogout();
                       setDropdownOpen(false);
                     }}
@@ -184,10 +202,11 @@ export default function Navbar() {
 
               <button
                 onClick={() => {
+                  console.log("Mobile logout button clicked!");
                   handleLogout();
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
+                className="w-full  px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
               >
                 <FiLogOut />
                 Logout

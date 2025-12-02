@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import bgImg from "../assets/bg.png";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +12,23 @@ export default function Signup() {
     password: "",
     role: "customer", // NEW: Added role field
   });
+
+  /* 🔥 CHECK IF USER IS ALREADY LOGGED IN */
+  useEffect(() => {
+    const userRole = localStorage.getItem("userRole");
+    const userDetails = localStorage.getItem("userDetails");
+
+    if (userRole && userDetails) {
+      // User is already logged in, redirect to their dashboard
+      if (userRole === "admin") {
+        navigate("/admin-dashboard");
+      } else if (userRole === "employee") {
+        navigate("/employee-dashboard");
+      } else if (userRole === "customer") {
+        navigate("/customer-dashboard");
+      }
+    }
+  }, [navigate]);
 
   const [message, setMessage] = useState("");
   const [otpMode, setOtpMode] = useState(false);

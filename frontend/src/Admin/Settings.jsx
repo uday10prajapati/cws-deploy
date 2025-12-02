@@ -3,6 +3,7 @@ import { FiSave, FiAlertCircle, FiCheck, FiMenu, FiLogOut, FiChevronLeft, FiHome
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { FaCar } from "react-icons/fa";
+import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function Settings() {
   const location = useLocation();
@@ -21,6 +22,8 @@ export default function Settings() {
     bank_name: "",
     account_type: "Savings",
   });
+
+  useRoleBasedRedirect("admin");
 
   useEffect(() => {
     const loadUser = async () => {
