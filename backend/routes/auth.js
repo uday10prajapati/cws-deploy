@@ -161,4 +161,42 @@ router.post("/verify-otp", async (req, res) => {
   return res.json({ success: true, message: "Account created!" });
 });
 
+/* -----------------------------------------
+   GET USER DATA BY ID
+----------------------------------------- */
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID required" });
+    }
+
+    // Fetch from profiles table using correct column names
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, name, email, phone")
+      .eq("id", userId)
+      .single();
+
+    if (profile) {
+      return res.json({
+        success: true,
+        user: {
+          id: profile.id,
+          full_name: profile.name,
+          email: profile.email,
+          phone: profile.phone
+        }
+      });
+    }
+
+    // If not found in profiles, return error
+    return res.status(404).json({ error: "User not found" });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return res.status(500).json({ error: "Failed to fetch user data" });
+  }
+});
+
 export default router;

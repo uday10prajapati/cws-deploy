@@ -10,8 +10,10 @@ import {
   FiDollarSign,
   FiBell,
   FiStar,
+  FiMapPin
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
+import { FaStar } from "react-icons/fa"
 
 export default function Ratings() {
   const location = useLocation();

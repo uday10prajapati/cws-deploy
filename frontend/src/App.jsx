@@ -24,6 +24,7 @@ import AllUser from "./Admin/AllUser.jsx";
 import Analytics from "./Admin/Analytics.jsx";
 import Settings from "./Admin/Settings.jsx";
 import AllCars from "./Admin/AllCars.jsx";
+import AdminEarnings from "./Admin/Earnings.jsx";
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/employee/cars" element={<Cars />} />
         <Route path="/admin/bookings" element={<AllBookings />} />
         <Route path="/admin/revenue" element={<AllRevenue />} />
+        <Route path="/admin/earnings" element={<AdminEarnings />} />
         <Route path="/admin/users" element={<AllUser />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/settings" element={<Settings />} />

@@ -36,6 +36,20 @@ export default function AllCars() {
           .select("id, car_id, status, amount, date, location")
           .in("car_id", carIds);
 
+        // Fetch monthly pass for each car's customer
+        const passMap = {};
+        for (const car of carsData) {
+          try {
+            const passResponse = await fetch(`http://localhost:5000/pass/current/${car.customer_id}`);
+            const passResult = await passResponse.json();
+            if (passResult.success && passResult.data) {
+              passMap[car.id] = passResult.data;
+            }
+          } catch (err) {
+            console.error(`Error fetching pass for car ${car.id}:`, err);
+          }
+        }
+
         // Enrich car data with booking info
         const enrichedCars = carsData.map(car => {
           const carBookings = (bookingsData || []).filter(b => b.car_id === car.id);
@@ -49,6 +63,7 @@ export default function AllCars() {
             total_revenue: carBookings.reduce((sum, b) => sum + (b.amount || 0), 0),
             last_service: carBookings.length > 0 ? carBookings[0].date : null,
             locations: [...new Set(carBookings.map(b => b.location).filter(Boolean))],
+            monthlyPass: passMap[car.id] || null,
           };
         });
 
@@ -180,6 +195,23 @@ export default function AllCars() {
                       <div className="mb-3 p-2 bg-blue-50 rounded text-center">
                         <p className="text-xs text-gray-600">Total Revenue</p>
                         <p className="font-bold text-blue-600 text-lg">₹{car.total_revenue.toLocaleString()}</p>
+                      </div>
+
+                      {/* ACTIVE PASS */}
+                      <div className="mb-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                        <p className="text-[10px] text-gray-600 uppercase tracking-wide font-semibold">Active Pass</p>
+                        {car.monthlyPass && car.monthlyPass.active ? (
+                          <div>
+                            <p className="text-sm font-semibold text-green-600 mt-1">
+                              ✓ Monthly Pass • {car.monthlyPass.remaining_washes}/{car.monthlyPass.total_washes} washes
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Valid till: {new Date(car.monthlyPass.valid_till).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm font-semibold text-yellow-600 mt-1">No Active Pass</p>
+                        )}
                       </div>
 
                       {/* LOCATIONS */}

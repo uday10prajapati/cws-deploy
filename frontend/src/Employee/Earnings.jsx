@@ -11,8 +11,12 @@ import {
   FiBell,
   FiTrendingUp,
   FiCalendar,
+  FiMapPin,
+  FiDownload,
+  FiEye,
 } from "react-icons/fi";
-import { FaCar } from "react-icons/fa";
+import { FaCar, FaStar } from "react-icons/fa";
+import { generateTransactionPDF, viewTransactionPDF } from "../utils/pdfGenerator";
 
 export default function Earnings() {
   const location = useLocation();
@@ -57,6 +61,50 @@ export default function Earnings() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
+  };
+
+  // Get customer profile using customer_id from transaction
+  const getCustomerProfile = async (customerId) => {
+    try {
+      if (!customerId) return null;
+      
+      // Try to fetch from profiles table using correct column names
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("name, email, phone")
+        .eq("id", customerId)
+        .single();
+      
+      if (profile && (profile.name || profile.email)) {
+        console.log("Customer profile found:", profile);
+        return {
+          name: profile.name || 'Customer',
+          email: profile.email || 'N/A',
+          phone: profile.phone || 'N/A'
+        };
+      }
+      
+      // If profiles table doesn't have data, try to get from backend
+      try {
+        const response = await fetch(`http://localhost:5000/auth/user/${customerId}`);
+        const result = await response.json();
+        if (result.success && result.user) {
+          console.log("Fetching from backend:", result.user);
+          return {
+            name: result.user.full_name || result.user.email || 'Customer',
+            email: result.user.email || 'N/A',
+            phone: result.user.phone || 'N/A'
+          };
+        }
+      } catch (backendError) {
+        console.error("Backend fetch error:", backendError);
+      }
+      
+      return { name: 'Customer', email: 'N/A', phone: 'N/A' };
+    } catch (error) {
+      console.error("Error fetching customer profile:", error);
+      return { name: 'Customer', email: 'N/A', phone: 'N/A' };
+    }
   };
 
   const employeeMenu = [
@@ -167,7 +215,7 @@ export default function Earnings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-linear-to-br from-green-600/20 to-green-900/20 border border-green-500/30 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-slate-400 text-sm font-medium">This Month</p>
+                <p className="text-slate-400 text-sm font-medium">{new Date().toLocaleString('en-US', { month: 'long' })} Earnings</p>
                 <FiCalendar className="text-green-400 text-xl" />
               </div>
               <p className="text-4xl font-bold text-green-400">₹{monthlyTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
@@ -235,13 +283,39 @@ export default function Earnings() {
                           </span>
                         </div>
                       </div>
-                      <div className="text-right ml-4">
-                        <p className="font-bold text-green-400">
-                          ₹{parseFloat(transaction.total_amount || transaction.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {transaction.gst ? `+₹${parseFloat(transaction.gst).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST` : 'No GST'}
-                        </p>
+                      <div className="text-right ml-4 flex items-center gap-2">
+                        <div>
+                          <p className="font-bold text-green-400">
+                            ₹{parseFloat(transaction.total_amount || transaction.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {transaction.gst ? `+₹${parseFloat(transaction.gst).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST` : 'No GST'}
+                          </p>
+                        </div>
+                        {transaction.status === 'success' && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={async () => {
+                                const customerProfile = await getCustomerProfile(transaction.customer_id);
+                                viewTransactionPDF(transaction, { name: customerProfile?.name || 'Customer', email: customerProfile?.email || 'N/A', phone: customerProfile?.phone || 'N/A' }, 'customer');
+                              }}
+                              className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                              title="View Invoice"
+                            >
+                              <FiEye size={12} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const customerProfile = await getCustomerProfile(transaction.customer_id);
+                                generateTransactionPDF(transaction, { name: customerProfile?.name || 'Customer', email: customerProfile?.email || 'N/A', phone: customerProfile?.phone || 'N/A' }, 'customer');
+                              }}
+                              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition"
+                              title="Download Invoice"
+                            >
+                              <FiDownload size={12} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -76,6 +76,7 @@ export default function AllBookings() {
     { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard" },
     { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings" },
     { name: "Users", icon: <FiUsers />, link: "/admin/users" },
+    { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings" },
     { name: "Cars", icon: <FaCar />, link: "/admin/cars" },
     { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue" },
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics" },

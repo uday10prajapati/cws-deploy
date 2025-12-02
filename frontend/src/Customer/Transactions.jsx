@@ -18,11 +18,13 @@ import {
   FiUser,
   FiMenu,
   FiAward,
-  FiMapPin
+  FiMapPin,
+  FiEye
 } from "react-icons/fi";
 
 import { FaWallet, FaCar } from "react-icons/fa";
 import { SiGooglepay, SiPhonepe } from "react-icons/si";
+import { generateTransactionPDF, viewTransactionPDF } from "../utils/pdfGenerator";
 
 /**
  * @typedef {Object} Transaction
@@ -1375,6 +1377,38 @@ export default function TransactionsPage() {
                       </span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* INVOICE BUTTON */}
+              {selectedTx.status === 'success' && (
+                <div className="flex gap-3 mt-4">
+                  <button 
+                    onClick={() => {
+                      const userInfo = { 
+                        name: user?.email || 'Customer', 
+                        email: user?.email || 'N/A', 
+                        phone: user?.phone || 'N/A' 
+                      };
+                      viewTransactionPDF(selectedTx, userInfo, 'customer');
+                    }}
+                    className="flex-1 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg flex items-center justify-center gap-2 font-medium transition text-white"
+                  >
+                    <FiEye size={18} /> View Invoice
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const userInfo = { 
+                        name: user?.email || 'Customer', 
+                        email: user?.email || 'N/A', 
+                        phone: user?.phone || 'N/A' 
+                      };
+                      generateTransactionPDF(selectedTx, userInfo, 'customer');
+                    }}
+                    className="flex-1 py-3 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg flex items-center justify-center gap-2 font-medium transition text-white"
+                  >
+                    <FiDownload size={18} /> Download Invoice
+                  </button>
                 </div>
               )}
 

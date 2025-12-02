@@ -12,6 +12,7 @@ import {
   FiUser,
   FiCreditCard,
   FiAward,
+  FiMapPin,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -22,6 +23,7 @@ export default function MyCars() {
 
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);
+  const [monthlyPass, setMonthlyPass] = useState(null);
 
   /** Add Car Modal */
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,8 +61,15 @@ export default function MyCars() {
         if (result.success) {
           setCars(result.data || []);
         }
+
+        // Load monthly pass
+        const passResponse = await fetch(`http://localhost:5000/pass/current/${auth.user.id}`);
+        const passResult = await passResponse.json();
+        if (passResult.success && passResult.data) {
+          setMonthlyPass(passResult.data);
+        }
       } catch (err) {
-        console.error("Error loading cars:", err);
+        console.error("Error loading cars or pass:", err);
       }
     };
     load();
@@ -341,6 +350,23 @@ export default function MyCars() {
                           {car.number_plate}
                         </p>
                       </div>
+                    </div>
+
+                    {/* Active Pass Section */}
+                    <div className="mt-4 p-3 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wide">Active Pass</p>
+                      {monthlyPass && monthlyPass.active ? (
+                        <div>
+                          <p className="text-sm font-semibold text-green-400 mt-1">
+                            ✓ Monthly Pass • {monthlyPass.remaining_washes}/{monthlyPass.total_washes} washes
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Valid till: {new Date(monthlyPass.valid_till).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-semibold text-yellow-400 mt-1">No Active Pass</p>
+                      )}
                     </div>
 
                     <button

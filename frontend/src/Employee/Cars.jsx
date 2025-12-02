@@ -14,6 +14,7 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 import { FaCar, FaUser } from "react-icons/fa";
+import { FaStar } from "react-icons/fa"
 
 export default function Cars() {
   const location = useLocation();
@@ -60,6 +61,20 @@ export default function Cars() {
           .from("bookings")
           .select("*");
 
+        // Fetch monthly pass for each car's customer
+        const passMap = {};
+        for (const car of allCarsData) {
+          try {
+            const passResponse = await fetch(`http://localhost:5000/pass/current/${car.customer_id}`);
+            const passResult = await passResponse.json();
+            if (passResult.success && passResult.data) {
+              passMap[car.id] = passResult.data;
+            }
+          } catch (err) {
+            console.error(`Error fetching pass for car ${car.id}:`, err);
+          }
+        }
+
         // Enrich car data with booking information
         const enrichedCars = allCarsData.map(car => {
           // Get all bookings for this car
@@ -91,6 +106,8 @@ export default function Cars() {
             my_services_count: myServices.length,
             my_completed: myServices.filter(b => b.status === "Completed").length,
             my_total_amount: myServices.reduce((sum, b) => sum + (b.amount || 0), 0),
+            // Monthly pass
+            monthlyPass: passMap[car.id] || null,
           };
         });
 
@@ -370,6 +387,23 @@ export default function Cars() {
                       </div>
                     </div>
                   )}
+
+                  {/* ACTIVE PASS SECTION */}
+                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
+                    <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold">Active Pass</p>
+                    {car.monthlyPass && car.monthlyPass.active ? (
+                      <div>
+                        <p className="text-sm font-semibold text-green-400 mt-1">
+                          ✓ Monthly Pass • {car.monthlyPass.remaining_washes}/{car.monthlyPass.total_washes} washes
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Valid till: {new Date(car.monthlyPass.valid_till).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-yellow-400 mt-1">No Active Pass</p>
+                    )}
+                  </div>
 
                   {/* DETAILS GRID */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg">

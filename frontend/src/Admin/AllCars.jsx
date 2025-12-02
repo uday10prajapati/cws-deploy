@@ -81,6 +81,20 @@ export default function AllCars() {
           customerMap[cust.id] = cust;
         });
 
+        // Fetch monthly pass for each car
+        const passMap = {};
+        for (const car of carsData) {
+          try {
+            const passResponse = await fetch(`http://localhost:5000/pass/current/${car.customer_id}`);
+            const passResult = await passResponse.json();
+            if (passResult.success && passResult.data) {
+              passMap[car.id] = passResult.data;
+            }
+          } catch (err) {
+            console.error(`Error fetching pass for car ${car.id}:`, err);
+          }
+        }
+
         // Enrich car data with stats
         const enrichedCars = carsData.map(car => {
           const carBookings = (bookingsData || []).filter(b => b.car_id === car.id);
@@ -101,6 +115,7 @@ export default function AllCars() {
               inProgress: carBookings.filter(b => b.status === "In Progress").length,
               completed: carBookings.filter(b => b.status === "Completed").length,
             },
+            monthlyPass: passMap[car.id] || null,
           };
         });
 
@@ -142,6 +157,7 @@ export default function AllCars() {
     { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard" },
     { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings" },
     { name: "Users", icon: <FiUsers />, link: "/admin/users" },
+    { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings" },
     { name: "Cars", icon: <FaCar />, link: "/admin/cars" },
     { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue" },
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics" },
@@ -499,6 +515,23 @@ export default function AllCars() {
                         <p className="text-xs text-gray-300 font-semibold">Pending</p>
                         <p className="font-bold text-gray-400">{car.status_breakdown.pending}</p>
                       </div>
+                    </div>
+
+                    {/* ACTIVE PASS SECTION */}
+                    <div className="mb-4 p-3 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Active Pass</p>
+                      {car.monthlyPass && car.monthlyPass.active ? (
+                        <div>
+                          <p className="text-sm font-semibold text-green-400 mt-1">
+                            ✓ Monthly Pass • {car.monthlyPass.remaining_washes}/{car.monthlyPass.total_washes} washes
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Valid till: {new Date(car.monthlyPass.valid_till).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-semibold text-yellow-400 mt-1">No Active Pass</p>
+                      )}
                     </div>
 
                     {/* LOCATIONS */}
