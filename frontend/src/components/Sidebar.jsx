@@ -162,8 +162,8 @@ export default function Sidebar() {
           `}
           title={collapsed ? "Logout" : ""}
         >
-          <FiLogOut className="text-lg flex-shrink-0" />
-          {!collapsed && <span className="text-sm flex-shrink-0">Logout</span>}
+          <FiLogOut className="text-lg shrink-0" />
+          {!collapsed && <span className="text-sm shrink-0">Logout</span>}
         </button>
       </aside>
 
