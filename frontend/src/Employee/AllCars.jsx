@@ -198,7 +198,7 @@ export default function AllCars() {
                       </div>
 
                       {/* ACTIVE PASS */}
-                      <div className="mb-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                      <div className="mb-3 p-3 bg-linear-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
                         <p className="text-[10px] text-gray-600 uppercase tracking-wide font-semibold">Active Pass</p>
                         {car.monthlyPass && car.monthlyPass.active ? (
                           <div>

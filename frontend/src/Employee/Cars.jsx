@@ -389,7 +389,7 @@ export default function Cars() {
                   )}
 
                   {/* ACTIVE PASS SECTION */}
-                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
+                  <div className="mb-4 p-3 bg-linear-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
                     <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold">Active Pass</p>
                     {car.monthlyPass && car.monthlyPass.active ? (
                       <div>
