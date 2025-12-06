@@ -41,8 +41,15 @@ export default function Earnings() {
 
         setUser(auth.user);
 
-        // Fetch earnings from transactions table
-        const response = await fetch(`http://localhost:5000/earnings/transactions/${auth.user.id}`);
+        // Fetch earnings from transactions table with authentication
+        const url = new URL(`http://localhost:5000/earnings/transactions/${auth.user.id}`);
+        url.searchParams.append('user_id', auth.user.id);
+        
+        const response = await fetch(url.toString(), {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         const result = await response.json();
 
         if (result.success) {

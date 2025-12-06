@@ -122,6 +122,8 @@ router.get("/customer/:customer_id", async (req, res) => {
       });
     }
 
+    console.log(`📋 Fetching bookings for customer: ${customer_id}`);
+
     const { data, error } = await supabase
       .from("bookings")
       .select("*")
@@ -129,22 +131,24 @@ router.get("/customer/:customer_id", async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
+      console.error("❌ Supabase Error fetching bookings:", error);
       return res.status(400).json({ 
         success: false, 
-        error: error.message 
+        error: `Failed to fetch bookings: ${error.message}` 
       });
     }
 
+    console.log(`✅ Retrieved ${data?.length || 0} bookings for customer ${customer_id}`);
     return res.status(200).json({ 
       success: true, 
       bookings: data || [] 
     });
 
   } catch (err) {
-    console.error("SERVER ERROR:", err);
+    console.error("❌ SERVER ERROR:", err);
     return res.status(500).json({ 
       success: false, 
-      error: "Server error: " + err.message 
+      error: `Server error: ${err.message}` 
     });
   }
 });

@@ -56,6 +56,7 @@ export default function Sidebar() {
     { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
     { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
     { name: "Profile", icon: <FiUser />, link: "/profile" },
+    { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
   ];
 
   const menu = role === "admin" ? adminMenu : customerMenu;

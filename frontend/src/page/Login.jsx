@@ -18,44 +18,101 @@ export default function Login() {
   }
 
   setMessage("Checking...");
+  console.log("🔐 Login attempt with identifier:", identifier);
 
   const isEmail = identifier.includes("@");
+  console.log("📧 Is Email:", isEmail);
 
   let response;
 
   if (isEmail) {
+    // Direct email login
+    console.log("→ Attempting email login with:", identifier);
     response = await supabase.auth.signInWithPassword({
       email: identifier,
       password,
     });
+    console.log("✅ Email login response:", response);
   } else {
-    response = await supabase.auth.signInWithPassword({
-      phone: identifier,
-      password,
-    });
+    // Phone login - try to find user by phone in profiles table first
+    console.log("📱 Attempting phone login with:", identifier);
+    try {
+      console.log("🔍 Looking up phone in profiles table...");
+      const { data: profileByPhone, error: lookupError } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("phone", identifier)
+        .single();
+
+      console.log("📋 Profile lookup result:", { profileByPhone, lookupError });
+
+      if (profileByPhone && profileByPhone.email) {
+        console.log("✅ Found email for phone:", profileByPhone.email);
+        // Found user by phone, use their email to login
+        response = await supabase.auth.signInWithPassword({
+          email: profileByPhone.email,
+          password,
+        });
+        console.log("✅ Phone->Email login response:", response);
+      } else {
+        console.error("❌ Phone number not found in profiles");
+        setMessage("Phone number not found in system");
+        return;
+      }
+    } catch (err) {
+      console.error("❌ Error looking up phone:", err);
+      setMessage("Phone number not found");
+      return;
+    }
   }
 
+  console.log("🔍 Auth response error:", response?.error);
+  console.log("🔍 Auth response data:", response?.data);
+
   if (response.error) {
-    setMessage(response.error.message);
+    console.error("❌ Auth failed:", response.error.message);
+    setMessage("❌ " + response.error.message);
     return;
   }
 
   const user = response.data.user;
+  console.log("👤 Auth user:", user);
 
   if (!user) {
+    console.error("❌ No user returned from auth");
     setMessage("Login failed");
     return;
   }
 
-  // 🔥 Fetch profile & role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, name, email, phone")
-    .eq("id", user.id)
-    .single();
+  // 🔥 Fetch profile & role via backend API (to bypass RLS)
+  console.log("📝 Fetching profile for user:", user.id);
+  const profileRes = await fetch(`http://localhost:5000/profile/profile/${user.id}`);
+  
+  if (!profileRes.ok) {
+    console.error("❌ Failed to fetch profile:", profileRes.status);
+    setMessage("Profile not found");
+    return;
+  }
+  
+  const profileData = await profileRes.json();
+  const profile = profileData.profile;
+
+  console.log("👤 Profile fetched:", profile);
 
   if (!profile) {
+    console.error("❌ Profile not found for user:", user.id);
     setMessage("Profile not found");
+    return;
+  }
+
+  // 🔥 CHECK IF EMPLOYEE IS APPROVED
+  if (profile.role === "employee" && profile.approval_status === "pending") {
+    setMessage("Your account is pending admin approval. You will be notified once approved.");
+    return;
+  }
+
+  if (profile.role === "employee" && profile.approval_status === "rejected") {
+    setMessage("Your account request was rejected. Please contact admin for more details.");
     return;
   }
 
@@ -66,6 +123,7 @@ export default function Login() {
     name: profile.name,
     phone: profile.phone,
     role: profile.role,
+    employeeType: profile.employee_type,
     loginTime: new Date().toISOString()
   };
   localStorage.setItem("userDetails", JSON.stringify(userDetails));
@@ -77,14 +135,31 @@ export default function Login() {
 
   // 🔥 Role based redirect
   setTimeout(() => {
-  if (profile.role === "admin") {
-    navigate("/admin-dashboard");
-  } else if (profile.role === "employee") {
-    navigate("/employee-dashboard");
-  } else {
-    navigate("/customer-dashboard");
-  }
-}, 1000);
+    console.log("🔀 Redirecting based on role:", profile.role, "employee_type:", profile.employee_type);
+    
+    if (profile.role === "admin") {
+      console.log("→ Navigating to admin-dashboard");
+      navigate("/admin-dashboard");
+    } else if (profile.role === "employee") {
+      // Check employee type for specific routing
+      if (profile.employee_type === "washer") {
+        console.log("→ Navigating to carwash (washer)");
+        navigate("/carwash");
+      } else if (profile.employee_type === "rider") {
+        console.log("→ Navigating to employee-dashboard (rider)");
+        navigate("/employee-dashboard");
+      } else if (profile.employee_type === "sales") {
+        console.log("→ Navigating to employee-dashboard (sales)");
+        navigate("/employee-dashboard");
+      } else {
+        console.log("→ Navigating to employee-dashboard (default)");
+        navigate("/employee-dashboard");
+      }
+    } else {
+      console.log("→ Navigating to customer-dashboard");
+      navigate("/customer-dashboard");
+    }
+  }, 1000);
 
 };
 

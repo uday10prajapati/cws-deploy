@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import NotificationBell from "../components/NotificationBell";
+import AddressManager from "../components/AddressManager";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FiUser, FiMail, FiPhone, FiClock, FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell, FiMapPin } from "react-icons/fi";
@@ -8,14 +9,15 @@ import { FaCar } from "react-icons/fa";
 import { FiAward } from "react-icons/fi";
 
 const customerMenu = [
-  { name: "Home", icon: <FiHome />, link: "/" },
-      { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-      { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-      { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
-      { name: "Profile", icon: <FiUser />, link: "/profile" },
-      { name: "Location", icon: <FiMapPin />, link: "/location" },
-      { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-  ];
+  { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
+  { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
+  { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
+  { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+  { name: "Profile", icon: <FiUser />, link: "/profile" },
+  { name: "Location", icon: <FiMapPin />, link: "/location" },
+  { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+  { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
+];
 
 export default function ProfilePage() {
   const location = useLocation();
@@ -256,7 +258,7 @@ export default function ProfilePage() {
                 <FiUser className="text-3xl" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">{user.name?.full_name || "User"}</h1>
+                <h1 className="text-3xl font-bold">{user.user_metadata?.name || user.email?.split("@")[0] || "User"}</h1>
                 <p className="text-slate-400">{user.email}</p>
               </div>
             </div>
@@ -277,6 +279,9 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* ADDRESS MANAGER */}
+          <AddressManager userId={user.id} />
 
           {/* MAIN CONTENT GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

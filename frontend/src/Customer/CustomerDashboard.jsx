@@ -21,6 +21,7 @@ import {
   FiCreditCard,
   FiTruck,
   FiAward,
+  FiSettings,
 } from "react-icons/fi";
 import { FaCar, FaStar } from "react-icons/fa";
 
@@ -78,28 +79,44 @@ export default function CustomerDashboard() {
   /* LOAD LOGGED-IN CUSTOMER + BOOKINGS + WALLET */
   useEffect(() => {
     const load = async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth?.user) return;
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth?.user) return;
 
-      setUser(auth.user);
+        setUser(auth.user);
 
-      const { data } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("customer_id", auth.user.id);
+        // Fetch bookings from backend API instead of direct Supabase query to avoid RLS issues
+        try {
+          const response = await fetch(
+            `http://localhost:5000/bookings/customer/${auth.user.id}`
+          );
+          const result = await response.json();
+          
+          if (result.success) {
+            setBookings(result.bookings || []);
 
-      setBookings(data || []);
+            // Calculate completed bookings
+            const completed = (result.bookings || []).filter((b) => b.status === "Completed").length;
+            setCompletedBookings(completed);
 
-      // Calculate completed bookings
-      const completed = (data || []).filter((b) => b.status === "Completed").length;
-      setCompletedBookings(completed);
+            // Calculate loyalty points (1.5 points per completed booking, with tier bonuses)
+            const loyaltyPts = completed > 0 ? Math.floor(completed * 1.5 * 10) : 0;
+            setLoyaltyPoints(loyaltyPts);
+          } else {
+            console.error("❌ Error fetching bookings:", result.error);
+            setBookings([]);
+          }
+        } catch (err) {
+          console.error("❌ Error fetching bookings from backend:", err);
+          setBookings([]);
+        }
 
-      // Calculate loyalty points (1.5 points per completed booking, with tier bonuses)
-      const loyaltyPts = completed > 0 ? Math.floor(completed * 1.5 * 10) : 0;
-      setLoyaltyPoints(loyaltyPts);
-
-      // Fetch wallet balance
-      await fetchWalletBalance(auth.user.id);
+        // Fetch wallet balance
+        await fetchWalletBalance(auth.user.id);
+      } catch (err) {
+        console.error("❌ Error loading customer data:", err);
+        setBookings([]);
+      }
     };
 
     load();
@@ -113,9 +130,17 @@ export default function CustomerDashboard() {
   // Fetch wallet balance from transactions
   const fetchWalletBalance = async (customerId) => {
     try {
-      const response = await fetch(
+      // Send userId in query params for backend authentication
+      const url = new URL(
         `http://localhost:5000/transactions/customer/${customerId}`
       );
+      url.searchParams.append('user_id', customerId);
+      
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
       const result = await response.json();
 
       if (result.success && result.transactions) {
@@ -234,13 +259,14 @@ export default function CustomerDashboard() {
   };
 
   const customerMenu = [
-    { name: "Home", icon: <FiHome />, link: "/" },
+    { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
     { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
     { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
     { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
     { name: "Profile", icon: <FiUser />, link: "/profile" },
     { name: "Location", icon: <FiMapPin />, link: "/location" },
     { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+    { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
   ];
 
   const stats = [

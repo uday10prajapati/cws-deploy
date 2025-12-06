@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+import ApprovalPanel from "./ApprovalPanel";
 import {
   FiHome,
   FiUsers,
@@ -14,6 +15,7 @@ import {
   FiLogOut,
   FiChevronLeft,
   FiCreditCard,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -22,6 +24,7 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
+  const [activeSection, setActiveSection] = useState("dashboard");
 
   /* 🔥 USE ROLE-BASED REDIRECT HOOK */
   useRoleBasedRedirect("admin");
@@ -49,10 +52,20 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
+      // Build earnings URL with user_id for authentication
+      const earningsUrl = new URL("http://localhost:5000/earnings/transactions/admin");
+      if (user?.id) {
+        earningsUrl.searchParams.append('user_id', user.id);
+      }
+      
       const [overviewRes, bookingsRes, earningsRes] = await Promise.all([
         fetch("http://localhost:5000/admin/analytics/overview").then((r) => r.json()),
         fetch("http://localhost:5000/admin/recent-bookings").then((r) => r.json()),
-        fetch("http://localhost:5000/earnings/transactions/admin").then((r) => r.json()),
+        fetch(earningsUrl.toString(), {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }).then((r) => r.json()),
       ]);
 
       if (overviewRes.success) {
@@ -127,15 +140,18 @@ export default function AdminDashboard() {
   }));
 
   const adminMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard" },
-    { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings" },
-    { name: "Users", icon: <FiUsers />, link: "/admin/users" },
-    { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings" },
-    { name: "Cars", icon: <FaCar />, link: "/admin/cars" },
-    { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue" },
-    { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics" },
-    { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account" },
-    { name: "Settings", icon: <FiSettings />, link: "/admin/settings" },
+    { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard", id: "dashboard" },
+    { name: "Approvals", icon: <FiAlertCircle />, link: null, id: "approvals" },
+    { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings", id: "bookings" },
+    { name: "Users", icon: <FiUsers />, link: "/admin/users", id: "users" },
+    { name: "Riders", icon: <FiUsers />, link: "/admin/riders", id: "riders" },
+    { name: "Customer Accounts", icon: <FiSettings />, link: "/admin/customer-accounts", id: "customer-accounts" },
+    { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings", id: "earnings" },
+    { name: "Cars", icon: <FaCar />, link: "/admin/cars", id: "cars" },
+    { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue", id: "revenue" },
+    { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics", id: "analytics" },
+    { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account", id: "bank" },
+    { name: "Settings", icon: <FiSettings />, link: "/admin/settings", id: "settings" },
   ];
 
   return (
@@ -180,27 +196,55 @@ export default function AdminDashboard() {
 
         {/* MENU */}
         <nav className="mt-4 px-3 pb-24">
-          {adminMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
+          {adminMenu.map((item) => {
+            if (item.link) {
+              return (
+                <Link
+                  key={item.name}
+                  to={item.link}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`
+                    flex items-center gap-4 px-3 py-2 rounded-lg 
+                    mb-2 font-medium transition-all
+                    ${
+                      location.pathname === item.link
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
+                    }
+                    ${collapsed ? "justify-center" : ""}
+                  `}
+                  title={collapsed ? item.name : ""}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  {!collapsed && <span className="text-sm">{item.name}</span>}
+                </Link>
+              );
+            } else {
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => {
+                    setActiveSection(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`
+                    w-full flex items-center gap-4 px-3 py-2 rounded-lg 
+                    mb-2 font-medium transition-all
+                    ${
+                      activeSection === item.id
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
+                    }
+                    ${collapsed ? "justify-center" : ""}
+                  `}
+                  title={collapsed ? item.name : ""}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  {!collapsed && <span className="text-sm">{item.name}</span>}
+                </button>
+              );
+            }
+          })}
         </nav>
 
         {/* LOGOUT */}
@@ -226,7 +270,9 @@ export default function AdminDashboard() {
         <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
         items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
 
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold">
+            {activeSection === "approvals" ? "Employee Approvals" : "Admin Dashboard"}
+          </h1>
 
           <div className="flex items-center gap-8">
             <div className="relative">
@@ -291,6 +337,12 @@ export default function AdminDashboard() {
         {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
         <main className="p-4 md:p-8 space-y-8">
 
+          {/* APPROVALS SECTION */}
+          {activeSection === "approvals" && <ApprovalPanel />}
+
+          {/* DASHBOARD CONTENT */}
+          {activeSection === "dashboard" && (
+            <>
           {/* Title */}
           <div>
             <h1 className="text-3xl font-bold">Dashboard Overview</h1>
@@ -412,6 +464,8 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+            </>
+          )}
 
         </main>
       </div>

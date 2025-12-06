@@ -74,7 +74,14 @@ export default function EmployeeDashboard() {
   /* LOAD NOTIFICATIONS FOR EMPLOYEE */
   const loadNotifications = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/notifications/user/${userId}`);
+      const url = new URL(`http://localhost:5000/notifications/user/${userId}`);
+      url.searchParams.append('user_id', userId);
+      
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
       const data = await response.json();
       
       if (data.success && data.notifications) {
@@ -94,7 +101,14 @@ export default function EmployeeDashboard() {
   /* FETCH EARNINGS FROM TRANSACTIONS */
   const fetchEarnings = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/earnings/dashboard-summary/${userId}`);
+      const url = new URL(`http://localhost:5000/earnings/dashboard-summary/${userId}`);
+      url.searchParams.append('user_id', userId);
+      
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
       const data = await response.json();
       
       if (data.success) {

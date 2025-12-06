@@ -39,8 +39,17 @@ export default function Earnings() {
   const loadEarningsData = async () => {
     setLoading(true);
     try {
-      // Fetch all system earnings/transactions
-      const response = await fetch("http://localhost:5000/earnings/transactions/admin");
+      // Fetch all system earnings/transactions with authentication
+      const url = new URL("http://localhost:5000/earnings/transactions/admin");
+      if (user?.id) {
+        url.searchParams.append('user_id', user.id);
+      }
+      
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
       const result = await response.json();
       if (result.success) {
         setEarnings({

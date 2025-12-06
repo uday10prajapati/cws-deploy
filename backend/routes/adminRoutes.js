@@ -770,4 +770,165 @@ function calculateTopCities(users) {
     .slice(0, 5);
 }
 
+/**
+ * =====================================================
+ * EMPLOYEE APPROVAL MANAGEMENT
+ * =====================================================
+ */
+
+/**
+ * @GET /admin/pending-approvals
+ * Get all pending employee approval requests
+ */
+router.get("/pending-approvals", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("user_approvals")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("❌ Error fetching approvals:", error);
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      approvals: data || [],
+    });
+  } catch (err) {
+    console.error("❌ Server error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch approvals: " + err.message,
+    });
+  }
+});
+
+/**
+ * @POST /admin/approve-employee
+ * Approve an employee's signup request
+ */
+router.post("/approve-employee", async (req, res) => {
+  try {
+    const { approvalId, userId } = req.body;
+
+    if (!approvalId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: "Approval ID and User ID required",
+      });
+    }
+
+    // Update approval status
+    const { error: approvalError } = await supabase
+      .from("user_approvals")
+      .update({
+        status: "approved",
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", approvalId);
+
+    if (approvalError) {
+      console.error("❌ Error updating approval:", approvalError);
+      return res.status(400).json({
+        success: false,
+        error: approvalError.message,
+      });
+    }
+
+    // Update profile approval status
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ approval_status: "approved" })
+      .eq("id", userId);
+
+    if (profileError) {
+      console.error("❌ Error updating profile:", profileError);
+      return res.status(400).json({
+        success: false,
+        error: profileError.message,
+      });
+    }
+
+    console.log("✅ Employee approved:", userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Employee approved successfully",
+    });
+  } catch (err) {
+    console.error("❌ Server error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to approve employee: " + err.message,
+    });
+  }
+});
+
+/**
+ * @POST /admin/reject-employee
+ * Reject an employee's signup request
+ */
+router.post("/reject-employee", async (req, res) => {
+  try {
+    const { approvalId, userId } = req.body;
+
+    if (!approvalId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: "Approval ID and User ID required",
+      });
+    }
+
+    // Update approval status
+    const { error: approvalError } = await supabase
+      .from("user_approvals")
+      .update({
+        status: "rejected",
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", approvalId);
+
+    if (approvalError) {
+      console.error("❌ Error updating approval:", approvalError);
+      return res.status(400).json({
+        success: false,
+        error: approvalError.message,
+      });
+    }
+
+    // Update profile approval status
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ approval_status: "rejected" })
+      .eq("id", userId);
+
+    if (profileError) {
+      console.error("❌ Error updating profile:", profileError);
+      return res.status(400).json({
+        success: false,
+        error: profileError.message,
+      });
+    }
+
+    console.log("✅ Employee rejected:", userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Employee rejected",
+    });
+  } catch (err) {
+    console.error("❌ Server error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to reject employee: " + err.message,
+    });
+  }
+});
+
 export default router;

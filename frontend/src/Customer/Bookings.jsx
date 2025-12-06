@@ -82,7 +82,7 @@ export default function BookingPage() {
 
   // Menu for sidebar
   const customerMenu = [
-    { name: "Home", icon: <FiHome />, link: "/" },
+    { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
         { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
         { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
         { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
@@ -132,15 +132,39 @@ export default function BookingPage() {
 
       setCars(carList || []);
 
-      // Load existing bookings
+      // Load user address from backend API instead of direct Supabase query
+      try {
+        const response = await fetch(`http://localhost:5000/profile/address/${auth.user.id}`);
+        const result = await response.json();
+
+        if (result.success && result.address?.address) {
+          // Format address as: street, city, state
+          const profileData = result.address;
+          const formattedAddress = `${profileData.address}${profileData.city ? ', ' + profileData.city : ''}${profileData.state ? ', ' + profileData.state : ''}`;
+          setLocation(formattedAddress);
+        }
+      } catch (err) {
+        console.error("Error loading address:", err);
+      }
+
+      // Load existing bookings from backend API instead of direct Supabase query
       setLoadingBookings(true);
-      const { data: bookingList } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("customer_id", auth.user.id)
-        .order("created_at", { ascending: false });
-      
-      setBookings(bookingList || []);
+      try {
+        console.log(`📋 Fetching bookings for customer ${auth.user.id}...`);
+        const response = await fetch(`http://localhost:5000/bookings/customer/${auth.user.id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log(`✅ Retrieved ${result.bookings?.length || 0} bookings`);
+          setBookings(result.bookings || []);
+        } else {
+          console.error("❌ Error fetching bookings:", result.error);
+          setBookings([]);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching bookings from API:", err);
+        setBookings([]);
+      }
       setLoadingBookings(false);
 
       // Load active monthly pass

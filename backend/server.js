@@ -17,6 +17,9 @@ import carLocationRoutes from "./routes/carLocation.js";
 import ratingsRoutes from "./routes/ratingsRoutes.js";
 import earningsRoutes from "./routes/earningsRoutes.js";
 import notificationsRoutes from "./routes/notificationsRoutes.js";
+import adminStatsRoutes from "./routes/adminStatsRoutes.js";
+import accountStatusRoutes from "./routes/accountStatusRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -32,10 +35,13 @@ app.use("/transactions", transactions);
 app.use("/payment", paymentRoutes);
 app.use("/alt-payment", alternativePaymentRoutes);
 app.use("/admin", adminRoutes);
+app.use("/admin-stats", adminStatsRoutes);
+app.use("/account-status", accountStatusRoutes);
 app.use("/employee", myJobs);
 app.use("/ratings", ratingsRoutes);
 app.use("/earnings", earningsRoutes);
 app.use("/notifications", notificationsRoutes);
+app.use("/profile", profileRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

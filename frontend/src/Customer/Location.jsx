@@ -81,7 +81,7 @@ export default function Location() {
 
   // Menu items
   const customerMenu = [
-        { name: "Home", icon: <FiHome />, link: "/" },
+        { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
         { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
         { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
         { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
 
 import {
   FiMenu,
@@ -420,7 +422,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
   /** Sidebar menu items */
   const menu = [
-        { name: "Home", icon: <FiHome />, link: "/" },
+        { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
         { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
         { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
         { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },

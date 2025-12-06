@@ -4,6 +4,67 @@ import { supabase } from "../supabase.js";
 const router = express.Router();
 
 /* -----------------------------------------
+   HELPER: Get user role from auth
+----------------------------------------- */
+const getUserRole = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+    return data.role;
+  } catch (err) {
+    console.error("Error fetching user role:", err);
+    return null;
+  }
+};
+
+/* -----------------------------------------
+   HELPER: Extract user ID from request
+----------------------------------------- */
+const getUserFromRequest = async (req) => {
+  try {
+    // Priority 1: Get from headers (Bearer token)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (!error && user) {
+          console.log("✅ User extracted from Bearer token:", user.id);
+          return user.id;
+        }
+      } catch (err) {
+        console.log("⚠️ Bearer token validation failed:", err.message);
+      }
+    }
+
+    // Priority 2: Get from request body
+    if (req.body?.user_id) {
+      console.log("✅ User extracted from request body:", req.body.user_id);
+      return req.body.user_id;
+    }
+
+    // Priority 3: Get from query parameters
+    if (req.query?.user_id) {
+      console.log("✅ User extracted from query params:", req.query.user_id);
+      return req.query.user_id;
+    }
+
+    console.log("❌ No user authentication found in request");
+    return null;
+  } catch (err) {
+    console.error("Error extracting user from request:", err);
+    return null;
+  }
+};
+
+/* -----------------------------------------
    CREATE TRANSACTION
 ----------------------------------------- */
 router.post("/create", async (req, res) => {
@@ -88,10 +149,32 @@ router.post("/create", async (req, res) => {
 });
 
 /* -----------------------------------------
-   GET ALL TRANSACTIONS (ADMIN)
+   GET ALL TRANSACTIONS (ADMIN ONLY)
 ----------------------------------------- */
 router.get("/", async (req, res) => {
   try {
+    // Extract user ID from request
+    const userId = await getUserFromRequest(req);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required. Please provide a valid token or user_id.",
+      });
+    }
+
+    // Get user's role
+    const userRole = await getUserRole(userId);
+
+    // Only admins can view all transactions
+    if (userRole !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Only administrators can view all transactions.",
+        userRole: userRole,
+      });
+    }
+
     const { data, error } = await supabase
       .from("transactions")
       .select("*")
@@ -106,6 +189,8 @@ router.get("/", async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      message: "All transactions retrieved (Admin view)",
+      total: data?.length || 0,
       transactions: data || [],
     });
   } catch (err) {
@@ -118,7 +203,7 @@ router.get("/", async (req, res) => {
 });
 
 /* -----------------------------------------
-   GET TRANSACTIONS BY CUSTOMER
+   GET TRANSACTIONS BY CUSTOMER (Customer or Admin only)
 ----------------------------------------- */
 router.get("/customer/:customer_id", async (req, res) => {
   try {
@@ -128,6 +213,41 @@ router.get("/customer/:customer_id", async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Customer ID is required",
+      });
+    }
+
+    // Extract user ID from request
+    const userId = await getUserFromRequest(req);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required. Please provide a valid token or user_id.",
+      });
+    }
+
+    // Get user's role
+    const userRole = await getUserRole(userId);
+
+    // Check access permission:
+    // 1. Customer can only view their own transactions
+    // 2. Admin can view any customer's transactions
+    // 3. Employee cannot view any customer transactions
+    if (userRole === "employee") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Employees cannot view customer transaction receipts.",
+        userRole: userRole,
+      });
+    }
+
+    if (userRole === "customer" && userId !== customer_id) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. You can only view your own transaction receipts.",
+        userRole: userRole,
+        requestedCustomerId: customer_id,
+        yourId: userId,
       });
     }
 
@@ -146,6 +266,9 @@ router.get("/customer/:customer_id", async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      message: userRole === "admin" ? "Customer transactions retrieved (Admin view)" : "Your transactions retrieved",
+      customer_id,
+      total: data?.length || 0,
       transactions: data || [],
     });
   } catch (err) {
@@ -158,7 +281,7 @@ router.get("/customer/:customer_id", async (req, res) => {
 });
 
 /* -----------------------------------------
-   GET TRANSACTION BY ID
+   GET TRANSACTION BY ID (Invoice/Receipt - Access Control)
 ----------------------------------------- */
 router.get("/:id", async (req, res) => {
   try {
@@ -171,22 +294,81 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const { data, error } = await supabase
+    // First fetch the transaction
+    const { data: transaction, error: fetchError } = await supabase
       .from("transactions")
       .select("*")
       .eq("id", id)
       .single();
 
-    if (error) {
+    if (fetchError || !transaction) {
       return res.status(404).json({
         success: false,
-        error: "Transaction not found",
+        error: "Transaction/Receipt not found",
+      });
+    }
+
+    // Extract user ID from request
+    const userId = await getUserFromRequest(req);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required to view receipts.",
+      });
+    }
+
+    // Get user's role
+    const userRole = await getUserRole(userId);
+
+    // Access control logic:
+    // 1. Customer can only view their own receipt/invoice
+    // 2. Admin can view any receipt/invoice
+    // 3. Employee CANNOT view any receipt/invoice
+    if (userRole === "employee") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Employees cannot view customer receipts or invoices.",
+        userRole: "employee",
+        transactionId: id,
+      });
+    }
+
+    if (userRole === "customer" && userId !== transaction.customer_id) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. You can only view your own receipt.",
+        userRole: "customer",
+        yourId: userId,
+        receiptBelongsTo: transaction.customer_id,
       });
     }
 
     return res.status(200).json({
       success: true,
-      transaction: data,
+      message: userRole === "admin" ? "Receipt retrieved (Admin view)" : "Your receipt",
+      userRole: userRole,
+      transaction: {
+        id: transaction.id,
+        customer_id: transaction.customer_id,
+        booking_id: transaction.booking_id,
+        pass_id: transaction.pass_id,
+        type: transaction.type,
+        direction: transaction.direction,
+        status: transaction.status,
+        amount: transaction.amount,
+        gst: transaction.gst,
+        total_amount: transaction.total_amount,
+        currency: transaction.currency,
+        payment_method: transaction.payment_method,
+        gateway_order_id: transaction.gateway_order_id,
+        gateway_payment_id: transaction.gateway_payment_id,
+        invoice_url: transaction.invoice_url,
+        gst_number: transaction.gst_number,
+        notes: transaction.notes,
+        created_at: transaction.created_at,
+        updated_at: transaction.updated_at,
+      },
     });
   } catch (err) {
     console.error("SERVER ERROR:", err);
@@ -198,7 +380,7 @@ router.get("/:id", async (req, res) => {
 });
 
 /* -----------------------------------------
-   GET TRANSACTIONS BY STATUS
+   GET TRANSACTIONS BY STATUS (Admin only)
 ----------------------------------------- */
 router.get("/status/:status", async (req, res) => {
   try {
@@ -208,6 +390,28 @@ router.get("/status/:status", async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Status is required",
+      });
+    }
+
+    // Extract user ID from request
+    const userId = await getUserFromRequest(req);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required.",
+      });
+    }
+
+    // Get user's role
+    const userRole = await getUserRole(userId);
+
+    // Only admins can filter by status across all transactions
+    if (userRole !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Only administrators can filter transactions by status.",
+        userRole: userRole,
       });
     }
 
@@ -226,6 +430,9 @@ router.get("/status/:status", async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      message: "Transactions filtered by status (Admin view)",
+      status,
+      total: data?.length || 0,
       transactions: data || [],
     });
   } catch (err) {
@@ -238,7 +445,7 @@ router.get("/status/:status", async (req, res) => {
 });
 
 /* -----------------------------------------
-   GET TRANSACTIONS BY TYPE
+   GET TRANSACTIONS BY TYPE (Admin only)
 ----------------------------------------- */
 router.get("/type/:type", async (req, res) => {
   try {
@@ -248,6 +455,28 @@ router.get("/type/:type", async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Type is required",
+      });
+    }
+
+    // Extract user ID from request
+    const userId = await getUserFromRequest(req);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required.",
+      });
+    }
+
+    // Get user's role
+    const userRole = await getUserRole(userId);
+
+    // Only admins can filter by type across all transactions
+    if (userRole !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Only administrators can filter transactions by type.",
+        userRole: userRole,
       });
     }
 
@@ -266,6 +495,9 @@ router.get("/type/:type", async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      message: "Transactions filtered by type (Admin view)",
+      type,
+      total: data?.length || 0,
       transactions: data || [],
     });
   } catch (err) {

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
 import {
   FiCreditCard,
   FiDollarSign,
@@ -53,12 +55,20 @@ import { generateTransactionPDF, viewTransactionPDF } from "../utils/pdfGenerato
 // ===========================
 const API_BASE = "http://localhost:5000";
 
-async function fetchTransactions(customerId) {
+async function fetchTransactions(customerId, userId) {
   try {
-    const response = await fetch(
-      `${API_BASE}/transactions/customer/${customerId}`,
-      { signal: AbortSignal.timeout(5000) } // 5 second timeout
+    // Send userId in query params for backend authentication
+    const url = new URL(
+      `${API_BASE}/transactions/customer/${customerId}`
     );
+    url.searchParams.append('user_id', userId);
+    
+    const response = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -660,7 +670,7 @@ export default function TransactionsPage() {
   useRoleBasedRedirect("customer");
 
   const customerMenu = [
-    { name: "Home", icon: <FiHome />, link: "/" },
+    { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
         { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
         { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
         { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
@@ -713,7 +723,7 @@ export default function TransactionsPage() {
 
         // Fetch transactions from backend with fallback
         try {
-          const txData = await fetchTransactions(userData.user.id);
+          const txData = await fetchTransactions(userData.user.id, userData.user.id);
           setTransactions(txData);
         } catch (txErr) {
           console.warn("⚠️ Could not fetch transactions:", txErr);

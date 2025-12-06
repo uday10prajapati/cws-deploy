@@ -2,7 +2,11 @@ import { Routes, Route } from "react-router-dom";
 import { NotificationProvider } from "./context/NotificationContext";
 import Signup from "./page/SignUp.jsx";
 import Login from "./page/Login.jsx";
+import CarWash from "./page/CarWash.jsx";
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
+import AdminEmployeeTracking from "./Admin/AdminEmployeeTracking.jsx";
+import AdminRiders from "./Admin/AdminRiders.jsx";
+import CustomerAccountManagement from "./Admin/CustomerAccountManagement.jsx";
 import BankAccountSettings from "./Admin/BankAccountSettings.jsx";
 import CustomerDashboard from "./Customer/CustomerDashboard.jsx";
 import EmployeeSadhboard from "./Employee/EmployeeDashboard.jsx";
@@ -12,6 +16,7 @@ import MyCars from "./Customer/MyCars.jsx";
 import Transactions from "./Customer/Transactions.jsx";
 import Location from "./Customer/Location.jsx";
 import Profile from "./Customer/Profile.jsx";
+import CustomerAccountSettings from "./Customer/CustomerAccountSettings.jsx";
 import MyJobs from "./Employee/MyJobs.jsx";
 import Visit from "./Visit.jsx";
 import Earnings from "./Employee/Earnings.jsx";
@@ -33,7 +38,11 @@ export default function App() {
         <Route path="/" element={<Visit />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/carwash" element={<CarWash />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/employee-tracking" element={<AdminEmployeeTracking />} />
+        <Route path="/admin/riders" element={<AdminRiders />} />
+        <Route path="/admin/customer-accounts" element={<CustomerAccountManagement />} />
         <Route path="/admin/bank-account" element={<BankAccountSettings />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/customer-dashboard" element={<CustomerDashboard />} />
@@ -44,6 +53,7 @@ export default function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/location" element={<Location />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/account-settings" element={<CustomerAccountSettings />} />
         <Route path="/employee/jobs" element={<MyJobs />} />
         <Route path="/employee/earnings" element={<Earnings />} />
         <Route path="/employee/ratings" element={<Ratings />} />
@@ -57,6 +67,7 @@ export default function App() {
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/settings" element={<Settings />} />
         <Route path="/admin/cars" element={<AllCars />} />
+        <Route path="/admin/customer-accounts" element={<CustomerAccountManagement />} />
       </Routes>
     </NotificationProvider>
   );
