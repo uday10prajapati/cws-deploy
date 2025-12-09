@@ -16,6 +16,7 @@ import {
   FiCreditCard,
   FiAward,
   FiMapPin,
+  FiSettings,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -28,7 +29,7 @@ export default function MyCars() {
 
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);
-  const [monthlyPass, setMonthlyPass] = useState(null);
+  const [carPasses, setCarPasses] = useState({}); // Map of car_id -> active pass
 
   /** Add Car Modal */
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,10 +50,10 @@ export default function MyCars() {
         { name: "Profile", icon: <FiUser />, link: "/profile" },
         { name: "Location", icon: <FiMapPin />, link: "/location" },
         { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-    
+        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
   ];
 
-  /** Load user + cars */
+  /** Load user + cars + passes for each car */
   useEffect(() => {
     const load = async () => {
       const { data: auth } = await supabase.auth.getUser();
@@ -64,17 +65,28 @@ export default function MyCars() {
         const response = await fetch(`http://localhost:5000/cars/${auth.user.id}`);
         const result = await response.json();
         if (result.success) {
-          setCars(result.data || []);
-        }
+          const carList = result.data || [];
+          setCars(carList);
 
-        // Load monthly pass
-        const passResponse = await fetch(`http://localhost:5000/pass/current/${auth.user.id}`);
-        const passResult = await passResponse.json();
-        if (passResult.success && passResult.data) {
-          setMonthlyPass(passResult.data);
+          // Load active pass for each car
+          const passesMap = {};
+          for (const car of carList) {
+            try {
+              const passResponse = await fetch(
+                `http://localhost:5000/pass/car/${auth.user.id}/${car.id}`
+              );
+              const passResult = await passResponse.json();
+              if (passResult.success && passResult.data) {
+                passesMap[car.id] = passResult.data;
+              }
+            } catch (err) {
+              console.error(`Error loading pass for car ${car.id}:`, err);
+            }
+          }
+          setCarPasses(passesMap);
         }
       } catch (err) {
-        console.error("Error loading cars or pass:", err);
+        console.error("Error loading cars:", err);
       }
     };
     load();
@@ -360,13 +372,13 @@ export default function MyCars() {
                     {/* Active Pass Section */}
                     <div className="mt-4 p-3 bg-linear-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
                       <p className="text-[10px] text-slate-400 uppercase tracking-wide">Active Pass</p>
-                      {monthlyPass && monthlyPass.active ? (
+                      {carPasses[car.id] && carPasses[car.id].active ? (
                         <div>
                           <p className="text-sm font-semibold text-green-400 mt-1">
-                            ✓ Monthly Pass • {monthlyPass.remaining_washes}/{monthlyPass.total_washes} washes
+                            ✓ Monthly Pass • {carPasses[car.id].remaining_washes}/{carPasses[car.id].total_washes} washes
                           </p>
                           <p className="text-xs text-slate-400 mt-1">
-                            Valid till: {new Date(monthlyPass.valid_till).toLocaleDateString()}
+                            Valid till: {new Date(carPasses[car.id].valid_till).toLocaleDateString()}
                           </p>
                         </div>
                       ) : (

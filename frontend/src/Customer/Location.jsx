@@ -25,7 +25,8 @@ import {
   FiChevronLeft,
   FiClipboard,
   FiUser,
-  FiCreditCard
+  FiCreditCard,
+  FiSettings 
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -88,6 +89,7 @@ export default function Location() {
         { name: "Profile", icon: <FiUser />, link: "/profile" },
         { name: "Location", icon: <FiMapPin />, link: "/location" },
         { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
       ];
 
   // Get booking ID from state or URL

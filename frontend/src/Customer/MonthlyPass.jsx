@@ -17,7 +17,8 @@ import {
   FiAward,
   FiCheckCircle,
   FiX,
-  FiMapPin
+  FiMapPin,
+  FiSettings 
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -34,6 +35,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
   /** User */
   const [user, setUser] = useState(null);
+  const [cars, setCars] = useState([]);
 
   /** Active pass from backend */
   const [activePass, setActivePass] = useState(null);
@@ -42,6 +44,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
   /** Modal for purchase */
   const [buyModalOpen, setBuyModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedCar, setSelectedCar] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -104,7 +107,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
   };
 
   // Create a new monthly pass via backend API
-  const createMonthlyPass = async (customerId, plan) => {
+  const createMonthlyPass = async (customerId, plan, carId) => {
     const newValidTill = new Date();
     newValidTill.setDate(newValidTill.getDate() + 30);
 
@@ -114,6 +117,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: customerId,
+          car_id: carId || null,
           total_washes: plan.washes,
           remaining_washes: plan.washes,
           valid_till: newValidTill.toISOString().split("T")[0],
@@ -195,7 +199,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     }
   };
 
-  /** ---------- Load user + active pass on mount ---------- */
+  /** ---------- Load user + cars + active pass on mount ---------- */
   useEffect(() => {
     const load = async () => {
       const { data: auth } = await supabase.auth.getUser();
@@ -207,6 +211,17 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
       console.log("👤 Loading pass for user:", auth.user.id);
       setUser(auth.user);
+
+      // Load cars
+      try {
+        const { data: carList } = await supabase
+          .from("cars")
+          .select("*")
+          .eq("customer_id", auth.user.id);
+        setCars(carList || []);
+      } catch (err) {
+        console.error("Error loading cars:", err);
+      }
 
       const pass = await getActivePass(auth.user.id);
       console.log("📋 Active pass result:", pass);
@@ -226,6 +241,12 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
   /** Buy / Upgrade Plan */
   const buyPlan = async () => {
     if (!user || !selectedPlan) return;
+    
+    // Validate car selection
+    if (!selectedCar) {
+      alert("Please select a car for this pass");
+      return;
+    }
 
     // Show payment selection
     setPaymentAmount(selectedPlan.price);
@@ -359,7 +380,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     let error = null;
 
     if (!existingPass) {
-      error = await createMonthlyPass(user.id, selectedPlan);
+      error = await createMonthlyPass(user.id, selectedPlan, selectedCar?.id);
     } else {
       error = await updateMonthlyPass(existingPass, selectedPlan);
     }
@@ -429,6 +450,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
         { name: "Profile", icon: <FiUser />, link: "/profile" },
         { name: "Location", icon: <FiMapPin />, link: "/location" },
         { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
       ];
 
   /** Derived values from activePass */
@@ -590,6 +612,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                   <button
                     onClick={() => {
                       setSelectedPlan(plan);
+                      setSelectedCar(null); // Reset car selection
                       setBuyModalOpen(true);
                     }}
                     className="mt-4 w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg"
@@ -688,6 +711,33 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
               </p>
             </div>
 
+            {/* Car Selection */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <label className="text-sm font-semibold text-slate-300 uppercase tracking-wider block mb-3">
+                Select Car
+              </label>
+              {cars.length > 0 ? (
+                <div className="space-y-2">
+                  {cars.map((car) => (
+                    <button
+                      key={car.id}
+                      onClick={() => setSelectedCar(car)}
+                      className={`w-full p-3 rounded-lg text-left transition border-2 ${
+                        selectedCar?.id === car.id
+                          ? "bg-blue-600/30 border-blue-500 text-blue-300"
+                          : "bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500"
+                      }`}
+                    >
+                      <div className="font-medium">{car.brand} {car.model}</div>
+                      <div className="text-xs opacity-75">{car.number_plate}</div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-400 text-sm">No cars found. Add a car first.</p>
+              )}
+            </div>
+
             {/* Plan Summary */}
             <div className="bg-slate-800/50 rounded-lg p-4 space-y-3">
               <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Plan Summary</p>
@@ -747,8 +797,9 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
               <button
                 onClick={buyPlan}
-                disabled={loading}
-                className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                disabled={loading || !selectedCar}
+                className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                title={!selectedCar ? "Please select a car first" : ""}
               >
                 {loading ? (
                   <>

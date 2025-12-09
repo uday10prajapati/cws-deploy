@@ -725,12 +725,28 @@ router.get("/all-revenue", async (req, res) => {
     const completedBookings = bookings || [];
     const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
 
+    // Calculate daily breakdown
+    const dailyRevenue = {};
+    completedBookings.forEach((booking) => {
+      const date = booking.date || booking.created_at;
+      const dateKey = new Date(date).toISOString().split('T')[0]; // YYYY-MM-DD format
+      dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (booking.amount || 0);
+    });
+
     // Calculate monthly breakdown
     const monthlyRevenue = {};
     completedBookings.forEach((booking) => {
-      const date = new Date(booking.date);
+      const date = new Date(booking.date || booking.created_at);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
       monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + (booking.amount || 0);
+    });
+
+    // Calculate yearly breakdown
+    const yearlyRevenue = {};
+    completedBookings.forEach((booking) => {
+      const date = new Date(booking.date || booking.created_at);
+      const yearKey = `${date.getFullYear()}`;
+      yearlyRevenue[yearKey] = (yearlyRevenue[yearKey] || 0) + (booking.amount || 0);
     });
 
     return res.status(200).json({
@@ -741,7 +757,9 @@ router.get("/all-revenue", async (req, res) => {
         averagePerTransaction: completedBookings.length > 0
           ? Math.round(totalRevenue / completedBookings.length)
           : 0,
+        dailyBreakdown: dailyRevenue,
         monthlyBreakdown: monthlyRevenue,
+        yearlyBreakdown: yearlyRevenue,
         recentTransactions: completedBookings.slice(0, 20),
       },
     });

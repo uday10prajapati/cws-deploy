@@ -21,6 +21,7 @@ import {
   FiCheckCircle,
   FiX,
   FiMapPin,
+  FiSettings,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -78,6 +79,8 @@ export default function BookingPage() {
 
   // Monthly pass state
   const [activePass, setActivePass] = useState(null);
+  const [selectedCarPassId, setSelectedCarPassId] = useState(null); // Track selected car's ID
+  const [selectedCarPass, setSelectedCarPass] = useState(null); // Track selected car's pass data
   const [usePass, setUsePass] = useState(false);
 
   // Menu for sidebar
@@ -89,6 +92,7 @@ export default function BookingPage() {
         { name: "Profile", icon: <FiUser />, link: "/profile" },
         { name: "Location", icon: <FiMapPin />, link: "/location" },
         { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
       ];
 
   // Service options
@@ -1307,15 +1311,57 @@ export default function BookingPage() {
                   <span className="text-red-400">*</span>
                 </label>
 
-                <input
-                  type="text"
-                  placeholder="Enter your car name (e.g., Honda City, Swift, Creta)…"
-                  value={customCarName}
-                  onChange={(e) => setCustomCarName(e.target.value)}
-                  required
-                  className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-sm 
-               focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                {cars.length > 0 ? (
+                  <select
+                    value={customCarName}
+                    onChange={async (e) => {
+                      const carName = e.target.value;
+                      setCustomCarName(carName);
+                      
+                      // Find selected car and fetch its pass
+                      const selectedCar = cars.find(
+                        (car) => `${car.brand} ${car.model}` === carName
+                      );
+                      
+                      if (selectedCar && user) {
+                        setSelectedCarPassId(selectedCar.id);
+                        
+                        // Fetch pass for this specific car
+                        try {
+                          const response = await fetch(
+                            `http://localhost:5000/pass/car/${user.id}/${selectedCar.id}`
+                          );
+                          const result = await response.json();
+                          if (result.success && result.data) {
+                            setSelectedCarPass(result.data);
+                          } else {
+                            setSelectedCarPass(null);
+                          }
+                        } catch (err) {
+                          console.error("Error fetching car pass:", err);
+                          setSelectedCarPass(null);
+                        }
+                      } else {
+                        setSelectedCarPassId(null);
+                        setSelectedCarPass(null);
+                      }
+                    }}
+                    required
+                    className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-sm 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  >
+                    <option value="">Select a car...</option>
+                    {cars.map((car) => (
+                      <option key={car.id} value={`${car.brand} ${car.model}`}>
+                        {car.brand} {car.model} - {car.number_plate}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 text-sm">
+                    No cars found. <a href="/my-cars" className="text-blue-400 hover:underline">Add a car</a>
+                  </div>
+                )}
               </div>
 
               {/* Services */}
@@ -1600,8 +1646,8 @@ export default function BookingPage() {
 
             {/* RIGHT: MONTHLY PASS + SUMMARY CARD */}
             <div className="space-y-6">
-              {/* MONTHLY PASS CARD - Only show if user has active pass */}
-              {activePass && (
+              {/* MONTHLY PASS CARD - Only show if selected car has active pass */}
+              {selectedCarPass && (
                 <div className="bg-linear-to-br from-amber-600/20 to-amber-900/20 border border-amber-500/50 rounded-xl p-6 shadow-xl">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -1617,7 +1663,7 @@ export default function BookingPage() {
                     <div className="flex justify-between items-center p-2 bg-slate-800/30 rounded">
                       <span className="text-sm text-slate-300">Remaining Washes:</span>
                       <span className="text-sm font-bold text-amber-400">
-                        {activePass.remaining_washes} / {activePass.total_washes}
+                        {selectedCarPass.remaining_washes} / {selectedCarPass.total_washes}
                       </span>
                     </div>
 
@@ -1626,9 +1672,9 @@ export default function BookingPage() {
                         className="bg-amber-500 h-3 rounded-full transition-all"
                         style={{
                           width: `${
-                            ((activePass.total_washes -
-                              activePass.remaining_washes) /
-                              activePass.total_washes) *
+                            ((selectedCarPass.total_washes -
+                              selectedCarPass.remaining_washes) /
+                              selectedCarPass.total_washes) *
                             100
                           }%`,
                         }}
@@ -1637,7 +1683,7 @@ export default function BookingPage() {
 
                     <div className="flex justify-between text-xs text-slate-400">
                       <span>
-                        Expires: {new Date(activePass.valid_till).toLocaleDateString()}
+                        Expires: {new Date(selectedCarPass.valid_till).toLocaleDateString()}
                       </span>
                     </div>
 

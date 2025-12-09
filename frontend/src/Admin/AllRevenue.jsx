@@ -14,6 +14,7 @@ export default function AllRevenue() {
   const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [chartView, setChartView] = useState("monthly"); // monthly, daily, yearly
 
   useRoleBasedRedirect("admin");
 
@@ -255,56 +256,203 @@ export default function AllRevenue() {
           </div>
         )}
 
-        {/* MONTHLY BREAKDOWN */}
+        {/* CHART TABS */}
+        <div className="flex gap-2 mb-6 bg-slate-900/50 border border-slate-800 rounded-lg p-2 w-fit">
+          <button
+            onClick={() => setChartView("daily")}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              chartView === "daily"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+            }`}
+          >
+            Daily
+          </button>
+          <button
+            onClick={() => setChartView("monthly")}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              chartView === "monthly"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setChartView("yearly")}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              chartView === "yearly"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+            }`}
+          >
+            Yearly
+          </button>
+        </div>
+
+        {/* BREAKDOWN & CHARTS */}
         {revenueData && Object.keys(revenueData.monthlyBreakdown).length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-xl font-semibold mb-6">Monthly Revenue</h2>
-              <div className="space-y-3">
-                {Object.entries(revenueData.monthlyBreakdown)
-                  .sort()
-                  .reverse()
-                  .map(([month, amount]) => (
-                    <div key={month} className="flex items-center justify-between p-3 bg-slate-800/50 rounded">
-                      <span className="text-sm font-medium">{month}</span>
-                      <span className="text-lg font-bold text-green-400">₹{amount.toLocaleString()}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-xl font-semibold mb-6">Monthly Chart</h2>
-              <div className="flex items-end justify-between gap-2 h-48 p-4 bg-slate-800/50 rounded-lg">
-                {Object.entries(revenueData.monthlyBreakdown)
-                  .sort()
-                  .map(([month, amount]) => {
-                    const maxAmount = Math.max(
-                      ...Object.values(revenueData.monthlyBreakdown),
-                      1
-                    );
-                    return (
-                      <div
-                        key={month}
-                        className="flex flex-col items-center gap-2 flex-1"
-                      >
-                        <div
-                          className="w-full bg-linear-to-t from-green-500 to-emerald-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
-                          style={{
-                            height: `${(amount / maxAmount) * 120}px`,
-                            minHeight: "8px",
-                          }}
-                        >
-                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                            ₹{amount.toLocaleString()}
-                          </div>
+            {/* DAILY VIEW */}
+            {chartView === "daily" && (
+              <>
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-6">Daily Revenue</h2>
+                  <div className="space-y-3">
+                    {Object.entries(revenueData.dailyBreakdown || {})
+                      .sort()
+                      .reverse()
+                      .slice(0, 7)
+                      .map(([day, amount]) => (
+                        <div key={day} className="flex items-center justify-between p-3 bg-slate-800/50 rounded">
+                          <span className="text-sm font-medium">{day}</span>
+                          <span className="text-lg font-bold text-blue-400">₹{amount.toLocaleString()}</span>
                         </div>
-                        <p className="text-xs text-slate-500">{month.split("-")[1]}</p>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
+                      ))}
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-6">Daily Chart</h2>
+                  <div className="flex items-end justify-between gap-1 h-48 p-4 bg-slate-800/50 rounded-lg overflow-x-auto">
+                    {Object.entries(revenueData.dailyBreakdown || {})
+                      .sort()
+                      .slice(0, 30)
+                      .map(([day, amount]) => {
+                        const maxAmount = Math.max(
+                          ...Object.values(revenueData.dailyBreakdown || {}),
+                          1
+                        );
+                        return (
+                          <div
+                            key={day}
+                            className="flex flex-col items-center gap-2 flex-1 min-w-max"
+                          >
+                            <div
+                              className="w-full bg-gradient-to-t from-blue-500 to-cyan-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              style={{
+                                height: `${(amount / maxAmount) * 120}px`,
+                                minHeight: "4px",
+                              }}
+                            >
+                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                                ₹{amount.toLocaleString()}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500">{day.split("-")[2]}</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* MONTHLY VIEW */}
+            {chartView === "monthly" && (
+              <>
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-6">Monthly Revenue</h2>
+                  <div className="space-y-3">
+                    {Object.entries(revenueData.monthlyBreakdown)
+                      .sort()
+                      .reverse()
+                      .map(([month, amount]) => (
+                        <div key={month} className="flex items-center justify-between p-3 bg-slate-800/50 rounded">
+                          <span className="text-sm font-medium">{month}</span>
+                          <span className="text-lg font-bold text-green-400">₹{amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-6">Monthly Chart</h2>
+                  <div className="flex items-end justify-between gap-2 h-48 p-4 bg-slate-800/50 rounded-lg">
+                    {Object.entries(revenueData.monthlyBreakdown)
+                      .sort()
+                      .map(([month, amount]) => {
+                        const maxAmount = Math.max(
+                          ...Object.values(revenueData.monthlyBreakdown),
+                          1
+                        );
+                        return (
+                          <div
+                            key={month}
+                            className="flex flex-col items-center gap-2 flex-1"
+                          >
+                            <div
+                              className="w-full bg-gradient-to-t from-green-500 to-emerald-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              style={{
+                                height: `${(amount / maxAmount) * 120}px`,
+                                minHeight: "8px",
+                              }}
+                            >
+                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                                ₹{amount.toLocaleString()}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500">{month.split("-")[1]}</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* YEARLY VIEW */}
+            {chartView === "yearly" && (
+              <>
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-6">Yearly Revenue</h2>
+                  <div className="space-y-3">
+                    {Object.entries(revenueData.yearlyBreakdown || {})
+                      .sort()
+                      .reverse()
+                      .map(([year, amount]) => (
+                        <div key={year} className="flex items-center justify-between p-3 bg-slate-800/50 rounded">
+                          <span className="text-sm font-medium">{year}</span>
+                          <span className="text-lg font-bold text-purple-400">₹{amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-6">Yearly Chart</h2>
+                  <div className="flex items-end justify-between gap-3 h-48 p-4 bg-slate-800/50 rounded-lg">
+                    {Object.entries(revenueData.yearlyBreakdown || {})
+                      .sort()
+                      .map(([year, amount]) => {
+                        const maxAmount = Math.max(
+                          ...Object.values(revenueData.yearlyBreakdown || {}),
+                          1
+                        );
+                        return (
+                          <div
+                            key={year}
+                            className="flex flex-col items-center gap-2 flex-1"
+                          >
+                            <div
+                              className="w-full bg-gradient-to-t from-purple-500 to-pink-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              style={{
+                                height: `${(amount / maxAmount) * 120}px`,
+                                minHeight: "8px",
+                              }}
+                            >
+                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                                ₹{amount.toLocaleString()}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500">{year}</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 

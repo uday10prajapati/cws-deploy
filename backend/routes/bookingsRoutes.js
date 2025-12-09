@@ -126,7 +126,7 @@ router.get("/customer/:customer_id", async (req, res) => {
 
     const { data, error } = await supabase
       .from("bookings")
-      .select("*")
+      .select("*, cars(number_plate)")
       .eq("customer_id", customer_id)
       .order("created_at", { ascending: false });
 
@@ -138,10 +138,16 @@ router.get("/customer/:customer_id", async (req, res) => {
       });
     }
 
-    console.log(`✅ Retrieved ${data?.length || 0} bookings for customer ${customer_id}`);
+    // Map data to flatten number_plate for easier access
+    const bookingsWithNumberPlate = (data || []).map(booking => ({
+      ...booking,
+      number_plate: booking.cars?.number_plate || "N/A"
+    }));
+
+    console.log(`✅ Retrieved ${bookingsWithNumberPlate?.length || 0} bookings for customer ${customer_id}`);
     return res.status(200).json({ 
       success: true, 
-      bookings: data || [] 
+      bookings: bookingsWithNumberPlate || [] 
     });
 
   } catch (err) {

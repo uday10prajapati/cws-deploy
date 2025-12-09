@@ -7,7 +7,7 @@ const router = express.Router();
    BUY MONTHLY PASS
 ----------------------------------------- */
 router.post("/buy", async (req, res) => {
-  const { customer_id, total_washes, remaining_washes, valid_till } = req.body;
+  const { customer_id, car_id, total_washes, remaining_washes, valid_till } = req.body;
 
   if (!customer_id) {
     return res.status(400).json({
@@ -21,6 +21,7 @@ router.post("/buy", async (req, res) => {
     .insert([
       {
         customer_id,
+        car_id: car_id || null,
         total_washes: total_washes || 4,
         remaining_washes: remaining_washes || 4,
         valid_till,
@@ -216,6 +217,57 @@ router.delete("/:id", async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Pass deactivated successfully",
+  });
+});
+
+/* -----------------------------------------
+   GET ACTIVE PASS FOR SPECIFIC CAR
+----------------------------------------- */
+router.get("/car/:customer_id/:car_id", async (req, res) => {
+  const { customer_id, car_id } = req.params;
+
+  const { data, error } = await supabase
+    .from("monthly_pass")
+    .select("*")
+    .eq("customer_id", customer_id)
+    .eq("car_id", car_id)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.log("PASS FETCH ERROR:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+
+  res.status(200).json({
+    success: true,
+    data,
+  });
+});
+
+/* -----------------------------------------
+   GET ALL PASSES FOR A CAR
+----------------------------------------- */
+router.get("/car-all/:customer_id/:car_id", async (req, res) => {
+  const { customer_id, car_id } = req.params;
+
+  const { data, error } = await supabase
+    .from("monthly_pass")
+    .select("*")
+    .eq("customer_id", customer_id)
+    .eq("car_id", car_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log("PASS FETCH ERROR:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: data || [],
   });
 });
 

@@ -3,6 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import ApprovalPanel from "./ApprovalPanel";
+import ExpiredPassesNotification from "./ExpiredPassesNotification";
+import AdminLoyaltyDashboard from "./AdminLoyaltyDashboard";
+import AdminDocumentVerification from "./AdminDocumentVerification";
 import {
   FiHome,
   FiUsers,
@@ -16,6 +19,7 @@ import {
   FiChevronLeft,
   FiCreditCard,
   FiAlertCircle,
+  FiAward,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -148,6 +152,10 @@ export default function AdminDashboard() {
     { name: "Customer Accounts", icon: <FiSettings />, link: "/admin/customer-accounts", id: "customer-accounts" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings", id: "earnings" },
     { name: "Cars", icon: <FaCar />, link: "/admin/cars", id: "cars" },
+    { name: "Pass Expirations", icon: <FiAlertCircle />, link: null, id: "pass-expiration" },
+    { name: "Loyalty Points", icon: <FiAward />, link: null, id: "loyalty-points" },
+    { name: "Washer Documents", icon: <FiClipboard />, link: null, id: "washer-documents" },
+    { name: "Scan QR", icon: <FiClipboard />, link: "/scan-customer-qr", id: "scan-qr" },
     { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue", id: "revenue" },
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics", id: "analytics" },
     { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account", id: "bank" },
@@ -339,6 +347,15 @@ export default function AdminDashboard() {
 
           {/* APPROVALS SECTION */}
           {activeSection === "approvals" && <ApprovalPanel />}
+
+          {/* PASS EXPIRATION SECTION */}
+          {activeSection === "pass-expiration" && <ExpiredPassesNotification />}
+
+          {/* LOYALTY POINTS SECTION */}
+          {activeSection === "loyalty-points" && <AdminLoyaltyDashboard />}
+
+          {/* WASHER DOCUMENTS SECTION */}
+          {activeSection === "washer-documents" && <AdminDocumentVerification />}
 
           {/* DASHBOARD CONTENT */}
           {activeSection === "dashboard" && (

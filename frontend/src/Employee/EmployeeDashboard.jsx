@@ -158,6 +158,7 @@ export default function EmployeeDashboard() {
     { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
     { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
+    { name: "Scan QR", icon: <FiClipboard />, link: "/scan-customer-qr" },
   ];
 
   // Filter pending and completed bookings

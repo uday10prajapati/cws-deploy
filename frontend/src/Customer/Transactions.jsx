@@ -22,7 +22,8 @@ import {
   FiMenu,
   FiAward,
   FiMapPin,
-  FiEye
+  FiEye,
+  FiSettings 
 } from "react-icons/fi";
 
 import { FaWallet, FaCar } from "react-icons/fa";
@@ -677,6 +678,7 @@ export default function TransactionsPage() {
         { name: "Profile", icon: <FiUser />, link: "/profile" },
         { name: "Location", icon: <FiMapPin />, link: "/location" },
         { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
       ];
 
   // Check if redirected from booking/pass purchase

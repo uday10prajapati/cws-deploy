@@ -20,6 +20,12 @@ import notificationsRoutes from "./routes/notificationsRoutes.js";
 import adminStatsRoutes from "./routes/adminStatsRoutes.js";
 import accountStatusRoutes from "./routes/accountStatusRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import carWashRoutes from "./routes/carWash.js";
+import qrcodeRoutes from "./routes/qrcodeRoutes.js";
+import passExpirationRoutes from "./routes/passExpirationRoutes.js";
+import loyaltyPointsRoutes from "./routes/loyaltyPointsRoutes.js";
+import customerLoyaltyRoutes from "./routes/customerLoyaltyRoutes.js";
+import washerDocumentsRoutes from "./routes/washerDocumentsRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -42,6 +48,12 @@ app.use("/ratings", ratingsRoutes);
 app.use("/earnings", earningsRoutes);
 app.use("/notifications", notificationsRoutes);
 app.use("/profile", profileRoutes);
+app.use("/car-wash", carWashRoutes);
+app.use("/qrcode", qrcodeRoutes);
+app.use("/pass-expiration", passExpirationRoutes);
+app.use("/loyalty", loyaltyPointsRoutes);
+app.use("/customer-loyalty", customerLoyaltyRoutes);
+app.use("/documents", washerDocumentsRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

@@ -263,6 +263,7 @@ export default function CustomerDashboard() {
     { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
     { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
     { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+    { name: "Loyalty Points", icon: <FiTrendingUp />, link: "/customer/loyalty" },
     { name: "Profile", icon: <FiUser />, link: "/profile" },
     { name: "Location", icon: <FiMapPin />, link: "/location" },
     { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
@@ -503,30 +504,35 @@ export default function CustomerDashboard() {
           {/* 🌈 STAT CARDS — DARK THEME */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
             {stats.map((item, index) => (
-              <div
+              <Link
                 key={item.title}
-                className={`rounded-xl p-6 shadow-lg border border-slate-800 
-                bg-linear-to-br
-                ${
-                  index % 2 === 0
-                    ? "from-blue-600/20 to-blue-900/20"
-                    : "from-purple-600/20 to-pink-900/20"
-                }
-                hover:scale-105 transition-transform duration-300 cursor-pointer`}
+                to={item.title === "Loyalty Points" ? "/customer/loyalty" : "#"}
+                className="block"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-slate-400 text-sm font-medium">
-                    {item.title}
+                <div
+                  className={`rounded-xl p-6 shadow-lg border border-slate-800 
+                  bg-linear-to-br
+                  ${
+                    index % 2 === 0
+                      ? "from-blue-600/20 to-blue-900/20"
+                      : "from-purple-600/20 to-pink-900/20"
+                  }
+                  hover:scale-105 transition-transform duration-300 cursor-pointer`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-slate-400 text-sm font-medium">
+                      {item.title}
+                    </p>
+                    <span className="text-2xl text-blue-400 opacity-60">
+                      {item.icon}
+                    </span>
+                  </div>
+                  <p className="text-4xl font-bold text-white">{item.value}</p>
+                  <p className="text-blue-400 text-xs mt-2 font-medium">
+                    {item.change}
                   </p>
-                  <span className="text-2xl text-blue-400 opacity-60">
-                    {item.icon}
-                  </span>
                 </div>
-                <p className="text-4xl font-bold text-white">{item.value}</p>
-                <p className="text-blue-400 text-xs mt-2 font-medium">
-                  {item.change}
-                </p>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -768,6 +774,7 @@ export default function CustomerDashboard() {
                   <thead>
                     <tr className="border-b border-slate-700 text-slate-400">
                       <th className="py-3 text-left font-medium">Car</th>
+                      <th className="py-3 text-left font-medium">Number Plate</th>
                       <th className="py-3 text-left font-medium">
                         Date & Time
                       </th>
@@ -787,6 +794,9 @@ export default function CustomerDashboard() {
                         <td className="py-3 flex items-center gap-2">
                           <FaCar className="text-blue-400" />
                           {b.car_name || "Car"}
+                        </td>
+                        <td className="py-3 text-slate-300">
+                          {b.number_plate || "N/A"}
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import NotificationBell from "../components/NotificationBell";
 import AddressManager from "../components/AddressManager";
+import CarQRCode from "../components/CarQRCode";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FiUser, FiMail, FiPhone, FiClock, FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell, FiMapPin } from "react-icons/fi";
@@ -33,6 +34,10 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedCarForQR, setSelectedCarForQR] = useState(null);
+  const [selectedCarPass, setSelectedCarPass] = useState(null);
+  const [userAddress, setUserAddress] = useState(null);
 
   useEffect(() => {
     loadUserData();
@@ -79,11 +84,43 @@ export default function ProfilePage() {
       if (passResult.success && passResult.data) {
         setMonthlyPass(passResult.data);
       }
+
+      // Load Primary Address
+      const { data: addressData } = await supabase
+        .from("user_addresses")
+        .select("*")
+        .eq("user_id", uid)
+        .eq("is_primary", true)
+        .maybeSingle();
+      
+      if (addressData) {
+        setUserAddress(addressData);
+      }
     } catch (err) {
       console.error("Error loading user data:", err);
     }
 
     setLoading(false);
+  };
+
+  const handleOpenQRCode = async (car) => {
+    setSelectedCarForQR(car);
+    
+    // Fetch pass for this specific car if available
+    try {
+      const passRes = await fetch(`http://localhost:5000/pass/car/${user.id}/${car.id}`);
+      const passResult = await passRes.json();
+      if (passResult.success && passResult.data) {
+        setSelectedCarPass(passResult.data);
+      } else {
+        setSelectedCarPass(null);
+      }
+    } catch (err) {
+      console.error("Error loading car pass:", err);
+      setSelectedCarPass(null);
+    }
+    
+    setShowQRModal(true);
   };
 
   const handleChangePassword = async () => {
@@ -297,9 +334,20 @@ export default function ProfilePage() {
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {cars.map((car) => (
                     <div key={car.id} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                      <p className="font-semibold text-blue-300">{car.brand} {car.model || ""}</p>
-                      <p className="text-sm text-slate-400">Plate: {car.number_plate}</p>
-                      <p className="text-xs text-slate-500 mt-1">{car.color || "Color not specified"}</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-blue-300">{car.brand} {car.model || ""}</p>
+                          <p className="text-sm text-slate-400">Plate: {car.number_plate}</p>
+                          <p className="text-xs text-slate-500 mt-1">{car.color || "Color not specified"}</p>
+                        </div>
+                        <button
+                          onClick={() => handleOpenQRCode(car)}
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold transition"
+                          title="Generate QR Code for this car"
+                        >
+                          🎫 QR Code
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -523,6 +571,26 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* CAR QR CODE MODAL */}
+      {showQRModal && selectedCarForQR && (
+        <CarQRCode
+          carData={selectedCarForQR}
+          userData={{
+            name: user?.user_metadata?.name || user?.email?.split("@")[0],
+            email: user?.email,
+            phone: user?.user_metadata?.phone,
+          }}
+          passData={selectedCarPass}
+          userAddress={userAddress}
+          isOpen={showQRModal}
+          onClose={() => {
+            setShowQRModal(false);
+            setSelectedCarForQR(null);
+            setSelectedCarPass(null);
+          }}
+        />
       )}
     </div>
   );
