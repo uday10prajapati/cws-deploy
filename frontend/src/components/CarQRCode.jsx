@@ -73,7 +73,7 @@ export default function CarQRCode({ carData, userData, passData, userAddress, is
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700 flex-shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-slate-700 shrink-0">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             🎫 Car QR Code
           </h2>
@@ -115,6 +115,22 @@ export default function CarQRCode({ carData, userData, passData, userAddress, is
                 <p><span className="font-medium">Brand:</span> {carData.brand} {carData.model}</p>
                 <p><span className="font-medium">Number Plate:</span> <span className="font-mono font-bold text-blue-400">{carData.number_plate}</span></p>
                 {carData.color && <p><span className="font-medium">Color:</span> {carData.color}</p>}
+                
+                {/* Monthly Pass Status */}
+                <div className="pt-2 border-t border-blue-500/20 mt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Pass Status:</span>
+                    {passData ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/20 text-green-300 text-xs font-bold border border-green-500/50">
+                        <span className="text-lg">✓</span> ACTIVE
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/50">
+                        <span className="text-lg">✕</span> INACTIVE
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -182,7 +198,7 @@ export default function CarQRCode({ carData, userData, passData, userAddress, is
         </div>
 
         {/* Footer Buttons - Fixed */}
-        <div className="border-t border-slate-700 p-6 flex gap-3 justify-end flex-shrink-0">
+        <div className="border-t border-slate-700 p-6 flex gap-3 justify-end shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition"
@@ -199,7 +215,7 @@ export default function CarQRCode({ carData, userData, passData, userAddress, is
         </div>
 
         {/* Info Message */}
-        <div className="bg-slate-800/50 border-t border-slate-700 px-6 py-3 text-xs text-slate-400 flex-shrink-0">
+        <div className="bg-slate-800/50 border-t border-slate-700 px-6 py-3 text-xs text-slate-400 shrink-0">
           💡 <span className="font-medium">How to use:</span> Washers can scan this QR code to see all your details.
         </div>
       </div>

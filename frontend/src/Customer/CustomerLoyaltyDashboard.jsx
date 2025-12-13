@@ -114,10 +114,10 @@ const CustomerLoyaltyDashboard = () => {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-8">
+        <div className="bg-linear-to-r from-green-500 to-emerald-500 rounded-lg p-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <FiAward size={48} className="text-white" />
@@ -262,7 +262,7 @@ const CustomerLoyaltyDashboard = () => {
 
             {/* Next Milestone */}
             {offers.all && offers.all.length > 0 && (
-              <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg p-6">
+              <div className="bg-linear-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg p-6">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <FiGift className="text-emerald-400" />
                   Next Milestone
@@ -312,7 +312,7 @@ const CustomerLoyaltyDashboard = () => {
                 {offers.available.map(offer => (
                   <div
                     key={offer.id}
-                    className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-5 hover:border-purple-500/60 transition"
+                    className="bg-linear-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-5 hover:border-purple-500/60 transition"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>

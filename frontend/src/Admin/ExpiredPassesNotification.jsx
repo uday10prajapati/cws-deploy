@@ -68,7 +68,7 @@ const ExpiredPassesNotification = () => {
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-lg p-6 text-white mb-6">
+      <div className="bg-linear-to-r from-red-600 to-orange-600 rounded-lg p-6 text-white mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FiAlertCircle size={32} />

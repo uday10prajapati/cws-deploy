@@ -9,15 +9,71 @@ import {
   FiClipboard,
   FiDollarSign,
   FiBell,
-  FiTrendingUp,
-  FiCalendar,
+  FiCheckCircle,
   FiMapPin,
-  FiDownload,
-  FiEye,
+  FiPhone,
+  FiUser
 } from "react-icons/fi";
 import { FaCar, FaStar } from "react-icons/fa";
-import { generateTransactionPDF, viewTransactionPDF } from "../utils/pdfGenerator";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+
+// Transaction Row Component
+function TransactionRow({ transaction, getCustomerDetails }) {
+  const [customerInfo, setCustomerInfo] = useState({ name: "Loading...", phone: "..." });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      const details = await getCustomerDetails(transaction.customer_id);
+      setCustomerInfo(details);
+      setLoading(false);
+    };
+    fetchCustomer();
+  }, [transaction.customer_id, getCustomerDetails]);
+
+  return (
+    <div className="p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800/80 transition">
+      <div className="flex items-center justify-between gap-3">
+        {/* Left Section - Type and Date */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold text-blue-300 capitalize">
+              {transaction.type}
+            </span>
+            <span className="text-xs text-slate-500">
+              {new Date(transaction.created_at).toLocaleDateString('en-IN')}
+            </span>
+          </div>
+          
+          {/* Customer Info */}
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1 text-slate-300">
+              <FiUser size={14} />
+              <span>{loading ? "Loading..." : customerInfo.name}</span>
+            </div>
+            <div className="flex items-center gap-1 text-slate-300">
+              <FiPhone size={14} />
+              <span>{loading ? "..." : customerInfo.phone}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Section - Status */}
+        <div>
+          <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+            transaction.status === 'success'
+              ? 'bg-green-600/20 text-green-300'
+              : transaction.status === 'pending'
+              ? 'bg-yellow-600/20 text-yellow-300'
+              : 'bg-red-600/20 text-red-300'
+          }`}>
+            {transaction.status === 'success' ? '✓ Successful' : transaction.status}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Earnings() {
   const location = useLocation();
@@ -73,54 +129,50 @@ export default function Earnings() {
     window.location.href = "/login";
   };
 
-  // Get customer profile using customer_id from transaction
-  const getCustomerProfile = async (customerId) => {
+  // Get customer details from customer_id
+  const getCustomerDetails = async (customerId) => {
     try {
-      if (!customerId) return null;
+      if (!customerId) return { name: "N/A", phone: "N/A" };
       
-      // Try to fetch from profiles table using correct column names
-      const { data: profile, error } = await supabase
+      // Try to fetch from profiles table
+      const { data: profile } = await supabase
         .from("profiles")
-        .select("name, email, phone")
+        .select("name, phone")
         .eq("id", customerId)
         .single();
       
-      if (profile && (profile.name || profile.email)) {
-        console.log("Customer profile found:", profile);
+      if (profile) {
         return {
-          name: profile.name || 'Customer',
-          email: profile.email || 'N/A',
-          phone: profile.phone || 'N/A'
+          name: profile.name || "N/A",
+          phone: profile.phone || "N/A"
         };
       }
-      
-      // If profiles table doesn't have data, try to get from backend
+
+      // Fallback to backend API
       try {
         const response = await fetch(`http://localhost:5000/auth/user/${customerId}`);
         const result = await response.json();
         if (result.success && result.user) {
-          console.log("Fetching from backend:", result.user);
           return {
-            name: result.user.full_name || result.user.email || 'Customer',
-            email: result.user.email || 'N/A',
-            phone: result.user.phone || 'N/A'
+            name: result.user.full_name || result.user.email || "N/A",
+            phone: result.user.phone || "N/A"
           };
         }
-      } catch (backendError) {
-        console.error("Backend fetch error:", backendError);
+      } catch (err) {
+        console.error("Backend fetch error:", err);
       }
-      
-      return { name: 'Customer', email: 'N/A', phone: 'N/A' };
+
+      return { name: "N/A", phone: "N/A" };
     } catch (error) {
-      console.error("Error fetching customer profile:", error);
-      return { name: 'Customer', email: 'N/A', phone: 'N/A' };
+      console.error("Error fetching customer details:", error);
+      return { name: "N/A", phone: "N/A" };
     }
   };
 
   const employeeMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
         { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-        { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+        { name: "Transaction Status", icon: <FiDollarSign />, link: "/employee/earnings" },
         { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
         { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
         { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
@@ -204,7 +256,7 @@ export default function Earnings() {
       <div className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
         {/* NAVBAR (Desktop Only) */}
         <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
-          <h1 className="text-2xl font-bold">Earnings</h1>
+          <h1 className="text-2xl font-bold">Transaction Status</h1>
 
           <div className="flex items-center gap-6">
             <FiBell className="text-xl text-slate-300 hover:text-blue-400 cursor-pointer" />
@@ -221,37 +273,16 @@ export default function Earnings() {
 
         {/* ▓▓ PAGE CONTENT ▓▓ */}
         <main className="p-4 md:p-8 space-y-6">
-          {/* TOP STATS CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-linear-to-br from-green-600/20 to-green-900/20 border border-green-500/30 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-slate-400 text-sm font-medium">{new Date().toLocaleString('en-US', { month: 'long' })} Earnings</p>
-                <FiCalendar className="text-green-400 text-xl" />
-              </div>
-              <p className="text-4xl font-bold text-green-400">₹{monthlyTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-              <p className="text-slate-500 text-xs mt-2">Current month earnings</p>
-            </div>
-
-            <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-slate-400 text-sm font-medium">Transactions</p>
-                <FiDollarSign className="text-blue-400 text-xl" />
-              </div>
-              <p className="text-4xl font-bold text-blue-400">{transactions.length}</p>
-              <p className="text-slate-500 text-xs mt-2">Successful payments</p>
-            </div>
-          </div>
-
-          {/* TOTAL EARNINGS CARD WITH TRANSACTION HISTORY */}
-          <div className="bg-linear-to-br from-purple-600/20 to-purple-900/20 border border-purple-500/30 rounded-xl p-6 shadow-lg">
+          {/* TRANSACTION HISTORY CARD - AMOUNTS HIDDEN */}
+          <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-xl p-6 shadow-lg">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-purple-500/30">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-blue-500/30">
               <div>
-                <p className="text-slate-400 text-sm font-medium">Total Earnings</p>
-                <p className="text-4xl font-bold text-purple-400 mt-2">₹{totalEarnings.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-                <p className="text-slate-500 text-xs mt-2">All successful transactions</p>
+                <p className="text-slate-400 text-sm font-medium">Transaction Status</p>
+                <p className="text-4xl font-bold text-blue-400 mt-2">{transactions.length}</p>
+                <p className="text-slate-500 text-xs mt-2">Successful transactions completed</p>
               </div>
-              <FiTrendingUp className="text-purple-400 text-4xl opacity-50" />
+              <FiCheckCircle className="text-blue-400 text-4xl opacity-50" />
             </div>
 
             {/* Transaction History */}
@@ -268,66 +299,11 @@ export default function Earnings() {
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {transactions.slice(0, 5).map((transaction, idx) => (
-                    <div key={transaction.id || idx} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800/80 transition">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold text-purple-300 capitalize">
-                            {transaction.type}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {new Date(transaction.created_at).toLocaleDateString('en-IN')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400 capitalize">
-                            {transaction.payment_method || "N/A"}
-                          </span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            transaction.status === 'success'
-                              ? 'bg-green-600/20 text-green-300'
-                              : transaction.status === 'pending'
-                              ? 'bg-yellow-600/20 text-yellow-300'
-                              : 'bg-red-600/20 text-red-300'
-                          }`}>
-                            {transaction.status}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right ml-4 flex items-center gap-2">
-                        <div>
-                          <p className="font-bold text-green-400">
-                            ₹{parseFloat(transaction.total_amount || transaction.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {transaction.gst ? `+₹${parseFloat(transaction.gst).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST` : 'No GST'}
-                          </p>
-                        </div>
-                        {transaction.status === 'success' && (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={async () => {
-                                const customerProfile = await getCustomerProfile(transaction.customer_id);
-                                viewTransactionPDF(transaction, { name: customerProfile?.name || 'Customer', email: customerProfile?.email || 'N/A', phone: customerProfile?.phone || 'N/A' }, 'customer');
-                              }}
-                              className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
-                              title="View Invoice"
-                            >
-                              <FiEye size={12} />
-                            </button>
-                            <button
-                              onClick={async () => {
-                                const customerProfile = await getCustomerProfile(transaction.customer_id);
-                                generateTransactionPDF(transaction, { name: customerProfile?.name || 'Customer', email: customerProfile?.email || 'N/A', phone: customerProfile?.phone || 'N/A' }, 'customer');
-                              }}
-                              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition"
-                              title="Download Invoice"
-                            >
-                              <FiDownload size={12} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <TransactionRow 
+                      key={transaction.id || idx} 
+                      transaction={transaction} 
+                      getCustomerDetails={getCustomerDetails}
+                    />
                   ))}
                   
                   {transactions.length > 5 && (
@@ -344,7 +320,7 @@ export default function Earnings() {
           {/* FOOTER INFO */}
           <div className="p-6 bg-slate-800/30 border border-slate-700 rounded-xl">
             <p className="text-slate-400 text-sm">
-              💡 <strong>Note:</strong> Earnings are calculated from successful payment transactions in the transactions table. GST and other charges are included in the total amount.
+              ✓ This page shows your transaction status. Only successful transactions are displayed.
             </p>
           </div>
         </main>

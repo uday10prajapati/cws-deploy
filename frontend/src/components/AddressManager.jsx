@@ -7,6 +7,7 @@ export default function AddressManager({ userId }) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    village: "",
     address: "",
     city: "",
     state: "",
@@ -14,6 +15,8 @@ export default function AddressManager({ userId }) {
     country: "",
     address_type: "home",
   });
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Load address on mount
   useEffect(() => {
@@ -28,12 +31,22 @@ export default function AddressManager({ userId }) {
 
       if (result.success && result.address) {
         setAddress(result.address);
-        setFormData(result.address);
+        setFormData({
+          village: result.address.village || "",
+          address: result.address.address || "",
+          city: result.address.city || "",
+          state: result.address.state || "",
+          postal_code: result.address.postal_code || "",
+          country: result.address.country || "",
+          address_type: result.address.address_type || "home",
+        });
       } else if (!result.success) {
         console.error("Error loading address:", result.error);
       }
+      setIsLoaded(true);
     } catch (err) {
       console.error("Error loading address:", err);
+      setIsLoaded(true);
     }
   };
 
@@ -43,9 +56,39 @@ export default function AddressManager({ userId }) {
       ...prev,
       [name]: value,
     }));
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const requiredFields = ["village", "city", "state", "country"];
+
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field].trim() === "") {
+        if (field === "village") {
+          newErrors[field] = "Village is required";
+        } else {
+          newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      alert("Please fill in all required fields: Village, City, State, and Country");
+      return;
+    }
+
     setLoading(true);
     try {
       // Save address via backend API instead of direct Supabase query
@@ -53,6 +96,7 @@ export default function AddressManager({ userId }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          village: formData.village,
           address: formData.address,
           city: formData.city,
           state: formData.state,
@@ -67,6 +111,7 @@ export default function AddressManager({ userId }) {
       if (result.success) {
         setAddress(formData);
         setIsEditing(false);
+        setErrors({});
         alert("Address saved successfully!");
       } else {
         alert("Error saving address: " + result.error);
@@ -80,6 +125,7 @@ export default function AddressManager({ userId }) {
 
   const handleCancel = () => {
     setFormData(address || {
+      village: "",
       address: "",
       city: "",
       state: "",
@@ -97,7 +143,7 @@ export default function AddressManager({ userId }) {
           <FiMapPin className="text-blue-400" size={24} />
           <h3 className="text-lg font-semibold text-white">Address</h3>
         </div>
-        {!isEditing && (
+        {!isEditing && isLoaded && (
           <button
             onClick={() => setIsEditing(true)}
             className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
@@ -108,9 +154,29 @@ export default function AddressManager({ userId }) {
         )}
       </div>
 
-      {isEditing ? (
+      {!isLoaded ? (
+        <p className="text-slate-400">Loading address...</p>
+      ) : isEditing ? (
         <div className="space-y-4">
-          {/* Address */}
+          {/* Village */}
+          <div>
+            <label className="block text-sm text-slate-300 mb-2">
+              Village <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="village"
+              value={formData.village}
+              onChange={handleInputChange}
+              placeholder="Enter your village name"
+              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.village ? "border-red-500" : "border-slate-600"
+              }`}
+            />
+            {errors.village && <p className="text-red-400 text-xs mt-1">{errors.village}</p>}
+          </div>
+
+          {/* Address (Street Address) */}
           <div>
             <label className="block text-sm text-slate-300 mb-2">
               Street Address
@@ -120,35 +186,48 @@ export default function AddressManager({ userId }) {
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="Enter your street address"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              placeholder="Enter your street address (optional)"
+              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.address ? "border-red-500" : "border-slate-600"
+              }`}
             />
+            {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
           </div>
 
           {/* City */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">City</label>
+            <label className="block text-sm text-slate-300 mb-2">
+              City <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="city"
               value={formData.city}
               onChange={handleInputChange}
               placeholder="Enter your city"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.city ? "border-red-500" : "border-slate-600"
+              }`}
             />
+            {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
           </div>
 
           {/* State */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">State</label>
+            <label className="block text-sm text-slate-300 mb-2">
+              State <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="state"
               value={formData.state}
               onChange={handleInputChange}
               placeholder="Enter your state"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.state ? "border-red-500" : "border-slate-600"
+              }`}
             />
+            {errors.state && <p className="text-red-400 text-xs mt-1">{errors.state}</p>}
           </div>
 
           {/* Postal Code */}
@@ -161,22 +240,27 @@ export default function AddressManager({ userId }) {
               name="postal_code"
               value={formData.postal_code}
               onChange={handleInputChange}
-              placeholder="Enter your postal code"
+              placeholder="Enter your postal code (optional)"
               className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
             />
           </div>
 
           {/* Country */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">Country</label>
+            <label className="block text-sm text-slate-300 mb-2">
+              Country <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="country"
               value={formData.country}
               onChange={handleInputChange}
               placeholder="Enter your country"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.country ? "border-red-500" : "border-slate-600"
+              }`}
             />
+            {errors.country && <p className="text-red-400 text-xs mt-1">{errors.country}</p>}
           </div>
 
           {/* Address Type */}
@@ -217,9 +301,10 @@ export default function AddressManager({ userId }) {
         </div>
       ) : (
         <div className="bg-slate-700/50 rounded-lg p-4">
-          {address?.address ? (
+          {address?.village ? (
             <div className="space-y-2 text-slate-300">
-              <p className="text-white font-semibold">{address.address}</p>
+              <p className="text-white font-semibold">📍 {address.village}</p>
+              {address.address && <p className="text-slate-400">{address.address}</p>}
               <p>{address.city}, {address.state} {address.postal_code}</p>
               <p>{address.country}</p>
               <p className="text-xs text-blue-400 uppercase tracking-wide mt-3">

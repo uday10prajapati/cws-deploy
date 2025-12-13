@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../supabase.js";
+import QRCode from "qrcode";
 
 const router = express.Router();
 
@@ -36,15 +37,100 @@ router.post("/buy", async (req, res) => {
     return res.status(500).json({ success: false, error });
   }
 
+  // Auto-create/update QR code if car_id is provided
+  if (car_id && data?.id) {
+    try {
+      // Fetch car with customer details
+      const { data: car } = await supabase
+        .from("cars")
+        .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, village)")
+        .eq("id", car_id)
+        .single();
+
+      if (car) {
+        const customer = car.profiles;
+        const monthlyPassActive = true;
+
+        const qrData = {
+          carId: car.id,
+          customerId: customer.id,
+          customerName: customer.full_name,
+          customerEmail: customer.email,
+          customerMobile: customer.phone,
+          customerAddress: customer.address || car.number_plate,
+          customerVillage: customer.village,
+          carBrand: car.brand,
+          carModel: car.model,
+          numberPlate: car.number_plate,
+          monthlyPassActive,
+          isActive: monthlyPassActive,
+          monthlyPassExpiry: valid_till,
+          generatedAt: new Date().toISOString(),
+        };
+
+        // Generate QR code
+        const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData));
+
+        // Check if QR code exists for this car
+        const { data: existingQR } = await supabase
+          .from("qr_codes")
+          .select("id")
+          .eq("car_id", car_id)
+          .single();
+
+        if (existingQR) {
+          // Update existing QR code
+          await supabase
+            .from("qr_codes")
+            .update({
+              qr_code_data: JSON.stringify(qrData),
+              qr_code_image: qrCodeDataUrl,
+              monthly_pass_id: data.id,
+              is_active: monthlyPassActive,
+              monthly_pass_active: monthlyPassActive,
+              monthly_pass_expiry: valid_till,
+              updated_at: new Date(),
+            })
+            .eq("id", existingQR.id);
+        } else {
+          // Create new QR code
+          await supabase
+            .from("qr_codes")
+            .insert({
+              car_id,
+              customer_id,
+              monthly_pass_id: data.id,
+              qr_code_data: JSON.stringify(qrData),
+              qr_code_image: qrCodeDataUrl,
+              customer_name: customer.full_name,
+              customer_email: customer.email,
+              customer_mobile: customer.phone,
+              customer_address: customer.address || car.number_plate,
+              customer_village: customer.village,
+              is_active: monthlyPassActive,
+              monthly_pass_active: monthlyPassActive,
+              monthly_pass_expiry: valid_till,
+              car_brand: car.brand,
+              car_model: car.model,
+              car_number_plate: car.number_plate,
+            });
+        }
+      }
+    } catch (qrError) {
+      console.log("QR Code auto-creation warning (non-fatal):", qrError.message);
+      // Don't fail the pass purchase if QR creation fails
+    }
+  }
+
   res.json({
     success: true,
-    message: "Pass purchased successfully",
+    message: "Pass purchased successfully" + (car_id ? " - QR code auto-created" : ""),
     data,
   });
 });
 
 /* -----------------------------------------
-   GET CURRENT ACTIVE PASS
+   GET CURRENT ACTIVE PASS BY CUSTOMER ID
 ----------------------------------------- */
 router.get("/current/:id", async (req, res) => {
   const customerId = req.params.id;
@@ -68,6 +154,40 @@ router.get("/current/:id", async (req, res) => {
       success: true,
       data: null,
       message: "No active pass found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data,
+  });
+});
+
+/* -----------------------------------------
+   GET CURRENT ACTIVE PASS BY CAR ID
+----------------------------------------- */
+router.get("/car/:carId", async (req, res) => {
+  const carId = req.params.carId;
+
+  const { data, error } = await supabase
+    .from("monthly_pass")
+    .select("*")
+    .eq("car_id", carId)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.log("PASS FETCH BY CAR ERROR:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+
+  if (!data) {
+    return res.status(200).json({
+      success: true,
+      data: null,
+      message: "No active pass found for this car",
     });
   }
 

@@ -142,10 +142,10 @@ const WMyjob = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
       {/* ▓▓ MOBILE TOP BAR ▓▓ */}
       <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
           CarWash+
         </h1>
         <FiMenu
@@ -170,7 +170,7 @@ const WMyjob = () => {
       >
         {/* Logo */}
         <div className="p-6 border-b border-slate-800">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             {collapsed ? "C+" : "CarWash+"}
           </h1>
         </div>

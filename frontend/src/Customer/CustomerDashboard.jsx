@@ -22,8 +22,9 @@ import {
   FiTruck,
   FiAward,
   FiSettings,
+  FiWind
 } from "react-icons/fi";
-import { FaCar, FaStar } from "react-icons/fa";
+import { FaCar } from "react-icons/fa";
 
 export default function CustomerDashboard() {
   const location = useLocation();
@@ -40,6 +41,10 @@ export default function CustomerDashboard() {
   const [totalSpent, setTotalSpent] = useState(0);
   const [completedBookings, setCompletedBookings] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltyData, setLoyaltyData] = useState(null);
+  const [washTracking, setWashTracking] = useState([]);
+  const [monthlyWashes, setMonthlyWashes] = useState(0);
+  const [nonWashDays, setNonWashDays] = useState(0);
   
   // Rating modal state
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -99,9 +104,11 @@ export default function CustomerDashboard() {
             const completed = (result.bookings || []).filter((b) => b.status === "Completed").length;
             setCompletedBookings(completed);
 
-            // Calculate loyalty points (1.5 points per completed booking, with tier bonuses)
-            const loyaltyPts = completed > 0 ? Math.floor(completed * 1.5 * 10) : 0;
-            setLoyaltyPoints(loyaltyPts);
+            // Fetch loyalty data from customer_loyalty_points table
+            await fetchLoyaltyData(auth.user.id);
+
+            // Fetch wash tracking data from car_wash_tracking table
+            await fetchWashTrackingData(auth.user.id);
           } else {
             console.error("❌ Error fetching bookings:", result.error);
             setBookings([]);
@@ -169,6 +176,139 @@ export default function CustomerDashboard() {
       console.warn("⚠️ Could not fetch wallet balance:", err);
       setWalletBalance(0);
       setTotalSpent(0);
+    }
+  };
+
+  // Fetch wash tracking data from car_wash_tracking table
+  const fetchWashTrackingData = async (customerId) => {
+    try {
+      // Fetch all wash records for this customer's cars
+      const { data: cars, error: carError } = await supabase
+        .from("cars")
+        .select("id, number_plate")
+        .eq("customer_id", customerId);
+
+      if (carError) {
+        console.warn("⚠️ Could not fetch customer cars:", carError);
+        return;
+      }
+
+      if (!cars || cars.length === 0) {
+        console.log("ℹ️ No cars found for customer");
+        setMonthlyWashes(0);
+        setNonWashDays(0);
+        return;
+      }
+
+      // Get all car numbers
+      const carNumbers = cars.map(c => c.number_plate);
+
+      // Fetch wash tracking records for this month
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const monthStart = new Date(currentYear, now.getMonth(), 1);
+      const monthStartStr = monthStart.toISOString().split('T')[0];
+
+      const { data: washRecords, error: washError } = await supabase
+        .from("car_wash_tracking")
+        .select("*")
+        .in("car_number", carNumbers)
+        .gte("wash_date", monthStartStr)
+        .eq("status", "washed");
+
+      if (washError) {
+        console.warn("⚠️ Could not fetch wash tracking:", washError);
+        return;
+      }
+
+      setWashTracking(washRecords || []);
+
+      // Calculate monthly washes
+      const totalWashes = washRecords?.length || 0;
+      setMonthlyWashes(totalWashes);
+
+      // Calculate non-wash days
+      const washDates = new Set();
+      if (washRecords) {
+        washRecords.forEach(record => {
+          const date = new Date(record.wash_date);
+          washDates.add(date.getDate());
+        });
+      }
+
+      // Count days from 1st to today without a wash
+      const today = now.getDate();
+      let nonWashCount = 0;
+      for (let i = 1; i <= today; i++) {
+        if (!washDates.has(i)) {
+          nonWashCount++;
+        }
+      }
+
+      setNonWashDays(nonWashCount);
+      console.log("✅ Wash tracking loaded:", { totalWashes, nonWashCount });
+    } catch (err) {
+      console.warn("⚠️ Error fetching wash tracking:", err);
+      setMonthlyWashes(0);
+      setNonWashDays(0);
+    }
+  };
+
+  // Fetch loyalty data from customer_loyalty_points table
+  const fetchLoyaltyData = async (customerId) => {
+    try {
+      // First try to fetch from customer_loyalty_points table
+      const { data: loyaltyRecord, error: loyaltyError } = await supabase
+        .from("customer_loyalty_points")
+        .select("total_points, cars_washed, last_wash_date")
+        .eq("customer_id", customerId)
+        .single();
+
+      if (loyaltyError && loyaltyError.code !== 'PGRST116') {
+        // PGRST116 = no rows returned
+        console.warn("⚠️ Could not fetch loyalty points from table:", loyaltyError);
+        setLoyaltyPoints(0);
+        setLoyaltyData(null);
+        return;
+      }
+
+      if (loyaltyRecord) {
+        // Use total_points from the table
+        setLoyaltyPoints(loyaltyRecord.total_points || 0);
+        setLoyaltyData({
+          total_points: loyaltyRecord.total_points || 0,
+          cars_washed: loyaltyRecord.cars_washed || 0,
+          last_wash_date: loyaltyRecord.last_wash_date
+        });
+        console.log("✅ Loyalty points fetched from table:", loyaltyRecord);
+      } else {
+        // No loyalty record found, try API as fallback
+        console.log("ℹ️ No loyalty record in table, trying API fallback");
+        try {
+          const res = await fetch(
+            `http://localhost:5000/customer-loyalty/loyalty/${customerId}`
+          );
+          const result = await res.json();
+
+          if (result.success && result.loyalty) {
+            setLoyaltyData(result.loyalty);
+            setLoyaltyPoints(result.loyalty.total_points || 0);
+            console.log("✅ Loyalty data fetched from API:", result.loyalty);
+          } else {
+            setLoyaltyPoints(0);
+            setLoyaltyData(null);
+          }
+        } catch (apiErr) {
+          console.warn("⚠️ Could not fetch loyalty data from API:", apiErr);
+          setLoyaltyPoints(0);
+          setLoyaltyData(null);
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ Error in fetchLoyaltyData:", err);
+      setLoyaltyPoints(0);
+      setLoyaltyData(null);
     }
   };
 
@@ -263,6 +403,7 @@ export default function CustomerDashboard() {
     { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
     { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
     { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+    { name: "Wash History", icon: <FiTruck />, link: "/wash-history" },
     { name: "Loyalty Points", icon: <FiTrendingUp />, link: "/customer/loyalty" },
     { name: "Profile", icon: <FiUser />, link: "/profile" },
     { name: "Location", icon: <FiMapPin />, link: "/location" },
@@ -270,18 +411,63 @@ export default function CustomerDashboard() {
     { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
   ];
 
+  // Calculate car wash frequency for current month
+  const getCurrentMonthWashes = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return bookings.filter((b) => {
+      const bookingDate = new Date(b.booking_date);
+      return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear && b.status === "Completed";
+    }).length;
+  };
+
+  // Calculate car wash-free days in current month (days without completed bookings)
+  const getCurrentMonthNonWashDays = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Get the last day of current month
+    const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Get all days with completed bookings in this month
+    const washDays = new Set();
+    bookings.forEach((b) => {
+      if (b.status === "Completed") {
+        const bookingDate = new Date(b.booking_date);
+        if (bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear) {
+          washDays.add(bookingDate.getDate());
+        }
+      }
+    });
+    
+    // Calculate non-wash days (today onwards)
+    const todayDate = now.getDate();
+    let nonWashDays = 0;
+    for (let i = 1; i <= todayDate; i++) {
+      if (!washDays.has(i)) {
+        nonWashDays++;
+      }
+    }
+    
+    return nonWashDays;
+  };
+
+  // Use state values from fetchWashTrackingData instead of calculating from bookings
   const stats = [
     {
-      title: "Total Bookings",
-      value: bookings.length,
-      icon: <FiClipboard />,
-      change: `${bookings.length} bookings total`,
+      title: "Month Washes",
+      value: monthlyWashes,
+      icon: <FiWind />,
+      change: `${monthlyWashes} times washed this month`,
     },
     {
-      title: "Completed",
-      value: completedBookings,
-      icon: <FiCheckCircle />,
-      change: `${completedBookings > 0 ? "All successful" : "No completed yet"}`,
+      title: "Non-Wash Days",
+      value: nonWashDays,
+      icon: <FiCalendar />,
+      change: `${nonWashDays} days not washed`,
     },
     {
       title: "Total Spent",
@@ -296,7 +482,7 @@ export default function CustomerDashboard() {
       title: "Loyalty Points",
       value: loyaltyPoints,
       icon: <FiTrendingUp />,
-      change: `${Math.floor(loyaltyPoints / 10)} tier rewards`,
+      change: `${loyaltyPoints} points earned from washes`,
     },
   ];
 

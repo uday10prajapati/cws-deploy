@@ -63,11 +63,11 @@ export default function Cars() {
           .from("bookings")
           .select("*");
 
-        // Fetch monthly pass for each car's customer
+        // Fetch monthly pass for each car
         const passMap = {};
         for (const car of allCarsData) {
           try {
-            const passResponse = await fetch(`http://localhost:5000/pass/current/${car.customer_id}`);
+            const passResponse = await fetch(`http://localhost:5000/pass/car/${car.id}`);
             const passResult = await passResponse.json();
             if (passResult.success && passResult.data) {
               passMap[car.id] = passResult.data;
@@ -148,7 +148,7 @@ export default function Cars() {
   const employeeMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
         { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-        { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+        { name: "Transaction Status", icon: <FiDollarSign />, link: "/employee/earnings" },
         { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
         { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
         { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
@@ -274,7 +274,7 @@ export default function Cars() {
           </div>
 
           {/* SUMMARY CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-slate-400 text-sm font-medium">{viewMode === "all" ? "Total Cars" : "Cars Serviced"}</p>
@@ -300,20 +300,6 @@ export default function Cars() {
                 }
               </p>
               <p className="text-slate-500 text-xs mt-2">{viewMode === "all" ? "across all cars" : "completed jobs"}</p>
-            </div>
-
-            <div className="bg-linear-to-br from-purple-600/20 to-purple-900/20 border border-purple-500/30 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-slate-400 text-sm font-medium">Revenue</p>
-                <span className="text-purple-400 text-2xl">💰</span>
-              </div>
-              <p className="text-4xl font-bold text-purple-400">
-                ₹{(viewMode === "all"
-                  ? cars.reduce((sum, car) => sum + car.total_amount, 0)
-                  : cars.reduce((sum, car) => sum + car.my_total_amount, 0)
-                ).toLocaleString()}
-              </p>
-              <p className="text-slate-500 text-xs mt-2">{viewMode === "all" ? "total from cars" : "your earnings"}</p>
             </div>
           </div>
 
@@ -408,7 +394,7 @@ export default function Cars() {
                   </div>
 
                   {/* DETAILS GRID */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg">
                     <div>
                       <p className="text-xs text-slate-500 mb-1">{viewMode === "all" ? "Services" : "My Services"}</p>
                       <p className="font-bold text-blue-400">
@@ -419,12 +405,6 @@ export default function Cars() {
                       <p className="text-xs text-slate-500 mb-1">Completed</p>
                       <p className="font-bold text-green-400">
                         {viewMode === "all" ? car.completed_services : car.my_completed}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">{viewMode === "all" ? "Total Amount" : "Your Earnings"}</p>
-                      <p className="font-bold text-purple-400">
-                        ₹{(viewMode === "all" ? car.total_amount : car.my_total_amount).toLocaleString()}
                       </p>
                     </div>
                     <div>

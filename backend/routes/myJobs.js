@@ -25,7 +25,7 @@ router.get("/bookings/:userId", async (req, res) => {
     // First, try to fetch all bookings assigned to this employee (both pending and completed)
     const { data: assignedBookings, error: assignedError } = await supabase
       .from("bookings")
-      .select("*")
+      .select("*, cars(brand, model, number_plate)")
       .eq("assigned_to", userId)
       .order("created_at", { ascending: false });
 
@@ -38,7 +38,7 @@ router.get("/bookings/:userId", async (req, res) => {
     
     const { data: unassignedBookings, error: unassignedError } = await supabase
       .from("bookings")
-      .select("*")
+      .select("*, cars(brand, model, number_plate)")
       .is("assigned_to", null)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -69,7 +69,7 @@ router.get("/jobs", async (req, res) => {
 
     const { data, error } = await supabase
       .from("bookings")
-      .select("*")
+      .select("*, cars(brand, model, number_plate)")
       .eq("assigned_to", userId)
       .order("created_at", { ascending: false });
 

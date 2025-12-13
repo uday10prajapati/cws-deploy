@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../supabase.js";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 const router = express.Router();
 
@@ -356,6 +357,57 @@ router.get("/stats/:employeeId", async (req, res) => {
   } catch (err) {
     console.error("Error:", err);
     return res.status(500).json({ error: "Failed to fetch statistics" });
+  }
+});
+
+/* -----------------------------------------
+   UPDATE WASH WITH CLOUDINARY IMAGES
+----------------------------------------- */
+router.put("/update-images/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { before_img_1, before_img_2, before_img_3, before_img_4, after_img_1, after_img_2, after_img_3, after_img_4 } = req.body;
+
+    const updateData = {};
+    const uploads = [];
+
+    // Handle image uploads
+    if (before_img_1) uploads.push(uploadToCloudinary(before_img_1, 'car_wash/before', `wash_${id}_before_1`).then(result => { updateData.before_img_1 = result.url; }));
+    if (before_img_2) uploads.push(uploadToCloudinary(before_img_2, 'car_wash/before', `wash_${id}_before_2`).then(result => { updateData.before_img_2 = result.url; }));
+    if (before_img_3) uploads.push(uploadToCloudinary(before_img_3, 'car_wash/before', `wash_${id}_before_3`).then(result => { updateData.before_img_3 = result.url; }));
+    if (before_img_4) uploads.push(uploadToCloudinary(before_img_4, 'car_wash/before', `wash_${id}_before_4`).then(result => { updateData.before_img_4 = result.url; }));
+    
+    if (after_img_1) uploads.push(uploadToCloudinary(after_img_1, 'car_wash/after', `wash_${id}_after_1`).then(result => { updateData.after_img_1 = result.url; }));
+    if (after_img_2) uploads.push(uploadToCloudinary(after_img_2, 'car_wash/after', `wash_${id}_after_2`).then(result => { updateData.after_img_2 = result.url; }));
+    if (after_img_3) uploads.push(uploadToCloudinary(after_img_3, 'car_wash/after', `wash_${id}_after_3`).then(result => { updateData.after_img_3 = result.url; }));
+    if (after_img_4) uploads.push(uploadToCloudinary(after_img_4, 'car_wash/after', `wash_${id}_after_4`).then(result => { updateData.after_img_4 = result.url; }));
+
+    // Wait for all uploads
+    await Promise.all(uploads);
+
+    // Update database with Cloudinary URLs
+    const { data, error } = await supabase
+      .from("car_wash_tracking")
+      .update(updateData)
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Car wash record not found" });
+    }
+
+    return res.json({
+      success: true,
+      message: "Car wash images updated with Cloudinary URLs",
+      data: data[0],
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    return res.status(500).json({ error: err.message || "Failed to update car wash images" });
   }
 });
 

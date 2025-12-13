@@ -85,16 +85,15 @@ export default function ProfilePage() {
         setMonthlyPass(passResult.data);
       }
 
-      // Load Primary Address
-      const { data: addressData } = await supabase
-        .from("user_addresses")
-        .select("*")
-        .eq("user_id", uid)
-        .eq("is_primary", true)
+      // Load Address from profiles table
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("address, city, state, postal_code, country, village")
+        .eq("id", uid)
         .maybeSingle();
       
-      if (addressData) {
-        setUserAddress(addressData);
+      if (profileData) {
+        setUserAddress(profileData);
       }
     } catch (err) {
       console.error("Error loading user data:", err);
@@ -308,7 +307,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center gap-2">
                 <FiPhone className="text-green-400" />
-                <span>{user.user_metadata?.phone || "Not added"}</span>
+                <span>{user.phone || "Not added"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <FiClock className="text-yellow-400" />

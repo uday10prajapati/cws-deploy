@@ -47,7 +47,7 @@ const AdminLoyaltyDashboard = () => {
   return (
     <div className="w-full space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg p-6 text-white">
+      <div className="bg-linear-to-r from-yellow-600 to-orange-600 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FiAward size={32} />

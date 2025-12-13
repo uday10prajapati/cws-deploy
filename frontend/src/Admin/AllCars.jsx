@@ -88,7 +88,7 @@ export default function AllCars() {
         const passMap = {};
         for (const car of carsData) {
           try {
-            const passResponse = await fetch(`http://localhost:5000/pass/current/${car.customer_id}`);
+            const passResponse = await fetch(`http://localhost:5000/pass/car/${car.id}`);
             const passResult = await passResponse.json();
             if (passResult.success && passResult.data) {
               passMap[car.id] = passResult.data;

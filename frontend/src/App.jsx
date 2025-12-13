@@ -6,9 +6,13 @@ import Signup from "./page/SignUp.jsx";
 import Login from "./page/Login.jsx";
 import CarWash from "./Washer/CarWash.jsx";
 import WMyjob from "./Washer/WMyjob.jsx";
-import WasherLoyaltyPoints from "./Washer/WasherLoyaltyPoints.jsx";
+
 import WasherDocumentUpload from "./Washer/WasherDocumentUpload.jsx";
 import DemoVideos from "./Washer/DemoVideos.jsx";
+import WasherProfile from "./Washer/WasherProfile.jsx";
+import SalesDocumentUpload from "./Sales/SalesDocumentUpload.jsx";
+import SalesProfile from "./Sales/SalesProfile.jsx";
+import SalesDashboard from "./Sales/SalesDashboard.jsx";
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
 import AdminEmployeeTracking from "./Admin/AdminEmployeeTracking.jsx";
 import AdminRiders from "./Admin/AdminRiders.jsx";
@@ -22,6 +26,7 @@ import MyCars from "./Customer/MyCars.jsx";
 import Transactions from "./Customer/Transactions.jsx";
 import Location from "./Customer/Location.jsx";
 import Profile from "./Customer/Profile.jsx";
+import WashHistory from "./Customer/WashHistory.jsx";
 import CustomerLoyaltyDashboard from "./Customer/CustomerLoyaltyDashboard.jsx";
 import CustomerAccountSettings from "./Customer/CustomerAccountSettings.jsx";
 import MyJobs from "./Employee/MyJobs.jsx";
@@ -53,9 +58,12 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/carwash" element={<CarWash />} />
         <Route path="/washer/jobs" element={<WMyjob />} />
-        <Route path="/washer/loyalty-points" element={<WasherLoyaltyPoints />} />
         <Route path="/washer/documents" element={<WasherDocumentUpload />} />
         <Route path="/washer/demo-videos" element={<DemoVideos />} />
+        <Route path="/washer/profile" element={<WasherProfile />} />
+        <Route path="/sales/documents" element={<SalesDocumentUpload />} />
+        <Route path="/sales/profile" element={<SalesProfile />} />
+        <Route path="/sales-dashboard" element={<SalesDashboard />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/employee-tracking" element={<AdminEmployeeTracking />} />
         <Route path="/admin/riders" element={<AdminRiders />} />
@@ -70,6 +78,7 @@ export default function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/location" element={<Location />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/wash-history" element={<WashHistory />} />
         <Route path="/customer/loyalty" element={<CustomerLoyaltyDashboard />} />
         <Route path="/account-settings" element={<CustomerAccountSettings />} />
         <Route path="/employee/jobs" element={<MyJobs />} />

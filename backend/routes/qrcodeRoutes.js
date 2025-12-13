@@ -41,34 +41,17 @@ router.get("/car/:car_id", async (req, res) => {
       // Continue even if profile not found
     }
 
-    // Get primary address
-    const { data: address, error: addressError } = await supabase
-      .from("user_addresses")
-      .select("*")
-      .eq("user_id", car.customer_id)
-      .eq("is_primary", true)
-      .maybeSingle();
-
-    if (addressError) {
-      console.error("Error fetching address:", addressError);
-      // Continue even if address not found
-    }
-
     // Get monthly pass for this car
     const { data: pass, error: passError } = await supabase
       .from("monthly_pass")
       .select("*")
       .eq("customer_id", car.customer_id)
       .eq("car_id", car_id)
+      .eq("active", true)
       .maybeSingle();
 
     // Get auth user details
     const authUser = await supabase.auth.admin.getUserById(car.customer_id);
-
-    // Format address
-    const formattedAddress = address 
-      ? `${address.address_line1}${address.address_line2 ? ', ' + address.address_line2 : ''}, ${address.city}, ${address.state} ${address.postal_code}`
-      : "N/A";
 
     const qrData = {
       // Car Details
@@ -78,15 +61,17 @@ router.get("/car/:car_id", async (req, res) => {
       carNumberPlate: car.number_plate,
       carColor: car.color || "N/A",
       
-      // Customer Details
+      // Customer Details (from profiles table)
       customerId: car.customer_id,
       customerName: customer?.full_name || authUser.data?.user?.user_metadata?.name || "N/A",
       customerEmail: authUser.data?.user?.email || "N/A",
-      customerPhone: customer?.phone || authUser.data?.user?.user_metadata?.phone || "N/A",
-      customerAddress: formattedAddress,
+      customerMobile: customer?.phone || authUser.data?.user?.user_metadata?.phone || "N/A",
+      customerAddress: customer?.address || "N/A",
+      customerVillage: customer?.village || "N/A",
       
       // Monthly Pass Details
       hasPass: !!pass,
+      isActive: pass?.active || false,
       passTotalWashes: pass?.total_washes || 0,
       passRemainingWashes: pass?.remaining_washes || 0,
       passExpiryDate: pass?.valid_till || "N/A",
@@ -152,6 +137,7 @@ router.post("/verify", async (req, res) => {
       .select("*")
       .eq("customer_id", car.customer_id)
       .eq("car_id", car.id)
+      .eq("active", true)
       .maybeSingle();
 
     // Return verified data with latest pass info
@@ -161,6 +147,7 @@ router.post("/verify", async (req, res) => {
         ...decodedData,
         // Update pass info from database
         hasPass: !!pass,
+        isActive: pass?.active || false,
         passTotalWashes: pass?.total_washes || 0,
         passRemainingWashes: pass?.remaining_washes || 0,
         passExpiryDate: pass?.valid_till || "N/A",

@@ -312,7 +312,7 @@ const WasherDocumentUpload = () => {
 
         {/* Profile Code Card */}
         {profileCode && (
-          <div className="bg-gradient-to-r from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-lg p-6 mb-8">
+          <div className="bg-linear-to-r from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-lg p-6 mb-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm mb-2">Your Profile Code</p>

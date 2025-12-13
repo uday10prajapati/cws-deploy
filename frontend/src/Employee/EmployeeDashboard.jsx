@@ -71,6 +71,37 @@ export default function EmployeeDashboard() {
     }
   }, [assignments, user]);
 
+  /* CALCULATE WEEKLY RATINGS DATA */
+  const getWeeklyRatingsData = () => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weeklyRatings = Array(7).fill(0);
+    const ratingCounts = Array(7).fill(0);
+
+    const now = new Date();
+    const currentDay = now.getDay();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+
+    assignments.forEach(job => {
+      if (job.status === "Completed" && job.rating && job.date) {
+        const jobDate = new Date(job.date);
+        const dayOfWeek = jobDate.getDay();
+        const index = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+        if (jobDate >= startOfWeek && jobDate <= now) {
+          weeklyRatings[index] += job.rating;
+          ratingCounts[index]++;
+        }
+      }
+    });
+
+    return days.map((day, idx) => ({
+      day,
+      rating: ratingCounts[idx] > 0 ? (weeklyRatings[idx] / ratingCounts[idx]).toFixed(1) : 0,
+      count: ratingCounts[idx]
+    }));
+  };
+
   /* LOAD NOTIFICATIONS FOR EMPLOYEE */
   const loadNotifications = async (userId) => {
     try {
@@ -154,7 +185,7 @@ export default function EmployeeDashboard() {
   const employeeMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-    { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+    { name: "Transaction Status", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
     { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
@@ -168,7 +199,6 @@ export default function EmployeeDashboard() {
   const stats = [
     { title: "Today's Pending Jobs", value: pendingBookings.length, icon: <FiClock />, change: "Awaiting action" },
     { title: "Completed", value: completedBookings.length, icon: <FiCheckCircle />, change: "Total completed" },
-    { title: "Earnings This Month", value: "₹" + parseFloat(earnings.thisMonthEarnings).toLocaleString('en-IN', { maximumFractionDigits: 2 }), icon: <FiDollarSign />, change: "From transactions" },
     { title: "Average Rating", value: averageRating > 0 ? averageRating.toFixed(1) : "N/A", icon: <FaStar />, change: ratingCount > 0 ? `${ratingCount} ratings` : "No ratings yet" },
   ];
 
@@ -353,14 +383,33 @@ export default function EmployeeDashboard() {
             ))}
           </div>
 
-          {/* 📊 EARNINGS CHART PLACEHOLDER */}
+          {/* 📊 WEEKLY RATINGS CHART */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-white text-lg font-semibold mb-4">Weekly Earnings</h2>
-            <div className="h-56 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-500 border border-slate-700">
-              <div className="text-center">
-                <FiTrendingUp className="text-4xl mx-auto mb-2 opacity-50" />
-                <p>Chart Coming Soon</p>
-              </div>
+            <h2 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+              <FaStar className="text-yellow-400" />
+              Weekly Ratings
+            </h2>
+            <div className="h-56 bg-slate-800/30 rounded-lg p-4 flex items-end justify-around">
+              {getWeeklyRatingsData().map((data, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-2">
+                  <div className="relative group">
+                    <div
+                      className="w-8 bg-linear-to-t from-yellow-500 to-yellow-400 rounded-t transition-all hover:from-yellow-600 hover:to-yellow-500"
+                      style={{ height: `${data.rating > 0 ? (data.rating / 5) * 150 : 10}px` }}
+                    />
+                    {data.count > 0 && (
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition">
+                        {data.rating}/5 ({data.count})
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 font-medium">{data.day}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-xs text-slate-400 flex justify-between">
+              <span>This week's performance</span>
+              <span>Hover for details</span>
             </div>
           </div>
 
@@ -384,10 +433,9 @@ export default function EmployeeDashboard() {
                   <thead>
                     <tr className="border-b border-slate-700 text-slate-400">
                       <th className="py-3 text-left font-medium">Customer</th>
-                      <th className="py-3 text-left font-medium">Car</th>
+                      <th className="py-3 text-left font-medium">Car & Plate</th>
                       <th className="py-3 text-left font-medium">Time</th>
                       <th className="py-3 text-left font-medium">Location</th>
-                      <th className="py-3 text-left font-medium">Amount</th>
                       <th className="py-3 text-left font-medium">Status</th>
                     </tr>
                   </thead>
@@ -404,7 +452,9 @@ export default function EmployeeDashboard() {
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             <FaCar className="text-blue-400" />
-                            {job.car_name || "Car"}
+                            <span>
+                              {job.car_name || "Car"} ({job.cars?.number_plate || job.number_plate || "N/A"})
+                            </span>
                           </div>
                         </td>
                         <td className="py-3">
@@ -418,9 +468,6 @@ export default function EmployeeDashboard() {
                             <FiMapPin className="text-slate-500" />
                             {job.location || "N/A"}
                           </div>
-                        </td>
-                        <td className="py-3 font-semibold text-green-400">
-                          ₹{job.amount || "299"}
                         </td>
                         <td className="py-3">
                           <span

@@ -38,13 +38,15 @@ router.get("/profile/:userId", async (req, res) => {
 router.put("/address/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { address, city, state, postal_code, country, address_type } = req.body;
+    const { village, address, city, state, postal_code, country, address_type } = req.body;
 
     console.log("📝 Updating address for user:", userId);
+    console.log("📝 Village data:", village);
 
     const { data, error } = await supabase
       .from("profiles")
       .update({
+        village,
         address,
         city,
         state,
@@ -85,7 +87,7 @@ router.get("/address/:userId", async (req, res) => {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("address, city, state, postal_code, country, address_type")
+      .select("village, address, city, state, postal_code, country, address_type")
       .eq("id", userId)
       .single();
 

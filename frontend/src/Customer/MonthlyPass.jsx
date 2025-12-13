@@ -818,7 +818,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       {/* ▓▓▓ PAYMENT PAGE ▓▓▓ */}
       {showPayment && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
             {paymentStep === "method" ? (
               // PAYMENT METHOD SELECTION
               <>
@@ -1150,6 +1150,33 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
           </div>
         </div>
       )}
+
+      {/* 🎨 CUSTOM SCROLLBAR STYLES */}
+      <style>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #3b82f6 #1e293b;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #1e293b;
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #3b82f6, #1e40af);
+          border-radius: 10px;
+          border: 2px solid #1e293b;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #1e40af, #1e3a8a);
+        }
+      `}</style>
     </div>
   );
 }

@@ -329,7 +329,7 @@ export default function AllRevenue() {
                             className="flex flex-col items-center gap-2 flex-1 min-w-max"
                           >
                             <div
-                              className="w-full bg-gradient-to-t from-blue-500 to-cyan-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              className="w-full bg-linear-to-t from-blue-500 to-cyan-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                               style={{
                                 height: `${(amount / maxAmount) * 120}px`,
                                 minHeight: "4px",
@@ -382,7 +382,7 @@ export default function AllRevenue() {
                             className="flex flex-col items-center gap-2 flex-1"
                           >
                             <div
-                              className="w-full bg-gradient-to-t from-green-500 to-emerald-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              className="w-full bg-linear-to-t from-green-500 to-emerald-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                               style={{
                                 height: `${(amount / maxAmount) * 120}px`,
                                 minHeight: "8px",
@@ -435,7 +435,7 @@ export default function AllRevenue() {
                             className="flex flex-col items-center gap-2 flex-1"
                           >
                             <div
-                              className="w-full bg-gradient-to-t from-purple-500 to-pink-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              className="w-full bg-linear-to-t from-purple-500 to-pink-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                               style={{
                                 height: `${(amount / maxAmount) * 120}px`,
                                 minHeight: "8px",

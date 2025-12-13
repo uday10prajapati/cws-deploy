@@ -38,11 +38,11 @@ export default function AllCars() {
           .select("id, car_id, status, amount, date, location")
           .in("car_id", carIds);
 
-        // Fetch monthly pass for each car's customer
+        // Fetch monthly pass for each car
         const passMap = {};
         for (const car of carsData) {
           try {
-            const passResponse = await fetch(`http://localhost:5000/pass/current/${car.customer_id}`);
+            const passResponse = await fetch(`http://localhost:5000/pass/car/${car.id}`);
             const passResult = await passResponse.json();
             if (passResult.success && passResult.data) {
               passMap[car.id] = passResult.data;
@@ -193,12 +193,6 @@ export default function AllCars() {
                         </div>
                       </div>
 
-                      {/* REVENUE */}
-                      <div className="mb-3 p-2 bg-blue-50 rounded text-center">
-                        <p className="text-xs text-gray-600">Total Revenue</p>
-                        <p className="font-bold text-blue-600 text-lg">₹{car.total_revenue.toLocaleString()}</p>
-                      </div>
-
                       {/* ACTIVE PASS */}
                       <div className="mb-3 p-3 bg-linear-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
                         <p className="text-[10px] text-gray-600 uppercase tracking-wide font-semibold">Active Pass</p>
@@ -251,8 +245,7 @@ export default function AllCars() {
               {/* INFO TEXT */}
               <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Total Cars:</span> {filteredCars.length} | 
-                  <span className="font-semibold ml-4">Total Revenue:</span> ₹{filteredCars.reduce((sum, car) => sum + car.total_revenue, 0).toLocaleString()}
+                  <span className="font-semibold">Total Cars:</span> {filteredCars.length}
                 </p>
               </div>
             </div>

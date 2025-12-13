@@ -76,7 +76,7 @@ export default function CarLocation() {
   const employeeMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-    { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+    { name: "Transaction Status", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
     { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },

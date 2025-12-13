@@ -108,7 +108,7 @@ export default function MyJobs() {
   const employeeMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
     { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-    { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+    { name: "Transaction Status", icon: <FiDollarSign />, link: "/employee/earnings" },
     { name: "Ratings", icon: <FiStar />, link: "/employee/ratings" },
     { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
@@ -445,12 +445,12 @@ export default function MyJobs() {
                             <p className="text-slate-200 font-medium">{job.slot_time || job.time}</p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Location</p>
-                            <p className="text-slate-200 font-medium">{job.location}</p>
+                            <p className="text-slate-500">Car & Plate</p>
+                            <p className="text-slate-200 font-medium">{job.car_name} ({job.cars?.number_plate || job.number_plate || "N/A"})</p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Amount</p>
-                            <p className="text-green-400 font-semibold">₹{job.amount || 0}</p>
+                            <p className="text-slate-500">Location</p>
+                            <p className="text-slate-200 font-medium">{job.location}</p>
                           </div>
                         </div>
 
