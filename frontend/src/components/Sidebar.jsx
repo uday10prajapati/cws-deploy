@@ -15,6 +15,8 @@ import {
   FiClipboard,
   FiSettings,
   FiChevronLeft,
+  FiAlertCircle,
+  FiInfo,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -49,17 +51,37 @@ export default function Sidebar() {
     { name: "Users", icon: <FiUsers />, link: "/admin/users" },
     { name: "Orders", icon: <FiClipboard />, link: "/admin/orders" },
     { name: "Services", icon: <FiSettings />, link: "/admin/services" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/admin/emergency-wash" },
+    { name: "About Us", icon: <FiInfo />, link: "/about-us" },
   ];
 
   const customerMenu = [
     { name: "Home", icon: <FiHome />, link: "/" },
     { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
     { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
     { name: "Profile", icon: <FiUser />, link: "/profile" },
     { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
+    { name: "About Us", icon: <FiInfo />, link: "/about-us" },
   ];
 
-  const menu = role === "admin" ? adminMenu : customerMenu;
+  const employeeMenu = [
+    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
+    { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/employee/emergency-wash" },
+    { name: "Earnings", icon: <FiDollarSign />, link: "/employee/earnings" },
+    { name: "Profile", icon: <FiUser />, link: "/profile" },
+    { name: "About Us", icon: <FiInfo />, link: "/about-us" },
+  ];
+
+  let menu = [];
+  if (role === "admin") {
+    menu = adminMenu;
+  } else if (role === "employee" || role === "washer") {
+    menu = employeeMenu;
+  } else {
+    menu = customerMenu;
+  }
 
   /* ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
       LOGOUT

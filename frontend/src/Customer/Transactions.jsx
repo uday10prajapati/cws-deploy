@@ -227,10 +227,16 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const customerMenu = [
-    { name: "Home", icon: <FiHome />, link: "/" },
-    { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-    { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-    { name: "Profile", icon: <FiUser />, link: "/profile" },
+    { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
+  { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
+  { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
+  { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
+  { name: "Profile", icon: <FiUser />, link: "/profile" },
+  { name: "Location", icon: <FiMapPin />, link: "/location" },
+  { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
+  { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
+  { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+  { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   const GST_RATE = 0.18; // 18% GST

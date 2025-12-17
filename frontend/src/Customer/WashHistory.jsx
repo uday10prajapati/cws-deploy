@@ -151,6 +151,8 @@ export default function WashHistory() {
     { label: "Transactions", icon: <FiCreditCard />, path: "/transactions" },
     { label: "Profile", icon: <FiUser />, path: "/profile" },
     { label: "Settings", icon: <FiSettings />, path: "/account-settings" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+    { label: "About Us", icon: <FiGift />, path: "/about-us" },
   ];
 
   if (loading) {

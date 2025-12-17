@@ -5,7 +5,7 @@ import AddressManager from "../components/AddressManager";
 import CarQRCode from "../components/CarQRCode";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { FiUser, FiMail, FiPhone, FiClock, FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell, FiMapPin } from "react-icons/fi";
+import { FiUser, FiMail, FiPhone, FiClock, FiAlertCircle , FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell, FiMapPin, FiGift } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import { FiAward } from "react-icons/fi";
 
@@ -18,6 +18,8 @@ const customerMenu = [
   { name: "Location", icon: <FiMapPin />, link: "/location" },
   { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
   { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
+  { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+  { name: "About Us", icon: <FiGift />, link: "/about-us" },
 ];
 
 export default function ProfilePage() {

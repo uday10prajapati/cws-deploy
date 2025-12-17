@@ -112,6 +112,8 @@ export default function MyJobs() {
     { name: "Ratings", icon: <FiStar />, link: "/employee/ratings" },
     { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+        { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   // Status workflow

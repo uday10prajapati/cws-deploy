@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
-import { FiMenu, FiBell, FiCalendar, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiChevronLeft, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiX } from "react-icons/fi";
+import { FiMenu, FiBell, FiCalendar, FiGift, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiChevronLeft, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiX } from "react-icons/fi";
 import { FaCar, FaStar, FaPhone } from "react-icons/fa";
 
 
@@ -190,6 +190,8 @@ export default function EmployeeDashboard() {
     { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
     { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
     { name: "Scan QR", icon: <FiClipboard />, link: "/scan-customer-qr" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/employee/emergency-wash" },
+        { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   // Filter pending and completed bookings

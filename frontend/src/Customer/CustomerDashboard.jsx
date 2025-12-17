@@ -10,6 +10,7 @@ import {
   FiMapPin,
   FiTrendingUp,
   FiCheckCircle,
+  FiAlertCircle,
   FiDollarSign,
   FiLogOut,
   FiChevronLeft,
@@ -409,6 +410,8 @@ export default function CustomerDashboard() {
     { name: "Location", icon: <FiMapPin />, link: "/location" },
     { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
     { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+    { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   // Calculate car wash frequency for current month

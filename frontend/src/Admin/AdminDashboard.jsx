@@ -9,6 +9,7 @@ import AdminDocumentVerification from "./AdminDocumentVerification";
 import {
   FiHome,
   FiUsers,
+  FiGift,
   FiTrendingUp,
   FiDollarSign,
   FiBell,
@@ -142,6 +143,8 @@ export default function AdminDashboard() {
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics", id: "analytics" },
     { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account", id: "bank" },
     { name: "Settings", icon: <FiSettings />, link: "/admin/settings", id: "settings" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/admin/emergency-wash" },
+    { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   return (

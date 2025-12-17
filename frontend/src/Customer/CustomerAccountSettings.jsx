@@ -31,6 +31,8 @@ export default function CustomerAccountSettings() {
     { name: "Location", icon: <FiMapPin />, link: "/location" },
     { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
     { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
+    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+    { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   useEffect(() => {

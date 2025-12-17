@@ -10,6 +10,10 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [slide, setSlide] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async () => {
   if (!identifier || !password) {
@@ -163,7 +167,22 @@ export default function Login() {
 
 };
 
+  const handleForgotPassword = () => {
+    navigate("/reset-password");
+  };
 
+  const handleReturn = () => {
+    setShowForgotPassword(false);
+    setResetEmail("");
+    setResetMessage("");
+  };
+
+  // If forgot password modal is open, show that instead
+  if (showForgotPassword) {
+    return null; // Redirect to reset password page instead
+  }
+
+  // Normal login view
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden relative">
 
@@ -250,6 +269,15 @@ export default function Login() {
             >
               Login
             </button>
+
+            <div className="mt-4 text-center">
+              <a
+                href="/reset-password"
+                className="text-blue-300 hover:text-blue-200 text-sm transition-all underline"
+              >
+                Forgot Password?
+              </a>
+            </div>
 
             <p className="text-blue-300 text-center mt-4 text-sm">{message}</p>
 

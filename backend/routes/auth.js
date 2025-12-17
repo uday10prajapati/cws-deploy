@@ -681,4 +681,229 @@ router.post("/check-user", async (req, res) => {
   }
 });
 
+/* -----------------------------------------
+   PASSWORD RESET - SEND OTP TO EMAIL
+----------------------------------------- */
+router.post("/send-password-reset-otp", async (req, res) => {
+  const { email } = req.body;
+
+  console.log("📧 Password Reset OTP Request for:", email);
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  if (!email.includes("@")) {
+    return res.status(400).json({ message: "Valid email required" });
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log("🔐 Generated OTP:", otp);
+
+  try {
+    // Store OTP in password_reset table
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes expiry
+    console.log("⏰ OTP Expiry time:", expiresAt);
+    
+    const { error: dbError } = await supabase
+      .from("password_reset_otp")
+      .insert([{ 
+        email, 
+        otp, 
+        expires_at: expiresAt
+      }]);
+
+    if (dbError) {
+      console.error("❌ DB Error storing OTP:", dbError);
+      return res.status(500).json({ message: "Failed to store OTP: " + dbError.message });
+    }
+
+    console.log("✅ OTP stored in database");
+
+    // Send OTP via email
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "CarWash+ Password Reset Code",
+        html: `<h2>Password Reset Request</h2>
+               <p>Your password reset code is:</p>
+               <h1 style="color: #0066cc; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
+               <p>This code will expire in 10 minutes.</p>
+               <p>If you didn't request this, please ignore this email.</p>`,
+      });
+      console.log("✅ Email sent to:", email);
+    } catch (emailErr) {
+      console.error("❌ Email sending error:", emailErr);
+      return res.status(500).json({ message: "Failed to send email: " + emailErr.message });
+    }
+
+    return res.json({ 
+      success: true, 
+      message: "Verification code sent to email" 
+    });
+  } catch (err) {
+    console.error("❌ Error in password reset OTP:", err);
+    return res.status(500).json({ message: "Failed to send code: " + err.message });
+  }
+});
+
+/* -----------------------------------------
+   PASSWORD RESET - VERIFY OTP
+----------------------------------------- */
+router.post("/verify-password-reset-otp", async (req, res) => {
+  const { email, otp } = req.body;
+
+  console.log("🔍 Verifying OTP for:", email);
+  console.log("📨 OTP received:", otp);
+  console.log("📨 Request body:", JSON.stringify(req.body));
+
+  if (!email || !otp) {
+    console.log("❌ Missing data - email:", !!email, "otp:", !!otp);
+    return res.status(400).json({ message: "Email and OTP required" });
+  }
+
+  try {
+    // Get the latest OTP record
+    const { data: records, error: fetchError } = await supabase
+      .from("password_reset_otp")
+      .select("*")
+      .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (fetchError) {
+      console.error("❌ Database fetch error:", fetchError);
+      return res.status(400).json({ message: "Database error: " + fetchError.message });
+    }
+
+    if (!records || records.length === 0) {
+      console.error("❌ No OTP found for email:", email);
+      return res.status(400).json({ message: "No OTP found for this email" });
+    }
+
+    const record = records[0];
+    
+    console.log("📋 OTP Record found:");
+    console.log("   Email:", record.email);
+    console.log("   OTP in DB:", record.otp);
+    console.log("   Verified:", record.verified);
+
+    // Verify OTP matches
+    if (record.otp !== otp) {
+      console.error("❌ Invalid OTP provided for:", email);
+      return res.status(400).json({ message: "Invalid OTP. Please try again." });
+    }
+
+    // Mark OTP as verified
+    const { error: updateError } = await supabase
+      .from("password_reset_otp")
+      .update({ verified: true })
+      .eq("id", record.id);
+
+    if (updateError) {
+      console.error("❌ Error updating OTP status:", updateError);
+      return res.status(500).json({ message: "Failed to verify OTP: " + updateError.message });
+    }
+
+    console.log("✅ OTP verified successfully for:", email);
+    return res.json({ 
+      success: true, 
+      message: "OTP verified successfully" 
+    });
+  } catch (err) {
+    console.error("❌ Error verifying OTP:", err);
+    return res.status(500).json({ message: "Verification failed: " + err.message });
+  }
+});
+
+/* -----------------------------------------
+   PASSWORD RESET - UPDATE PASSWORD
+----------------------------------------- */
+router.post("/reset-password", async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  console.log("🔐 Password reset request for:", email);
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ message: "Email and new password required" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters" });
+  }
+
+  try {
+    // Check if OTP was verified
+    const { data: records, error: fetchError } = await supabase
+      .from("password_reset_otp")
+      .select("*")
+      .eq("email", email)
+      .eq("verified", true)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (fetchError) {
+      console.error("❌ Database error:", fetchError);
+      return res.status(400).json({ message: "Database error: " + fetchError.message });
+    }
+
+    if (!records || records.length === 0) {
+      console.error("❌ No verified OTP for:", email);
+      return res.status(400).json({ message: "Please verify your email first" });
+    }
+
+    const record = records[0];
+
+    console.log("✅ Verified OTP found for:", email);
+
+    // Find the user in profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("❌ User not found:", email, profileError);
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    console.log("👤 Found user ID:", profile.id);
+
+    // Update password in Supabase Auth
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      profile.id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      console.error("❌ Auth update error:", updateError);
+      return res.status(500).json({ message: "Failed to update password: " + updateError.message });
+    }
+
+    console.log("✅ Password updated for:", email);
+
+    // Mark OTP as used
+    const { error: markError } = await supabase
+      .from("password_reset_otp")
+      .update({ used: true })
+      .eq("id", record.id);
+
+    if (markError) {
+      console.error("❌ Error marking OTP as used:", markError);
+      // Don't fail the request, password was already reset
+    }
+
+    return res.json({ 
+      success: true, 
+      message: "Password reset successfully" 
+    });
+  } catch (err) {
+    console.error("❌ Error resetting password:", err);
+    return res.status(500).json({ message: "Password reset failed: " + err.message });
+  }
+});
+
 export default router;

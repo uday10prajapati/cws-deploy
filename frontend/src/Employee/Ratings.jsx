@@ -108,6 +108,8 @@ export default function Ratings() {
         { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
         { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
         { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
+        { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
+            { name: "About Us", icon: <FiGift />, link: "/about-us" },
       ];
 
   // Count ratings by star value

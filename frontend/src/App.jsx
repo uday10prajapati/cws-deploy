@@ -4,6 +4,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { initializeStorageBucket } from "./utils/storageHelpers";
 import Signup from "./page/SignUp.jsx";
 import Login from "./page/Login.jsx";
+import ResetPassword from "./page/ResetPassword.jsx";
 import CarWash from "./Washer/CarWash.jsx";
 import WMyjob from "./Washer/WMyjob.jsx";
 
@@ -43,6 +44,10 @@ import Settings from "./Admin/Settings.jsx";
 import AllCars from "./Admin/AllCars.jsx";
 import AdminEarnings from "./Admin/Earnings.jsx";
 import ScanCustomerQR from "./Employee/ScanCustomerQR.jsx";
+import AboutUs from "./AboutUs.jsx";
+import EmergencyWashRequest from "./Customer/EmergencyWashRequest.jsx";
+import AdminEmergencyWashManagement from "./Admin/AdminEmergencyWashManagement.jsx";
+import EmployeeEmergencyWash from "./Employee/EmployeeEmergencyWash.jsx";
 
 export default function App() {
   // Initialize storage bucket on app load
@@ -56,6 +61,7 @@ export default function App() {
         <Route path="/" element={<Visit />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carwash" element={<CarWash />} />
         <Route path="/washer/jobs" element={<WMyjob />} />
         <Route path="/washer/documents" element={<WasherDocumentUpload />} />
@@ -96,6 +102,10 @@ export default function App() {
         <Route path="/admin/cars" element={<AllCars />} />
         <Route path="/admin/customer-accounts" element={<CustomerAccountManagement />} />
         <Route path="/scan-customer-qr" element={<ScanCustomerQR />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/emergency-wash" element={<EmergencyWashRequest />} />
+        <Route path="/admin/emergency-wash" element={<AdminEmergencyWashManagement />} />
+        <Route path="/employee/emergency-wash" element={<EmployeeEmergencyWash />} />
       </Routes>
     </NotificationProvider>
   );
