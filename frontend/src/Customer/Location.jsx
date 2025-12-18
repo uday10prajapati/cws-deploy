@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient";
 import { useNotifications } from "../context/NotificationContext";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+import NavbarNew from "../components/NavbarNew";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -13,20 +14,13 @@ import {
   FiMessageSquare,
   FiArrowLeft,
   FiTruck,
-  FiHome,
   FiClock,
   FiCheckCircle,
   FiAlertCircle,
   FiNavigation,
-  FiMenu,
-  FiBell,
-  FiAward,
   FiLogOut,
-  FiChevronLeft,
-  FiClipboard,
-  FiUser,
-  FiCreditCard,
-  FiSettings 
+  FiX,
+  FiHome 
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -62,7 +56,7 @@ export default function Location() {
   const locationHook = useLocationHook();
   const { addNotification } = useNotifications();
 
-    useRoleBasedRedirect("customer");
+  useRoleBasedRedirect("customer");
   // State
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -73,26 +67,10 @@ export default function Location() {
   const [status, setStatus] = useState(null);
   const [showMap, setShowMap] = useState(true);
   const [trackingActive, setTrackingActive] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [trackingHistory, setTrackingHistory] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-
-  // Menu items
-  const customerMenu = [
-        { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
-        { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-        { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-        { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
-        { name: "Profile", icon: <FiUser />, link: "/profile" },
-        { name: "Location", icon: <FiMapPin />, link: "/location" },
-        { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
-        { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
-        { name: "About Us", icon: <FiGift />, link: "/about-us" },
-      ];
 
   // Get booking ID from state or URL
   const bookingId = locationHook.state?.bookingId;
@@ -949,10 +927,10 @@ export default function Location() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-300">Loading location...</p>
+          <div className="w-12 h-12 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Loading location...</p>
         </div>
       </div>
     );
@@ -960,11 +938,11 @@ export default function Location() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <FiAlertCircle className="text-5xl text-red-500 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Booking Not Found</h2>
-          <p className="text-slate-400">Unable to load booking details</p>
+          <FiAlertCircle className="text-5xl text-red-600 mx-auto" />
+          <h2 className="text-2xl font-bold text-slate-900">Booking Not Found</h2>
+          <p className="text-slate-600">Unable to load booking details</p>
           <button
             onClick={() => navigate("/bookings")}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
@@ -979,123 +957,17 @@ export default function Location() {
   const statusConfig = getStatusBadge();
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <NavbarNew />
 
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  locationHook.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* NAVBAR */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-          items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-2xl font-bold">Live Tracking</h1>
-
-          <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* PAGE CONTENT */}
-        <main className="p-4 md:p-8 space-y-6">
+      {/* Main Content */}
+      <main className="pt-4">
+        <div className="max-w-7xl mx-auto px-4">
           {/* Back Button */}
           <div className="flex items-center gap-2 mb-4">
             <button
               onClick={() => navigate("/bookings")}
-              className="flex items-center gap-2 text-slate-300 hover:text-white transition"
+              className="flex items-center gap-2 text-slate-900 hover:text-blue-600 transition"
             >
               <FiArrowLeft className="text-xl" />
               <span>Back to Bookings</span>
@@ -1117,33 +989,33 @@ export default function Location() {
 
           {/* TRACKING INFO CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* DISTANCE & ETA */}
-        {trackingActive && (
-          <>
-            <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <FiNavigation className="text-2xl text-blue-400" />
-                <h3 className="text-lg font-semibold">Distance</h3>
-              </div>
-              <p className="text-4xl font-bold text-blue-300">
-                {distance ? distance.toFixed(1) : "---"} km
-              </p>
-              <p className="text-slate-400 text-sm">Current distance to your location</p>
-            </div>
+            {/* DISTANCE & ETA */}
+            {trackingActive && (
+              <>
+                <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <FiNavigation className="text-2xl text-blue-600" />
+                    <h3 className="text-lg font-semibold text-slate-900">Distance</h3>
+                  </div>
+                  <p className="text-4xl font-bold text-blue-600">
+                    {distance ? distance.toFixed(1) : "---"} km
+                  </p>
+                  <p className="text-slate-600 text-sm">Current distance to your location</p>
+                </div>
 
-            <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <FiClock className="text-2xl text-orange-400" />
-                <h3 className="text-lg font-semibold">ETA</h3>
-              </div>
-              <p className="text-4xl font-bold text-orange-300">
-                {eta ? `${eta}` : "---"} min
-              </p>
-              <p className="text-slate-400 text-sm">Estimated arrival time</p>
-            </div>
-          </>
-        )}
-      </div>
+                <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <FiClock className="text-2xl text-amber-600" />
+                    <h3 className="text-lg font-semibold text-slate-900">ETA</h3>
+                  </div>
+                  <p className="text-4xl font-bold text-amber-600">
+                    {eta ? `${eta}` : "---"} min
+                  </p>
+                  <p className="text-slate-600 text-sm">Estimated arrival time</p>
+                </div>
+              </>
+            )}
+          </div>
 
       {/* CAR DETAILS */}
       <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-6 mb-6 space-y-4">
@@ -1288,8 +1160,8 @@ export default function Location() {
       >
         {showMap ? "Hide Map" : "Show Map"}
       </button>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

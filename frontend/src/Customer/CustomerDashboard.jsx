@@ -3,8 +3,8 @@ import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import NotificationBell from "../components/NotificationBell";
+import NavbarNew from "../components/NavbarNew";
 import {
-  FiMenu,
   FiBell,
   FiCalendar,
   FiMapPin,
@@ -13,7 +13,6 @@ import {
   FiAlertCircle,
   FiDollarSign,
   FiLogOut,
-  FiChevronLeft,
   FiClipboard,
   FiUser,
   FiHome,
@@ -23,14 +22,15 @@ import {
   FiTruck,
   FiAward,
   FiSettings,
-  FiWind
+  FiWind,
+  FiPhone,
+  FiMail,
+  FiX
 } from "react-icons/fi";
-import { FaCar } from "react-icons/fa";
+import { FaCar, FaStar } from "react-icons/fa";
 
 export default function CustomerDashboard() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
 
   /* 🔥 USE ROLE-BASED REDIRECT HOOK */
@@ -130,11 +130,6 @@ export default function CustomerDashboard() {
     load();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
-
   // Fetch wallet balance from transactions
   const fetchWalletBalance = async (customerId) => {
     try {
@@ -183,16 +178,18 @@ export default function CustomerDashboard() {
   // Fetch wash tracking data from car_wash_tracking table
   const fetchWashTrackingData = async (customerId) => {
     try {
-      // Fetch all wash records for this customer's cars
-      const { data: cars, error: carError } = await supabase
-        .from("cars")
-        .select("id, number_plate")
-        .eq("customer_id", customerId);
+      // Fetch all customer cars via backend API
+      const carResponse = await fetch(
+        `http://localhost:5000/cars/${customerId}`
+      );
+      const carResult = await carResponse.json();
 
-      if (carError) {
-        console.warn("⚠️ Could not fetch customer cars:", carError);
+      if (!carResult.success || !carResult.data) {
+        console.warn("⚠️ Could not fetch customer cars");
         return;
       }
+
+      const cars = carResult.data;
 
       if (!cars || cars.length === 0) {
         console.log("ℹ️ No cars found for customer");
@@ -399,21 +396,6 @@ export default function CustomerDashboard() {
     }
   };
 
-  const customerMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
-    { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-    { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-    { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
-    { name: "Wash History", icon: <FiTruck />, link: "/wash-history" },
-    { name: "Loyalty Points", icon: <FiTrendingUp />, link: "/customer/loyalty" },
-    { name: "Profile", icon: <FiUser />, link: "/profile" },
-    { name: "Location", icon: <FiMapPin />, link: "/location" },
-    { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-    { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
-    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
-    { name: "About Us", icon: <FiGift />, link: "/about-us" },
-  ];
-
   // Calculate car wash frequency for current month
   const getCurrentMonthWashes = () => {
     const now = new Date();
@@ -529,294 +511,180 @@ export default function CustomerDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* ▓▓▓ NAVBAR ▓▓▓ */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-        items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-2xl font-bold">My Dashboard</h1>
-
-          <div className="flex items-center gap-8">
-            <NotificationBell />
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
-        <main className="p-4 md:p-8 space-y-8">
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
           {/* Welcome Section */}
-          <div>
-            <h1 className="text-3xl font-bold">Welcome back 👋</h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Check your bookings and service history
-            </p>
+          <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight">
+                Welcome back 👋
+              </h1>
+              <p className="text-slate-600 text-base">
+                Track your bookings, manage your pass & earn loyalty points
+              </p>
+            </div>
+            <div className="mt-6 md:mt-0 flex gap-3">
+              <Link
+                to="/bookings"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
+              >
+                <FiTruck size={20} /> Book a Wash
+              </Link>
+            </div>
           </div>
 
           {/* 🎯 QUICK ACTIONS */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Link
-              to="/bookings"
-              className="bg-linear-to-br from-blue-600/30 to-blue-900/30 border border-blue-500/50 rounded-lg p-4 text-center hover:scale-105 transition-transform group cursor-pointer"
-            >
-              <FiTruck className="text-3xl mx-auto mb-2 text-blue-400 group-hover:text-blue-300" />
-              <p className="text-xs font-semibold text-white">Book a Wash</p>
-            </Link>
-
-            <Link
-              to="/monthly-pass"
-              className="bg-linear-to-br from-purple-600/30 to-purple-900/30 border border-purple-500/50 rounded-lg p-4 text-center hover:scale-105 transition-transform group cursor-pointer"
-            >
-              <FiAward className="text-3xl mx-auto mb-2 text-purple-400 group-hover:text-purple-300" />
-              <p className="text-xs font-semibold text-white">Monthly Pass</p>
-            </Link>
-
-            <Link
-              to="/my-cars"
-              className="bg-linear-to-br from-green-600/30 to-green-900/30 border border-green-500/50 rounded-lg p-4 text-center hover:scale-105 transition-transform group cursor-pointer"
-            >
-              <FaCar className="text-3xl mx-auto mb-2 text-green-400 group-hover:text-green-300" />
-              <p className="text-xs font-semibold text-white">My Cars</p>
-            </Link>
-
-            <Link
-              to="/transactions"
-              className="bg-linear-to-br from-pink-600/30 to-pink-900/30 border border-pink-500/50 rounded-lg p-4 text-center hover:scale-105 transition-transform group cursor-pointer"
-            >
-              <FiCreditCard className="text-3xl mx-auto mb-2 text-pink-400 group-hover:text-pink-300" />
-              <p className="text-xs font-semibold text-white">Transactions</p>
-            </Link>
-            <Link
-  to="/location"
-  className="bg-slate-900/60 backdrop-blur border border-slate-700 rounded-xl p-4 text-center hover:bg-slate-800 hover:scale-[1.03] transition-all cursor-pointer group"
->
-  <FiMapPin className="text-3xl mx-auto mb-2 text-blue-400 group-hover:text-blue-300" />
-  <p className="text-sm font-semibold text-blue-200">Location</p>
-</Link>
-
-          </div>
-
-          {/* 🌈 STAT CARDS — DARK THEME */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {stats.map((item, index) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+            {[
+              { to: "/bookings", icon: FiTruck, label: "Book Wash", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" },
+              { to: "/monthly-pass", icon: FiAward, label: "My Pass", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
+              { to: "/my-cars", icon: FaCar, label: "My Cars", colors: "from-green-600 to-emerald-600", bg: "from-green-50 to-emerald-50", border: "border-green-200" },
+              { to: "/transactions", icon: FiCreditCard, label: "Wallet", colors: "from-pink-600 to-rose-600", bg: "from-pink-50 to-rose-50", border: "border-pink-200" },
+              { to: "/location", icon: FiMapPin, label: "Location", colors: "from-indigo-600 to-purple-600", bg: "from-indigo-50 to-purple-50", border: "border-indigo-200" },
+              { to: "/emergency-wash", icon: FiAlertCircle, label: "Quick Wash", colors: "from-red-600 to-pink-600", bg: "from-red-50 to-pink-50", border: "border-red-200" },
+            ].map(({ to, icon: Icon, label, colors, bg, border }) => (
               <Link
-                key={item.title}
-                to={item.title === "Loyalty Points" ? "/customer/loyalty" : "#"}
-                className="block"
+                key={label}
+                to={to}
+                className={`group rounded-xl p-5 border ${border} bg-gradient-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
               >
-                <div
-                  className={`rounded-xl p-6 shadow-lg border border-slate-800 
-                  bg-linear-to-br
-                  ${
-                    index % 2 === 0
-                      ? "from-blue-600/20 to-blue-900/20"
-                      : "from-purple-600/20 to-pink-900/20"
-                  }
-                  hover:scale-105 transition-transform duration-300 cursor-pointer`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-slate-400 text-sm font-medium">
-                      {item.title}
-                    </p>
-                    <span className="text-2xl text-blue-400 opacity-60">
-                      {item.icon}
-                    </span>
-                  </div>
-                  <p className="text-4xl font-bold text-white">{item.value}</p>
-                  <p className="text-blue-400 text-xs mt-2 font-medium">
-                    {item.change}
-                  </p>
+                <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
+                  <Icon />
                 </div>
+                <p className="text-sm font-bold text-slate-900">{label}</p>
               </Link>
             ))}
           </div>
 
+          {/* 📊 STAT CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+            {stats.map((item, index) => {
+              const colors = [
+                { icon: "text-blue-600", bg: "from-blue-600 to-cyan-600", bgGradient: "from-blue-50 to-cyan-50" },
+                { icon: "text-amber-600", bg: "from-amber-600 to-orange-600", bgGradient: "from-amber-50 to-orange-50" },
+                { icon: "text-emerald-600", bg: "from-emerald-600 to-green-600", bgGradient: "from-emerald-50 to-green-50" },
+                { icon: "text-purple-600", bg: "from-purple-600 to-pink-600", bgGradient: "from-purple-50 to-pink-50" },
+              ][index % 4];
+              
+              return (
+                <div
+                  key={item.title}
+                  className={`bg-gradient-to-br ${colors.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-slate-700 text-sm font-semibold tracking-wide">
+                      {item.title}
+                    </p>
+                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${colors.bg} text-white flex items-center justify-center text-xl opacity-90`}>
+                      {item.icon}
+                    </div>
+                  </div>
+                  <p className={`text-4xl font-black bg-gradient-to-r ${colors.bg} bg-clip-text text-transparent`}>
+                    {item.value}
+                  </p>
+                  <p className="text-slate-600 text-xs font-medium mt-3 leading-relaxed">
+                    {item.change}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
           {/* 💳 WALLET & MONTHLY PASS STATUS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
             {/* Wallet Balance */}
-            <div className="bg-linear-to-br from-emerald-600/20 to-emerald-900/20 border border-emerald-500/50 rounded-xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <FiDollarSign className="text-emerald-400" />
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-center text-2xl">
+                    <FiDollarSign />
+                  </div>
                   Wallet Balance
                 </h3>
-                <span className="text-xs bg-emerald-600/30 px-3 py-1 rounded-full text-emerald-300">
-                  Active
+                <span className="text-xs bg-emerald-600 text-white px-4 py-2 rounded-full font-bold tracking-wide">
+                  ACTIVE
                 </span>
               </div>
-              <p className="text-4xl font-bold text-emerald-400 mb-2">
+              <p className="text-5xl font-black text-emerald-600 mb-2">
                 ₹{walletBalance.toLocaleString("en-IN", {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 2,
                 })}
               </p>
-              <p className="text-sm text-slate-300 mb-4">
+              <p className="text-slate-600 text-sm font-semibold mb-6">
                 Available for bookings
               </p>
-              <div className="space-y-2">
-                <Link
-                  to="/transactions"
-                  className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-medium transition"
-                >
-                  Add Money
-                </Link>
-                <div className="text-xs text-slate-400 mt-4 pt-4 border-t border-emerald-500/20">
-                  <div className="flex justify-between mb-2">
-                    <span>Total Spent:</span>
-                    <span className="text-emerald-300 font-semibold">
-                      ₹{totalSpent.toLocaleString("en-IN", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
+              <Link
+                to="/transactions"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105"
+              >
+                + Add Money
+              </Link>
+              <div className="mt-6 pt-6 border-t border-emerald-200 space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-600">Total Spent:</span>
+                  <span className="font-bold text-emerald-700">
+                    ₹{totalSpent.toLocaleString("en-IN", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-600">Completed Bookings:</span>
+                  <span className="font-bold text-emerald-700">{completedBookings}</span>
                 </div>
               </div>
             </div>
 
             {/* Monthly Pass Status */}
             <div
-              className="
-    bg-[#0F1624] 
-    border border-amber-500/40 
-    rounded-xl p-6 shadow-xl 
-    relative
-"
+              className="bg-gradient-to-br from-slate-900 to-slate-800 border border-amber-500/40 rounded-xl p-5 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden"
               style={{
-                boxShadow: "0 0 25px rgba(255,193,7,0.25)", // 🔥 AMBER GLOW
+                boxShadow: "0 0 20px rgba(255,193,7,0.15)",
               }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <FiAward className="text-amber-400" />
+              {/* Decorative element */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-3xl"></div>
+              
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 text-white flex items-center justify-center text-xl">
+                    <FiAward />
+                  </div>
                   Monthly Pass
                 </h3>
 
                 {currentPass ? (
-                  <span className="text-xs bg-amber-600/20 px-3 py-1 rounded-full text-amber-300">
-                    Active
+                  <span className="text-xs bg-amber-600/40 text-amber-200 px-3 py-1 rounded-full font-bold border border-amber-500/50">
+                    ACTIVE
                   </span>
                 ) : (
-                  <span className="text-xs bg-red-600/20 px-3 py-1 rounded-full text-red-300">
-                    No Pass
+                  <span className="text-xs bg-red-600/40 text-red-200 px-3 py-1 rounded-full font-bold border border-red-500/50">
+                    INACTIVE
                   </span>
                 )}
               </div>
 
               {!currentPass ? (
                 <>
-                  <p className="text-sm text-slate-400 mb-4">
-                    You have no active pass.
+                  <p className="text-slate-300 text-xs mb-4 leading-relaxed">
+                    Unlock unlimited car washes with a monthly pass and save big! 🎉
                   </p>
-
-                  {/* LEFT ALIGNED BUTTON */}
-                  <div className="flex justify-start">
-                    <Link
-                      to="/monthly-pass"
-                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-medium transition"
-                    >
-                      Buy Pass Now
-                    </Link>
-                  </div>
+                  <Link
+                    to="/monthly-pass"
+                    className="inline-block px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg"
+                  >
+                    Get Pass Now
+                  </Link>
                 </>
               ) : (
                 <>
-                  {/* PLAN NAME */}
-                  <p className="text-xl font-bold text-amber-400">
+                  <p className="text-lg font-black text-amber-300 mb-1">
                     {currentPass.total_washes === 4
                       ? "Basic Plan"
                       : currentPass.total_washes === 8
@@ -826,16 +694,14 @@ export default function CustomerDashboard() {
                       : "Monthly Plan"}
                   </p>
 
-                  {/* WASHES USED */}
-                  <p className="text-sm text-slate-400 mt-1">
-                    {currentPass.total_washes - currentPass.remaining_washes}/
-                    {currentPass.total_washes} washes used
+                  <p className="text-slate-300 text-sm mb-4 font-semibold">
+                    {currentPass.total_washes - currentPass.remaining_washes}/{currentPass.total_washes} washes used
                   </p>
 
                   {/* PROGRESS BAR */}
-                  <div className="w-full bg-slate-700/40 rounded-full h-2 mt-3">
+                  <div className="w-full bg-slate-700 rounded-full h-3 mb-4 overflow-hidden">
                     <div
-                      className="bg-amber-500 h-2 rounded-full transition-all"
+                      className="bg-gradient-to-r from-amber-400 to-amber-500 h-3 rounded-full transition-all duration-500"
                       style={{
                         width: `${
                           ((currentPass.total_washes -
@@ -847,80 +713,93 @@ export default function CustomerDashboard() {
                     ></div>
                   </div>
 
-                  {/* EXPIRY */}
-                  <p className="text-sm text-slate-400 mt-3">
-                    Expires:{" "}
-                    <span className="text-white font-medium">
-                      {new Date(currentPass.valid_till).toLocaleDateString()}
-                    </span>
-                  </p>
-
-                  {/* LEFT ALIGNED BUTTON */}
-                  <div className="mt-4 flex justify-start">
-                    <Link
-                      to="/monthly-pass"
-                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-medium transition"
-                    >
-                      Manage / Renew
-                    </Link>
+                  <div className="space-y-3 mt-6 pt-6 border-t border-slate-700">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400">Expires:</span>
+                      <span className="font-bold text-amber-300">
+                        {new Date(currentPass.valid_till).toLocaleDateString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400">Remaining:</span>
+                      <span className="font-bold text-emerald-300">{currentPass.remaining_washes} washes</span>
+                    </div>
                   </div>
+
+                  <Link
+                    to="/monthly-pass"
+                    className="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105"
+                  >
+                    Renew Pass
+                  </Link>
                 </>
               )}
             </div>
           </div>
 
           {/* 🔔 NOTIFICATIONS */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <FiBell className="text-blue-400" />
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-lg mb-8">
+            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-sm">
+                <FiBell />
+              </div>
               Recent Notifications
             </h2>
-            <div className="space-y-3 max-h-40 overflow-y-auto">
-              {notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className={`p-3 rounded-lg text-sm border-l-4 ${
-                    notif.type === "success"
-                      ? "bg-green-600/10 border-green-500 text-green-300"
-                      : notif.type === "offer"
-                      ? "bg-purple-600/10 border-purple-500 text-purple-300"
-                      : "bg-blue-600/10 border-blue-500 text-blue-300"
-                  }`}
-                >
-                  {notif.message}
-                </div>
-              ))}
-            </div>
+            {notifications.length === 0 ? (
+              <p className="text-slate-500 text-center py-4">No notifications yet</p>
+            ) : (
+              <div className="space-y-2">
+                {notifications.map((notif) => (
+                  <div
+                    key={notif.id}
+                    className={`p-3 rounded-lg border-l-4 font-medium text-xs transition-all ${
+                      notif.type === "success"
+                        ? "bg-green-50 border-green-500 text-green-700"
+                        : notif.type === "offer"
+                        ? "bg-purple-50 border-purple-500 text-purple-700"
+                        : "bg-blue-50 border-blue-500 text-blue-700"
+                    }`}
+                  >
+                    {notif.message}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 🎁 OFFERS & PROMOTIONS */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <FiGift className="text-pink-400" />
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 shadow-xl mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-pink-500/10 to-transparent rounded-full blur-3xl"></div>
+            
+            <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2 relative z-10">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 text-white flex items-center justify-center text-sm">
+                <FiGift />
+              </div>
               Active Offers & Promotions
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
               {offers.map((offer) => (
                 <div
                   key={offer.id}
-                  className="bg-linear-to-br from-pink-600/15 to-rose-900/15 border border-pink-500/30 rounded-lg p-4 hover:scale-105 transition-transform cursor-pointer group"
+                  className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-300 rounded-lg p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-2xl">{offer.icon}</span>
-                    <span className="text-xs bg-pink-600/40 text-pink-300 px-2 py-1 rounded font-semibold">
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-3xl">{offer.icon}</span>
+                    <span className="text-xs bg-gradient-to-r from-pink-600 to-rose-600 text-white px-2 py-0.5 rounded-full font-bold">
                       {offer.discount}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-white mb-2">
+                  <p className="text-sm font-bold text-slate-900 mb-1">
                     {offer.title}
                   </p>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-xs text-slate-600 mb-3">
                     Code:{" "}
-                    <span className="text-pink-400 font-mono font-bold">
+                    <span className="inline-block bg-white px-2 py-0.5 rounded text-pink-600 font-bold font-mono group-hover:bg-pink-100 transition">
                       {offer.code}
                     </span>
                   </p>
-                  <button className="w-full px-3 py-2 bg-pink-600 hover:bg-pink-700 rounded text-xs font-medium transition">
+                  <button className="w-full px-3 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg">
                     Claim Now
                   </button>
                 </div>
@@ -928,121 +807,123 @@ export default function CustomerDashboard() {
             </div>
           </div>
 
-          {/* 🚗 RECENT BOOKINGS / ACTIVE BOOKINGS */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
+          {/* 🚗 RECENT BOOKINGS */}
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-lg">
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-semibold text-white">
-                {activeBookings.length > 0
-                  ? "Active & Recent Bookings"
-                  : "Your Bookings"}
+              <h2 className="text-lg font-bold text-slate-900">
+                {activeBookings.length > 0 ? "🚗 Active Bookings" : "Booking History"}
               </h2>
               <Link
                 to="/bookings"
-                className="text-blue-400 text-sm hover:text-blue-300 transition font-medium"
+                className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1 transition"
               >
-                View All →
+                View All <span>→</span>
               </Link>
             </div>
 
             {bookings.length === 0 ? (
-              <div className="py-12 text-center">
-                <FaCar className="text-4xl text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400">
-                  No bookings yet. Start your first wash!
+              <div className="py-8 text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <FaCar className="text-3xl text-slate-400" />
+                </div>
+                <p className="text-slate-600 text-base font-semibold mb-1">
+                  No bookings yet
+                </p>
+                <p className="text-slate-500 text-xs mb-4">
+                  Start your first car wash today!
                 </p>
                 <Link
                   to="/bookings"
-                  className="inline-block mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition"
+                  className="inline-block px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg"
                 >
-                  Book Now
+                  Book a Wash Now
                 </Link>
               </div>
             ) : (
-              <div className="overflow-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700 text-slate-400">
-                      <th className="py-3 text-left font-medium">Car</th>
-                      <th className="py-3 text-left font-medium">Number Plate</th>
-                      <th className="py-3 text-left font-medium">
-                        Date & Time
-                      </th>
-                      <th className="py-3 text-left font-medium">Location</th>
-                      <th className="py-3 text-left font-medium">Amount</th>
-                      <th className="py-3 text-left font-medium">Status</th>
-                      <th className="py-3 text-left font-medium">Action</th>
-                    </tr>
-                  </thead>
+              <div className="space-y-3">
+                {bookings.slice(0, 5).map((b, idx) => (
+                  <div
+                    key={b.id || idx}
+                    className="bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-lg p-3 hover:shadow-lg hover:border-blue-300 transition-all group"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      {/* Car & Plate */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 flex items-center justify-center text-base text-blue-600">
+                          <FaCar />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 text-sm">{b.car_name || "Car"}</p>
+                          <p className="text-xs text-slate-500">
+                            {b.number_plate || "N/A"}
+                          </p>
+                        </div>
+                      </div>
 
-                  <tbody>
-                    {bookings.slice(0, 5).map((b, idx) => (
-                      <tr
-                        key={b.id || idx}
-                        className="border-b border-slate-800 text-slate-300 hover:bg-slate-800/50 transition"
-                      >
-                        <td className="py-3 flex items-center gap-2">
-                          <FaCar className="text-blue-400" />
-                          {b.car_name || "Car"}
-                        </td>
-                        <td className="py-3 text-slate-300">
-                          {b.number_plate || "N/A"}
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <FiCalendar className="text-slate-500" />
+                      {/* Date & Location */}
+                      <div className="flex gap-4 flex-1">
+                        <div>
+                          <p className="text-xs text-slate-500 font-semibold mb-0.5">Date & Time</p>
+                          <p className="font-semibold text-slate-900 flex items-center gap-1 text-sm">
+                            <FiCalendar className="text-slate-400" size={14} />
                             {b.date || "N/A"}
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <FiMapPin className="text-slate-500" />
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-semibold mb-0.5">Location</p>
+                          <p className="font-semibold text-slate-900 flex items-center gap-1 text-sm">
+                            <FiMapPin className="text-slate-400" size={14} />
                             {b.location || "N/A"}
-                          </div>
-                        </td>
-                        <td className="py-3 font-semibold text-blue-400">
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xs text-slate-500 font-semibold mb-0.5">Amount</p>
+                        <p className="text-lg font-bold text-blue-600">
                           {b.amount || "₹299"}
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              b.status === "Completed"
-                                ? "bg-green-600/25 text-green-300"
-                                : b.status === "In Progress"
-                                ? "bg-yellow-600/25 text-yellow-300"
-                                : b.status === "Cancelled"
-                                ? "bg-red-600/25 text-red-300"
-                                : "bg-slate-600/25 text-slate-300"
-                            }`}
+                        </p>
+                      </div>
+
+                      {/* Status & Action */}
+                      <div className="flex flex-col gap-2 items-end">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                            b.status === "Completed"
+                              ? "bg-green-100 text-green-700"
+                              : b.status === "In Progress"
+                              ? "bg-amber-100 text-amber-700"
+                              : b.status === "Cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          {b.status || "Pending"}
+                        </span>
+                        
+                        {b.status === "Completed" && !b.has_rated ? (
+                          <button
+                            onClick={() => openRatingModal(b)}
+                            className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white rounded-lg text-xs font-bold transition-all hover:scale-105 flex items-center gap-1 whitespace-nowrap"
                           >
-                            {b.status || "Pending"}
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          {b.status === "Completed" && !b.has_rated ? (
-                            <button
-                              onClick={() => openRatingModal(b)}
-                              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-xs font-medium transition flex items-center gap-1"
-                            >
-                              ⭐ Rate
-                            </button>
-                          ) : b.status === "Completed" && b.has_rated ? (
-                            <span className="text-xs text-green-400 font-medium">✅ Rated</span>
-                          ) : (b.status === "In Progress" || b.status === "Confirmed" || b.status === "Pending") ? (
-                            <Link
-                              to={`/location`}
-                              state={{ bookingId: b.id }}
-                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium transition inline-block"
-                            >
-                              📍 Track
-                            </Link>
-                          ) : (
-                            <span className="text-slate-500 text-xs">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            ⭐ Rate
+                          </button>
+                        ) : b.status === "Completed" && b.has_rated ? (
+                          <span className="text-xs text-green-600 font-bold">✅ Rated</span>
+                        ) : (b.status === "In Progress" || b.status === "Confirmed" || b.status === "Pending") ? (
+                          <Link
+                            to={`/location`}
+                            state={{ bookingId: b.id }}
+                            className="px-3 py-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap"
+                          >
+                            📍 Track
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1050,71 +931,77 @@ export default function CustomerDashboard() {
 
         {/* ⭐ RATING MODAL */}
         {showRatingModal && selectedBooking && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-linear-to-b from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl border border-slate-200 relative">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowRatingModal(false)}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition-all hover:scale-110"
+              >
+                <FiX size={24} />
+              </button>
+
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Rate Your Service</h2>
-                <button
-                  onClick={() => setShowRatingModal(false)}
-                  className="text-2xl text-slate-400 hover:text-white transition"
-                >
-                  ✕
-                </button>
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-slate-900">Rate Your Service</h2>
+                <p className="text-slate-600 text-sm mt-2">Help us improve by sharing your experience</p>
               </div>
 
               {/* Service Details */}
-              <div className="bg-slate-800/50 rounded-lg p-4 mb-6 space-y-2">
-                <p className="text-sm text-slate-400">
-                  <span className="font-semibold text-white">{selectedBooking.car_name}</span>
-                </p>
-                <p className="text-xs text-slate-500">
-                  Completed on {selectedBooking.date}
-                </p>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-5 mb-6 border border-blue-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                    <FaCar />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">{selectedBooking.car_name}</p>
+                    <p className="text-xs text-slate-600">Completed: {selectedBooking.date}</p>
+                  </div>
+                </div>
               </div>
 
               {/* Rating Stars */}
-              <div className="mb-6">
-                <p className="text-sm font-semibold text-slate-300 mb-4">
-                  How was your experience?
-                </p>
-                <div className="flex justify-center gap-4">
+              <div className="mb-8">
+                <p className="text-sm font-bold text-slate-700 mb-5">How was your experience?</p>
+                <div className="flex justify-center gap-3">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => setRating(star)}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
-                      className="transition transform hover:scale-125"
+                      className="transition transform hover:scale-125 focus:outline-none"
                     >
                       <FaStar
-                        size={40}
+                        size={48}
                         className={`${
                           star <= (hoverRating || rating)
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-slate-600"
-                        } transition`}
+                            ? "text-yellow-400 fill-yellow-400 drop-shadow-lg"
+                            : "text-slate-300"
+                        } transition-all duration-200`}
                       />
                     </button>
                   ))}
                 </div>
                 {rating > 0 && (
-                  <p className="text-center mt-3 text-yellow-400 font-semibold">
-                    {rating} out of 5 stars
+                  <p className="text-center mt-5 text-lg font-bold">
+                    <span className="bg-gradient-to-r from-yellow-500 to-amber-500 bg-clip-text text-transparent">
+                      {rating} out of 5 stars
+                    </span>
                   </p>
                 )}
               </div>
 
               {/* Comment (Optional) */}
               <div className="mb-6">
-                <label className="text-sm font-semibold text-slate-300 block mb-2">
+                <label className="text-sm font-bold text-slate-700 block mb-3">
                   Comments (Optional)
                 </label>
                 <textarea
                   value={ratingComment}
                   onChange={(e) => setRatingComment(e.target.value)}
                   placeholder="Share your feedback about the service..."
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-medium"
                   rows="3"
                 />
               </div>
@@ -1123,14 +1010,14 @@ export default function CustomerDashboard() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowRatingModal(false)}
-                  className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition"
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg font-bold transition-all hover:scale-105"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={submitRating}
                   disabled={rating === 0 || submittingRating}
-                  className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-linear-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all hover:scale-105 flex items-center justify-center gap-2 disabled:hover:scale-100"
                 >
                   {submittingRating ? (
                     <>
@@ -1139,20 +1026,19 @@ export default function CustomerDashboard() {
                     </>
                   ) : (
                     <>
-                      ⭐ Submit Rating
+                      <span className="text-lg">⭐</span> Submit Rating
                     </>
                   )}
                 </button>
               </div>
 
               {/* Rating Info */}
-              <p className="text-center text-xs text-slate-500 mt-4">
-                Your rating helps us improve our service
+              <p className="text-center text-xs text-slate-500 mt-5 font-medium">
+                Your honest feedback helps us provide better service
               </p>
             </div>
           </div>
         )}
       </div>
-    </div>
-  );
+);
 }

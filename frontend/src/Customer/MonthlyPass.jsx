@@ -1,34 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import NavbarNew from "../components/NavbarNew";
 
 import {
-  FiMenu,
-  FiBell,
-  FiLogOut,
-  FiChevronLeft,
-  FiHome,
-  FiClipboard,
-  FiUser,
-  FiCreditCard,
   FiAward,
   FiCheckCircle,
   FiX,
-  FiMapPin,
-  FiSettings 
+  FiCreditCard,
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
 export default function MonthlyPass() {
-  const location = useLocation();
-
-    useRoleBasedRedirect("customer");
-  /** Sidebar + Navbar UI States */
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  useRoleBasedRedirect("customer");
   const [transactionId, setTransactionId] = useState(null);
 const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, upi_id etc.
 
@@ -59,15 +43,22 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       id: "basic",
       name: "Basic",
       washes: 4,
-      price: 799,
+      price: 499,
       perks: ["Exterior Wash", "Priority Slots", "4 washes / month"]
     },
     {
       id: "standard",
       name: "Standard",
       washes: 8,
-      price: 1499,
+      price: 999,
       perks: ["Exterior + Interior", "Pick-up optional", "8 washes / month"]
+    },
+    {
+      id: "daily",
+      name: "Daily Wash",
+      washes: 30,
+      price: 1499,
+      perks: ["Daily car wash", "Doorstep service", "External wash only", "30 days validity"]
     },
     {
       id: "premium",
@@ -88,11 +79,12 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     return "Custom";
   };
 
-  // Get active pass for a user from backend API
-  const getActivePass = async (customerId) => {
+  // Get active pass for a specific car from backend API
+  const getActivePassForCar = async (customerId, carId) => {
+    if (!customerId || !carId) return null;
     try {
       const res = await fetch(
-        `http://localhost:5000/pass/current/${customerId}`
+        `http://localhost:5000/pass/car/${customerId}/${carId}`
       );
       const result = await res.json();
       
@@ -101,7 +93,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       }
       return null;
     } catch (err) {
-      console.error("Error fetching pass from backend:", err);
+      console.error("Error fetching car pass from backend:", err);
       return null;
     }
   };
@@ -212,31 +204,44 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       console.log("👤 Loading pass for user:", auth.user.id);
       setUser(auth.user);
 
-      // Load cars
+      // Load cars from backend API
       try {
-        const { data: carList } = await supabase
-          .from("cars")
-          .select("*")
-          .eq("customer_id", auth.user.id);
-        setCars(carList || []);
+        const carResponse = await fetch(
+          `http://localhost:5000/cars/${auth.user.id}`
+        );
+        const carResult = await carResponse.json();
+        const carList = carResult.success ? carResult.data || [] : [];
+        setCars(carList);
+        // Preselect first car if available
+        if (carList && carList.length > 0) {
+          setSelectedCar(carList[0]);
+        }
       } catch (err) {
         console.error("Error loading cars:", err);
       }
 
-      const pass = await getActivePass(auth.user.id);
-      console.log("📋 Active pass result:", pass);
-      setActivePass(pass);
       setLoadingPass(false);
     };
 
     load();
   }, []);
 
-  /** Logout */
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
+  /** Load active pass when selected car changes */
+  useEffect(() => {
+    const loadPassForCar = async () => {
+      if (!user || !selectedCar) {
+        setActivePass(null);
+        return;
+      }
+
+      setLoadingPass(true);
+      const pass = await getActivePassForCar(user.id, selectedCar.id);
+      setActivePass(pass);
+      setLoadingPass(false);
+    };
+
+    loadPassForCar();
+  }, [user, selectedCar]);
 
   /** Buy / Upgrade Plan */
   const buyPlan = async () => {
@@ -376,7 +381,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     setPaymentVerified(true);
     setPaymentStatus("success");
 
-    const existingPass = await getActivePass(user.id);
+    const existingPass = await getActivePassForCar(user.id, selectedCar?.id);
     let error = null;
 
     if (!existingPass) {
@@ -399,7 +404,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       setPaymentStatus(null);
       setPaymentVerified(false);
 
-      const latest = await getActivePass(user.id);
+      const latest = await getActivePassForCar(user.id, selectedCar?.id);
       setActivePass(latest);
 
       alert("Plan purchased successfully!");
@@ -421,7 +426,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       return;
     }
 
-    const existingPass = await getActivePass(user.id);
+    const existingPass = await getActivePassForCar(user.id, selectedCar?.id);
     if (!existingPass) {
       alert("You don't have an active pass to renew.");
       return;
@@ -436,24 +441,10 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       return;
     }
 
-    const latest = await getActivePass(user.id);
+    const latest = await getActivePassForCar(user.id, selectedCar?.id);
     setActivePass(latest);
     alert("Pass renewed successfully!");
   };
-
-  /** Sidebar menu items */
-  const menu = [
-        { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
-        { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-        { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-        { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
-        { name: "Profile", icon: <FiUser />, link: "/profile" },
-        { name: "Location", icon: <FiMapPin />, link: "/location" },
-        { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-        { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
-        { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
-        { name: "About Us", icon: <FiGift />, link: "/about-us" },
-      ];
 
   /** Derived values from activePass */
   const totalWashes = activePass?.total_washes ?? 0;
@@ -467,219 +458,167 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     : "No Active Pass";
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* MOBILE TOP BAR */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between z-40">
-        <h1 className="text-xl font-bold">CarWash+</h1>
-        <FiMenu
-          className="text-2xl cursor-pointer"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* MOBILE BACKDROP */}
-      {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/60 z-30"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* SIDEBAR */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {menu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg
-            ${collapsed ? "justify-center" : ""}
-          `}
-        >
-          <FiLogOut />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* NAVBAR */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-          items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-xl font-bold">Monthly Pass</h1>
-
-          <div className="flex items-center gap-6">
-            <FiBell className="text-xl text-slate-300" />
-            <img
-              src={`https://ui-avatars.com/api/?name=${
-                user?.email || "User"
-              }&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500"
-              alt="User"
-            />
-          </div>
-        </header>
-
-        {/* PAGE CONTENT */}
-        <main className="p-4 md:p-8 space-y-8">
-          {/* Title */}
+      {/* PAGE CONTENT */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-8">
+        {/* Title */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold">Choose Your Monthly Pass</h2>
-            <p className="text-slate-400 text-sm mt-1">
-              Save up to 40% with monthly plans!
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+                <FiCreditCard />
+              </span>
+              <span>Monthly Pass</span>
+            </h2>
+            <p className="text-slate-600 text-sm md:text-base mt-2 max-w-xl">
+              Save more on regular washes. Pick a plan and link it to your car for quick, discounted bookings.
             </p>
           </div>
+        </div>
 
-          {/* TWO COLUMN LAYOUT */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT — PLANS */}
-            <div className="space-y-4">
-              {plans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl hover:border-blue-500/40 transition cursor-pointer"
-                >
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold">{plan.name}</h3>
-                    <p className="text-blue-400 text-lg font-bold">
-                      ₹{plan.price}
-                    </p>
-                  </div>
-
-                  <p className="text-sm text-slate-400 mt-2">
-                    {plan.washes} washes / month
+        {/* TWO COLUMN LAYOUT */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT — PLANS */}
+          <div className="space-y-4">
+            {plans.map((plan) => (
+              <div
+                key={plan.id}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-md hover:shadow-xl hover:border-blue-300 transition cursor-pointer"
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    {plan.name}
+                  </h3>
+                  <p className="text-blue-600 text-lg font-bold">
+                    ₹{plan.price}
                   </p>
-
-                  <ul className="mt-3 space-y-1 text-sm">
-                    {plan.perks.map((perk) => (
-                      <li
-                        key={perk}
-                        className="flex items-center gap-2 text-slate-300"
-                      >
-                        <FiCheckCircle className="text-green-400" />
-                        {perk}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={() => {
-                      setSelectedPlan(plan);
-                      setSelectedCar(null); // Reset car selection
-                      setBuyModalOpen(true);
-                    }}
-                    className="mt-4 w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg"
-                  >
-                    💳 Buy / Upgrade
-                  </button>
                 </div>
-              ))}
-            </div>
 
-            {/* RIGHT — ACTIVE PLAN */}
-            <div className="space-y-4">
-              {/* ACTIVE PASS CARD */}
-              <div className="bg-linear-to-br from-amber-600/20 to-amber-900/20 border border-amber-500/30 rounded-xl p-6 shadow-xl">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <FiAward className="text-amber-400" />
+                <p className="text-sm text-slate-600 mt-2">
+                  {plan.washes} washes / month
+                </p>
+
+                <ul className="mt-3 space-y-1 text-sm">
+                  {plan.perks.map((perk) => (
+                    <li
+                      key={perk}
+                      className="flex items-center gap-2 text-slate-700"
+                    >
+                      <FiCheckCircle className="text-emerald-500" />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => {
+                    setSelectedPlan(plan);
+                    setSelectedCar(null); // Reset car selection in modal
+                    setBuyModalOpen(true);
+                  }}
+                  className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg text-sm font-semibold text-white transition shadow-sm hover:shadow-md"
+                >
+                  💳 Buy / Upgrade
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* RIGHT — ACTIVE PLAN */}
+          <div className="space-y-4">
+            {/* ACTIVE PASS CARD */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
+                  <FiAward className="text-amber-500" />
                   Active Pass
                 </h3>
+                {/* Car selector to determine which car's pass to show */}
+                {cars.length > 0 && (
+                  <select
+                    value={selectedCar?.id || ""}
+                    onChange={(e) => {
+                      const carId = e.target.value;
+                      const car =
+                        cars.find((c) => String(c.id) === carId) || null;
+                      setSelectedCar(car);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  >
+                    <option value="">Select car</option>
+                    {cars.map((car) => (
+                      <option key={car.id} value={car.id}>
+                        {car.brand} {car.model} - {car.number_plate}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
-                {loadingPass ? (
-                  <p className="text-sm text-slate-400">Loading pass...</p>
-                ) : !activePass ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-slate-400">
-                      You don't have an active pass yet.
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Choose a plan from the left to get started!
-                    </p>
-                  </div>
+              {loadingPass ? (
+                <p className="text-sm text-slate-600">Loading pass...</p>
+              ) : !selectedCar ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600">
+                    Select a car above to view its monthly pass status.
+                  </p>
+                </div>
+              ) : !activePass ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-700">
+                    No active pass for{" "}
+                    <span className="font-semibold">
+                      {selectedCar.brand} {selectedCar.model} (
+                      {selectedCar.number_plate})
+                    </span>
+                    .
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Choose a plan on the left to activate a pass for this car.
+                  </p>
+                </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-amber-300">
+                    <p className="text-2xl font-bold text-amber-800">
                       {activePlanName} Plan
                     </p>
-                    <p className="text-sm text-amber-200 mt-1">
+                    <p className="text-sm text-amber-700 mt-1">
                       {usedWashes}/{totalWashes} washes used
                     </p>
 
                     {/* Progress bar */}
-                    <div className="w-full bg-slate-800 rounded-full h-3 mt-4 overflow-hidden">
+                    <div className="w-full bg-amber-100 rounded-full h-3 mt-4 overflow-hidden">
                       <div
-                        className="bg-linear-to-r from-amber-500 to-amber-400 h-3 rounded-full transition-all duration-300"
+                        className="bg-amber-500 h-3 rounded-full transition-all duration-300"
                         style={{ width: `${progress}%` }}
                       ></div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2 text-right">{progress}% Used</p>
+                    <p className="text-xs text-amber-700 mt-2 text-right">
+                      {progress}% Used
+                    </p>
 
-                    <div className="bg-slate-800/50 rounded-lg p-3 mt-4 space-y-2">
+                    <div className="bg-white/70 rounded-lg p-3 mt-4 space-y-2 border border-amber-100">
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Expires:</span>
-                        <span className="font-semibold text-amber-300">
+                        <span className="text-slate-600">Expires:</span>
+                        <span className="font-semibold text-amber-800">
                           {activePass.valid_till || "—"}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Remaining:</span>
-                        <span className="font-semibold text-green-400">{remainingWashes} washes</span>
+                        <span className="text-slate-600">Remaining:</span>
+                        <span className="font-semibold text-emerald-600">
+                          {remainingWashes} washes
+                        </span>
                       </div>
                     </div>
 
                     <button
                       onClick={handleRenew}
                       disabled={loading}
-                      className="mt-4 w-full px-4 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-lg font-semibold transition"
+                      className="mt-4 w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 rounded-lg font-semibold transition text-white"
                     >
                       {loading ? "Processing..." : "🔄 Renew Pass"}
                     </button>
@@ -688,34 +627,33 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
               </div>
 
               {/* INFO CARD */}
-              <div className="bg-blue-600/10 border border-blue-500/30 rounded-xl p-4 space-y-2">
-                <p className="text-sm font-semibold text-blue-300">💡 Pro Tip</p>
-                <p className="text-xs text-slate-400">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+                <p className="text-sm font-semibold text-blue-700">💡 Pro Tip</p>
+                <p className="text-xs text-slate-600">
                   Renew your pass before expiry to keep your benefits active without any interruption.
                 </p>
               </div>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
 
       {/* PURCHASE MODAL */}
       {buyModalOpen && selectedPlan && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-6">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-6">
             {/* Header */}
             <div>
-              <h3 className="text-2xl font-bold">
+              <h3 className="text-2xl font-bold text-slate-900">
                 Upgrade to {selectedPlan.name}
               </h3>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-slate-600 text-sm mt-1">
                 Get {selectedPlan.washes} washes per month
               </p>
             </div>
 
             {/* Car Selection */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <label className="text-sm font-semibold text-slate-300 uppercase tracking-wider block mb-3">
+            <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+              <label className="text-sm font-semibold text-slate-800 uppercase tracking-wider block mb-3">
                 Select Car
               </label>
               {cars.length > 0 ? (
@@ -724,64 +662,90 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                     <button
                       key={car.id}
                       onClick={() => setSelectedCar(car)}
-                      className={`w-full p-3 rounded-lg text-left transition border-2 ${
+                      className={`w-full p-3 rounded-lg text-left transition border ${
                         selectedCar?.id === car.id
-                          ? "bg-blue-600/30 border-blue-500 text-blue-300"
-                          : "bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500"
+                          ? "bg-blue-50 border-blue-400 text-blue-700"
+                          : "bg-white border-slate-300 text-slate-700 hover:border-slate-400"
                       }`}
                     >
-                      <div className="font-medium">{car.brand} {car.model}</div>
-                      <div className="text-xs opacity-75">{car.number_plate}</div>
+                      <div className="font-medium text-slate-900">
+                        {car.brand} {car.model}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {car.number_plate}
+                      </div>
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-400 text-sm">No cars found. Add a car first.</p>
+                <p className="text-slate-500 text-sm">
+                  No cars found. Add a car first.
+                </p>
               )}
             </div>
 
             {/* Plan Summary */}
-            <div className="bg-slate-800/50 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Plan Summary</p>
+            <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
+              <p className="text-sm font-semibold text-slate-800 uppercase tracking-wider">
+                Plan Summary
+              </p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Plan Name</span>
-                  <span className="font-medium text-white">{selectedPlan.name}</span>
+                  <span className="text-slate-500">Plan Name</span>
+                  <span className="font-medium text-slate-900">
+                    {selectedPlan.name}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Total Washes</span>
-                  <span className="font-medium text-white">{selectedPlan.washes}/month</span>
+                  <span className="text-slate-500">Total Washes</span>
+                  <span className="font-medium text-slate-900">
+                    {selectedPlan.washes}/month
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Validity</span>
-                  <span className="font-medium text-white">30 Days</span>
+                  <span className="text-slate-500">Validity</span>
+                  <span className="font-medium text-slate-900">30 Days</span>
                 </div>
               </div>
             </div>
 
             {/* Price Card */}
-            <div className="bg-linear-to-r from-blue-600/20 to-blue-900/20 border border-blue-500/50 rounded-lg p-4 space-y-2">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-300">Base Price:</span>
-                <span className="font-semibold">₹{Math.round(selectedPlan.price / 1.18)}</span>
+                <span className="text-slate-600">Base Price:</span>
+                <span className="font-semibold">
+                  ₹{Math.round(selectedPlan.price / 1.18)}
+                </span>
               </div>
-              <div className="flex justify-between text-sm pb-2 border-b border-blue-500/30">
-                <span className="text-slate-300">GST (18%):</span>
-                <span className="font-semibold">₹{Math.round(selectedPlan.price - selectedPlan.price / 1.18)}</span>
+              <div className="flex justify-between text-sm pb-2 border-b border-blue-200">
+                <span className="text-slate-600">GST (18%):</span>
+                <span className="font-semibold">
+                  ₹
+                  {Math.round(
+                    selectedPlan.price - selectedPlan.price / 1.18
+                  )}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-blue-300 font-bold">Total:</span>
-                <span className="text-3xl font-bold text-blue-300">₹{selectedPlan.price}</span>
+                <span className="text-blue-700 font-bold">Total:</span>
+                <span className="text-3xl font-bold text-blue-700">
+                  ₹{selectedPlan.price}
+                </span>
               </div>
             </div>
 
             {/* Perks List */}
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">What You Get</p>
+              <p className="text-sm font-semibold text-slate-800 uppercase tracking-wider">
+                What You Get
+              </p>
               <div className="space-y-1 text-sm">
                 {selectedPlan.perks.map((perk) => (
-                  <div key={perk} className="flex items-center gap-2 text-slate-300">
-                    <FiCheckCircle className="text-green-400 shrink-0" />
+                  <div
+                    key={perk}
+                    className="flex items-center gap-2 text-slate-700"
+                  >
+                    <FiCheckCircle className="text-emerald-500 shrink-0" />
                     {perk}
                   </div>
                 ))}
@@ -792,7 +756,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setBuyModalOpen(false)}
-                className="flex-1 px-4 py-3 rounded-lg border border-slate-600 hover:bg-slate-800 font-medium transition"
+                className="flex-1 px-4 py-3 rounded-lg border border-slate-300 hover:bg-slate-100 font-medium transition text-slate-800"
               >
                 Cancel
               </button>
@@ -800,7 +764,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
               <button
                 onClick={buyPlan}
                 disabled={loading || !selectedCar}
-                className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
                 title={!selectedCar ? "Please select a car first" : ""}
               >
                 {loading ? (
@@ -819,62 +783,62 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
       {/* ▓▓▓ PAYMENT PAGE ▓▓▓ */}
       {showPayment && selectedPlan && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
             {paymentStep === "method" ? (
               // PAYMENT METHOD SELECTION
               <>
                 {/* Header */}
                 <div>
-                  <h2 className="text-2xl font-bold">🛒 Confirm Purchase</h2>
-                  <p className="text-slate-400 text-sm mt-1">Select your preferred payment method</p>
+                  <h2 className="text-2xl font-bold text-slate-900">🛒 Confirm Purchase</h2>
+                  <p className="text-slate-600 text-sm mt-1">Select your preferred payment method</p>
                 </div>
 
                 {/* Close Button */}
                 <button
                   onClick={() => setShowPayment(false)}
-                  className="absolute top-6 right-6 text-slate-400 hover:text-white transition"
+                  className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition"
                 >
                   <FiX className="text-2xl" />
                 </button>
 
                 {/* Plan Details Card */}
-                <div className="space-y-3 bg-slate-800/50 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Plan Details</p>
+                <div className="space-y-3 bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <p className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Plan Details</p>
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Plan Name</span>
-                      <span className="text-white font-medium capitalize">{selectedPlan.name}</span>
+                      <span className="text-slate-500">Plan Name</span>
+                      <span className="text-slate-900 font-medium capitalize">{selectedPlan.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Total Washes</span>
-                      <span className="text-white font-medium">{selectedPlan.washes}</span>
+                      <span className="text-slate-500">Total Washes</span>
+                      <span className="text-slate-900 font-medium">{selectedPlan.washes}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Validity</span>
-                      <span className="text-white font-medium">30 Days</span>
+                      <span className="text-slate-500">Validity</span>
+                      <span className="text-slate-900 font-medium">30 Days</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Amount Breakdown Card */}
-                <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-4 space-y-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-300">Subtotal:</span>
+                    <span className="text-slate-600">Subtotal:</span>
                     <span className="font-semibold">
                       ₹{Math.round(paymentAmount / 1.18)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm pb-2 border-b border-blue-500/30">
-                    <span className="text-slate-300">GST (18%):</span>
+                  <div className="flex justify-between text-sm pb-2 border-b border-blue-200">
+                    <span className="text-slate-600">GST (18%):</span>
                     <span className="font-semibold">
                       ₹{Math.round(paymentAmount - paymentAmount / 1.18)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-blue-300 font-bold">Total Amount:</span>
-                    <span className="text-lg font-bold text-blue-300">
+                    <span className="text-blue-700 font-bold">Total Amount:</span>
+                    <span className="text-lg font-bold text-blue-700">
                       ₹{paymentAmount}
                     </span>
                   </div>
@@ -882,7 +846,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
                 {/* Payment Methods */}
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Payment Methods</p>
+                  <p className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Payment Methods</p>
                   
                   <div className="space-y-2">
                     {[
@@ -894,11 +858,11 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                       <button
                         key={method.id}
                         onClick={() => handlePaymentMethodSelected(method.id)}
-                        className="w-full flex items-center justify-between gap-3 p-4 border border-slate-700 hover:border-blue-500 hover:bg-blue-600/10 rounded-lg transition text-left"
+                        className="w-full flex items-center justify-between gap-3 p-4 border border-slate-200 hover:border-blue-500 hover:bg-blue-50 rounded-lg transition text-left"
                       >
                         <div>
-                          <p className="font-semibold text-white">{method.label}</p>
-                          <p className="text-xs text-slate-400">{method.desc}</p>
+                          <p className="font-semibold text-slate-900">{method.label}</p>
+                          <p className="text-xs text-slate-500">{method.desc}</p>
                         </div>
                         <span className="text-xl">→</span>
                       </button>
@@ -909,7 +873,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                 {/* Cancel Button */}
                 <button
                   onClick={() => setShowPayment(false)}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition"
+                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium transition text-slate-700"
                 >
                   Cancel
                 </button>
@@ -920,19 +884,19 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                 {/* SUCCESS MESSAGE - Show when payment verified */}
                 {paymentVerified && paymentStatus === "success" && (
                   <div className="text-center space-y-6">
-                    <div className="bg-green-600/20 border border-green-500/50 rounded-xl p-6 flex flex-col items-center gap-4 animate-pulse">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 flex flex-col items-center gap-4 animate-pulse">
                       <div className="text-5xl">✅</div>
                       <div>
-                        <h3 className="font-bold text-green-300 mb-1 text-xl">Payment Successful!</h3>
-                        <p className="text-sm text-green-200">Amount received in your account.</p>
+                        <h3 className="font-bold text-emerald-700 mb-1 text-xl">Payment Successful!</h3>
+                        <p className="text-sm text-emerald-600">Amount received in your account.</p>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-sm text-slate-400">Completing your purchase...</p>
+                      <p className="text-sm text-slate-600">Completing your purchase...</p>
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-slate-400">Processing</span>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-slate-600">Processing</span>
                       </div>
                     </div>
                   </div>
@@ -941,17 +905,17 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                 {/* FAILURE MESSAGE - Show when payment fails */}
                 {paymentStatus === "failed" && (
                   <div className="text-center space-y-6">
-                    <div className="bg-red-600/20 border border-red-500/50 rounded-xl p-6 flex flex-col items-center gap-4">
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex flex-col items-center gap-4">
                       <div className="text-5xl">❌</div>
                       <div>
-                        <h3 className="font-bold text-red-300 mb-1 text-xl">Payment Failed</h3>
-                        <p className="text-sm text-red-200">Unable to verify payment. Please try again.</p>
+                        <h3 className="font-bold text-red-700 mb-1 text-xl">Payment Failed</h3>
+                        <p className="text-sm text-red-600">Unable to verify payment. Please try again.</p>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => setPaymentStep("method")}
-                      className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                        onClick={() => setPaymentStep("method")}
+                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition text-slate-800"
                     >
                       Try Another Method
                     </button>
@@ -960,13 +924,11 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
 
                 {/* PAYMENT METHODS PROCESSING - Show only if not verified yet */}
                 {!paymentVerified && paymentStatus !== "failed" && (
-                  <>
-                {selectedPaymentMethod === "upi" ? (
-                  // UPI QR CODE
+                  selectedPaymentMethod === "upi" ? (
                   <div className="text-center space-y-6">
-                    <h2 className="text-2xl font-bold">📱 Scan to Pay with UPI</h2>
+                    <h2 className="text-2xl font-bold text-slate-900">📱 Scan to Pay with UPI</h2>
                     
-                    <div className="bg-white p-6 rounded-xl">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200">
                       <img 
                         src={generateQRCode(paymentDetails?.upi_link || "")} 
                         alt="UPI QR Code" 
@@ -975,111 +937,113 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-slate-400">Scan with any UPI app:</p>
+                      <p className="text-slate-600">Scan with any UPI app:</p>
                       <p className="text-sm text-slate-500">Google Pay • PhonePe • PayTM</p>
                     </div>
 
-                    <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-4">
-                      <p className="text-lg font-bold text-blue-300">Amount: ₹{paymentAmount}</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-lg font-bold text-blue-700">Amount: ₹{paymentAmount}</p>
                     </div>
 
                     <div className="space-y-3">
-                      <label className="block text-sm font-medium text-slate-300">Enter UTR Number after payment:</label>
+                      <label className="block text-sm font-medium text-slate-800">Enter UTR Number after payment:</label>
                       <input 
                         type="text" 
                         placeholder="UTR / Reference number (e.g., 123456789012)"
                         id="upi-utr"
-                        className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-green-500 focus:outline-none text-white"
+                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none text-slate-900"
                       />
                     </div>
 
                     <button
-  onClick={async () => {
-    const utr = document.getElementById("upi-utr")?.value?.trim();
+                      onClick={async () => {
+                        const utr = document
+                          .getElementById("upi-utr")
+                          ?.value?.trim();
 
-    if (!utr) {
-      alert("Please enter UTR number");
-      return;
-    }
+                        if (!utr) {
+                          alert("Please enter UTR number");
+                          return;
+                        }
 
-    const verified = await verifyPayment(
-      transactionId,
-      "upi",
-      { utr, payment_timestamp: new Date().toISOString() }
-    );
+                        const verified = await verifyPayment(
+                          transactionId,
+                          "upi",
+                          { utr, payment_timestamp: new Date().toISOString() }
+                        );
 
-    if (verified) {
-      setPaymentVerified(true);
-      setPaymentStatus("success");
+                        if (verified) {
+                          setPaymentVerified(true);
+                          setPaymentStatus("success");
 
-      await completePurchase(transactionId, "upi", { utr });
-    } else {
-      alert("Payment verification failed. Please check UTR and try again.");
-    }
-  }}
-  className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition"
->
-  ✓ Verify Payment
-</button>
-
+                          await completePurchase(transactionId, "upi", { utr });
+                        } else {
+                          alert(
+                            "Payment verification failed. Please check UTR and try again."
+                          );
+                        }
+                      }}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-semibold transition text-white"
+                    >
+                      ✓ Verify Payment
+                    </button>
 
                     <button
                       onClick={() => {
                         setPaymentStep("method");
                       }}
-                      className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                      className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition text-slate-800"
                     >
                       Use Different Method
                     </button>
                   </div>
                 ) : selectedPaymentMethod === "card" ? (
-                  // CARD PAYMENT
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-center">💳 Card Payment</h2>
+                    <h2 className="text-2xl font-bold text-center text-slate-900">💳 Card Payment</h2>
                     
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Card Number</label>
+                        <label className="block text-sm font-medium mb-2 text-slate-800">Card Number</label>
                         <input 
                           type="text" 
                           placeholder="1234 5678 9012 3456" 
-                          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
+                          className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium mb-2">Expiry</label>
+                          <label className="block text-sm font-medium mb-2 text-slate-800">Expiry</label>
                           <input 
                             type="text" 
                             placeholder="MM/YY" 
-                            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
+                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-2">CVV</label>
+                          <label className="block text-sm font-medium mb-2 text-slate-800">CVV</label>
                           <input 
                             type="text" 
                             placeholder="123" 
-                            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none"
+                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
                           />
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-purple-600/20 border border-purple-500/50 rounded-lg p-4 text-center">
-                      <p className="text-lg font-bold text-purple-300">Amount: ₹{paymentAmount}</p>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                      <p className="text-lg font-bold text-purple-700">Amount: ₹{paymentAmount}</p>
                     </div>
 
                     <div className="flex gap-3">
                       <button
                         onClick={() => setPaymentStep("method")}
-                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                        className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition text-slate-800"
                       >
                         Back
                       </button>
                       <button
-                        className="flex-1 py-3 bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                        className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                       >
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         Processing...
@@ -1087,43 +1051,41 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                     </div>
                   </div>
                 ) : selectedPaymentMethod === "wallet" ? (
-                  // WALLET PAYMENT
                   <div className="text-center space-y-6">
-                    <h2 className="text-2xl font-bold">👛 Wallet Payment</h2>
+                    <h2 className="text-2xl font-bold text-slate-900">👛 Wallet Payment</h2>
                     
-                    <div className="bg-green-600/20 border border-green-500/50 rounded-lg p-6 space-y-2">
-                      <p className="text-slate-400">Paying from:</p>
-                      <p className="text-2xl font-bold text-green-300">₹{paymentAmount}</p>
-                      <p className="text-sm text-slate-400">CarWash+ Wallet</p>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 space-y-2">
+                      <p className="text-slate-600">Paying from:</p>
+                      <p className="text-2xl font-bold text-emerald-700">₹{paymentAmount}</p>
+                      <p className="text-sm text-slate-600">CarWash+ Wallet</p>
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-sm text-slate-400">Processing wallet payment...</p>
+                      <p className="text-sm text-slate-600">Processing wallet payment...</p>
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-slate-400">Deducting funds</span>
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-slate-600">Deducting funds</span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => setPaymentStep("method")}
-                      className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                        onClick={() => setPaymentStep("method")}
+                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition text-slate-800"
                     >
                       Use Different Method
                     </button>
                   </div>
                 ) : (
-                  // NET BANKING
                   <div className="text-center space-y-6">
-                    <h2 className="text-2xl font-bold">🏦 Net Banking</h2>
+                    <h2 className="text-2xl font-bold text-slate-900">🏦 Net Banking</h2>
                     
                     <div className="space-y-3">
-                      <p className="text-slate-400">Select your bank:</p>
+                      <p className="text-slate-600">Select your bank:</p>
                       <div className="grid grid-cols-2 gap-3">
                         {["HDFC", "ICICI", "Axis", "SBI", "BOI", "Kotak"].map((bank) => (
                           <button
                             key={bank}
-                            className="py-3 bg-slate-800 hover:bg-orange-600/30 border border-slate-700 hover:border-orange-500 rounded-lg font-medium transition"
+                            className="py-3 bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-400 rounded-lg font-medium transition text-slate-800"
                           >
                             {bank}
                           </button>
@@ -1131,21 +1093,20 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                       </div>
                     </div>
 
-                    <div className="bg-orange-600/20 border border-orange-500/50 rounded-lg p-4">
-                      <p className="text-lg font-bold text-orange-300">Amount: ₹{paymentAmount}</p>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <p className="text-lg font-bold text-orange-700">Amount: ₹{paymentAmount}</p>
                     </div>
 
                     <div className="flex gap-3">
                       <button
                         onClick={() => setPaymentStep("method")}
-                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                        className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition text-slate-800"
                       >
                         Back
                       </button>
                     </div>
                   </div>
-                )}
-                  </>
+                )
                 )}
               </>
             )}

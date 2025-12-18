@@ -76,13 +76,13 @@ export default function QRCodeScanner({ isOpen, onClose, onScanComplete }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl p-8 max-w-2xl w-full">
+      <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-2xl w-full shadow-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">📱 Scan Customer QR Code</h2>
+          <h2 className="text-2xl font-bold text-slate-900">📱 Scan Customer QR Code</h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition"
+            className="text-slate-600 hover:text-slate-900 transition"
           >
             <FiX size={24} />
           </button>
@@ -92,19 +92,19 @@ export default function QRCodeScanner({ isOpen, onClose, onScanComplete }) {
           // Display scanned data
           <div className="space-y-4">
             {/* Car Details */}
-            <div className="bg-blue-600/10 border border-blue-500/30 rounded-lg p-4">
-              <p className="text-sm font-semibold text-blue-300 mb-2">🚗 Car Details</p>
-              <div className="text-sm text-slate-300 space-y-1">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-blue-900 mb-2">🚗 Car Details</p>
+              <div className="text-sm text-slate-700 space-y-1">
                 <p><span className="font-medium">Brand:</span> {scannedData.carBrand} {scannedData.carModel}</p>
-                <p><span className="font-medium">Number Plate:</span> <span className="font-mono font-bold text-blue-400">{scannedData.carNumberPlate}</span></p>
+                <p><span className="font-medium">Number Plate:</span> <span className="font-mono font-bold text-blue-600">{scannedData.carNumberPlate}</span></p>
                 {scannedData.carColor !== "N/A" && <p><span className="font-medium">Color:</span> {scannedData.carColor}</p>}
               </div>
             </div>
 
             {/* Customer Details */}
-            <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-4">
-              <p className="text-sm font-semibold text-green-300 mb-2">👤 Customer Details</p>
-              <div className="text-sm text-slate-300 space-y-1">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-emerald-900 mb-2">👤 Customer Details</p>
+              <div className="text-sm text-slate-700 space-y-1">
                 <p><span className="font-medium">Name:</span> {scannedData.customerName}</p>
                 <p><span className="font-medium">Email:</span> {scannedData.customerEmail}</p>
                 <p><span className="font-medium">Phone:</span> {scannedData.customerPhone}</p>
@@ -113,9 +113,9 @@ export default function QRCodeScanner({ isOpen, onClose, onScanComplete }) {
 
             {/* Monthly Pass Details (if available) */}
             {scannedData.hasPass && (
-              <div className="bg-amber-600/10 border border-amber-500/30 rounded-lg p-4">
-                <p className="text-sm font-semibold text-amber-300 mb-2">✨ Monthly Pass Details</p>
-                <div className="text-sm text-slate-300 space-y-1">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-amber-900 mb-2">✨ Monthly Pass Details</p>
+                <div className="text-sm text-slate-700 space-y-1">
                   <p><span className="font-medium">Total Washes:</span> {scannedData.passTotalWashes}</p>
                   <p><span className="font-medium">Remaining Washes:</span> {scannedData.passRemainingWashes}</p>
                   <p><span className="font-medium">Expires:</span> {new Date(scannedData.passExpiryDate).toLocaleDateString()}</p>
@@ -126,7 +126,7 @@ export default function QRCodeScanner({ isOpen, onClose, onScanComplete }) {
             <div className="flex gap-3 justify-end mt-6">
               <button
                 onClick={() => setScannedData(null)}
-                className="px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition"
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
               >
                 Scan Another
               </button>
@@ -142,18 +142,18 @@ export default function QRCodeScanner({ isOpen, onClose, onScanComplete }) {
           // Scan options
           <div className="space-y-4">
             {error && (
-              <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-4">
-                <p className="text-sm text-red-300">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
 
             {/* Upload Option */}
-            <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition"
+            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition"
               onClick={() => fileInputRef.current?.click()}
             >
-              <FiUpload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-              <p className="text-slate-300 font-medium mb-1">Upload QR Code Image</p>
-              <p className="text-slate-500 text-sm">Click to select an image file</p>
+              <FiUpload className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+              <p className="text-slate-900 font-medium mb-1">Upload QR Code Image</p>
+              <p className="text-slate-600 text-sm">Click to select an image file</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -166,14 +166,14 @@ export default function QRCodeScanner({ isOpen, onClose, onScanComplete }) {
             {/* Manual Input */}
             <button
               onClick={handleManualInput}
-              className="w-full px-4 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition"
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 hover:bg-slate-50 transition"
             >
               📋 Manual Input (Paste QR Data)
             </button>
 
             {/* Info */}
-            <div className="bg-blue-600/10 border border-blue-500/30 rounded-lg p-4">
-              <p className="text-xs text-blue-300">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-xs text-blue-900">
                 💡 <span className="font-medium">How to use:</span> Ask the customer to show you their QR code or scan it from their phone.
               </p>
             </div>

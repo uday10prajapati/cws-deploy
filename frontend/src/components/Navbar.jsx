@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { clearUserData, getUserRole } from "../utils/roleBasedRedirect";
-import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp, FiBell, FiPhone, FiMail } from "react-icons/fi";
+import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp, FiBell, FiPhone, FiMail, FiMapPin, FiGift, FiAlertCircle, FiCreditCard, FiAward, FiTruck, FiWind, FiInfo } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
 export default function Navbar() {
@@ -12,7 +12,9 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [servicesDropdown, setServicesDropdown] = useState(false);
+  const [paymentsDropdown, setPaymentsDropdown] = useState(false);
+  const [accountDropdown, setAccountDropdown] = useState(false);
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
 
   /* ---------------------------
@@ -87,14 +89,32 @@ export default function Navbar() {
     { label: "Settings", link: "/admin/settings", icon: <FiSettings /> },
   ];
 
-  const customerMenu = [
-    { label: "Home", link: "/", icon: <FiHome /> },
-    { label: "Bookings", link: "/bookings", icon: <FiClipboard /> },
+  const customerMenuItems = [
+    { label: "Dashboard", link: "/customer-dashboard", icon: <FiHome /> },
+    { label: "Book a Wash", link: "/emergency-wash", icon: <FiAlertCircle /> },
     { label: "My Cars", link: "/my-cars", icon: <FaCar /> },
-    { label: "Profile", link: "/profile", icon: <FiUser /> },
   ];
 
-  const menu = role === "admin" ? adminMenu : customerMenu;
+  const servicesMenuItems = [
+    { label: "My Bookings", link: "/bookings", icon: <FiClipboard /> },
+    { label: "Wash History", link: "/wash-history", icon: <FiTruck /> },
+    { label: "Monthly Pass", link: "/monthly-pass", icon: <FiAward /> },
+    { label: "Quick Wash", link: "/emergency-wash", icon: <FiWind /> },
+  ];
+
+  const paymentsMenuItems = [
+    { label: "Wallet", link: "/transactions", icon: <FiDollarSign /> },
+    { label: "Transactions", link: "/transactions", icon: <FiCreditCard /> },
+    { label: "Loyalty Points", link: "/customer/loyalty", icon: <FiGift /> },
+  ];
+
+  const accountMenuItems = [
+    { label: "Profile", link: "/profile", icon: <FiUser /> },
+    { label: "Account Settings", link: "/account-settings", icon: <FiSettings /> },
+    { label: "About Us", link: "/about-us", icon: <FiInfo /> },
+  ];
+
+  const mainMenu = role === "admin" ? adminMenu : customerMenuItems;
 
   return (
     <>

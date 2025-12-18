@@ -464,10 +464,27 @@ router.post("/loyalty/redeem-offer", async (req, res) => {
 router.get("/history/:customer_id", async (req, res) => {
   try {
     const { customer_id } = req.params;
-    const { days = 90 } = req.query;
+    const { days = "90" } = req.query;
+
+    // Validate customer_id format
+    if (!customer_id || customer_id.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        error: "Customer ID is required"
+      });
+    }
+
+    // Validate and parse days
+    const daysNum = parseInt(days);
+    if (isNaN(daysNum) || daysNum < 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Days must be a valid positive number"
+      });
+    }
 
     const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - parseInt(days));
+    fromDate.setDate(fromDate.getDate() - daysNum);
     const fromDateStr = fromDate.toISOString().split('T')[0];
 
     const { data: history, error } = await supabase
@@ -482,6 +499,7 @@ router.get("/history/:customer_id", async (req, res) => {
       .order("wash_date", { ascending: false });
 
     if (error) {
+      console.error("❌ Supabase error fetching wash history:", error);
       return res.status(400).json({
         success: false,
         error: "Failed to fetch wash history: " + error.message
@@ -492,7 +510,7 @@ router.get("/history/:customer_id", async (req, res) => {
       success: true,
       history: history || [],
       count: history?.length || 0,
-      period_days: parseInt(days)
+      period_days: daysNum
     });
 
   } catch (err) {

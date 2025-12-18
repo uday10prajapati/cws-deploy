@@ -137,11 +137,11 @@ export default function AddressManager({ userId }) {
   };
 
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-6">
+    <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6 shadow-md">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <FiMapPin className="text-blue-400" size={24} />
-          <h3 className="text-lg font-semibold text-white">Address</h3>
+          <FiMapPin className="text-blue-600" size={24} />
+          <h3 className="text-lg font-semibold text-slate-900">Address</h3>
         </div>
         {!isEditing && isLoaded && (
           <button
@@ -155,13 +155,13 @@ export default function AddressManager({ userId }) {
       </div>
 
       {!isLoaded ? (
-        <p className="text-slate-400">Loading address...</p>
+        <p className="text-slate-600">Loading address...</p>
       ) : isEditing ? (
         <div className="space-y-4">
           {/* Village */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
-              Village <span className="text-red-500">*</span>
+            <label className="block text-sm text-slate-700 mb-2">
+              Village <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -169,16 +169,16 @@ export default function AddressManager({ userId }) {
               value={formData.village}
               onChange={handleInputChange}
               placeholder="Enter your village name"
-              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
-                errors.village ? "border-red-500" : "border-slate-600"
+              className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.village ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.village && <p className="text-red-400 text-xs mt-1">{errors.village}</p>}
+            {errors.village && <p className="text-red-600 text-xs mt-1">{errors.village}</p>}
           </div>
 
           {/* Address (Street Address) */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
+            <label className="block text-sm text-slate-700 mb-2">
               Street Address
             </label>
             <input
@@ -187,17 +187,17 @@ export default function AddressManager({ userId }) {
               value={formData.address}
               onChange={handleInputChange}
               placeholder="Enter your street address (optional)"
-              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
-                errors.address ? "border-red-500" : "border-slate-600"
+              className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.address ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
+            {errors.address && <p className="text-red-600 text-xs mt-1">{errors.address}</p>}
           </div>
 
           {/* City */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
-              City <span className="text-red-500">*</span>
+            <label className="block text-sm text-slate-700 mb-2">
+              City <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -205,17 +205,17 @@ export default function AddressManager({ userId }) {
               value={formData.city}
               onChange={handleInputChange}
               placeholder="Enter your city"
-              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
-                errors.city ? "border-red-500" : "border-slate-600"
+              className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.city ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
+            {errors.city && <p className="text-red-600 text-xs mt-1">{errors.city}</p>}
           </div>
 
           {/* State */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
-              State <span className="text-red-500">*</span>
+            <label className="block text-sm text-slate-700 mb-2">
+              State <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -223,16 +223,16 @@ export default function AddressManager({ userId }) {
               value={formData.state}
               onChange={handleInputChange}
               placeholder="Enter your state"
-              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
-                errors.state ? "border-red-500" : "border-slate-600"
+              className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.state ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.state && <p className="text-red-400 text-xs mt-1">{errors.state}</p>}
+            {errors.state && <p className="text-red-600 text-xs mt-1">{errors.state}</p>}
           </div>
 
           {/* Postal Code */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
+            <label className="block text-sm text-slate-700 mb-2">
               Postal Code
             </label>
             <input
@@ -241,14 +241,14 @@ export default function AddressManager({ userId }) {
               value={formData.postal_code}
               onChange={handleInputChange}
               placeholder="Enter your postal code (optional)"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500"
             />
           </div>
 
           {/* Country */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
-              Country <span className="text-red-500">*</span>
+            <label className="block text-sm text-slate-700 mb-2">
+              Country <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -256,23 +256,23 @@ export default function AddressManager({ userId }) {
               value={formData.country}
               onChange={handleInputChange}
               placeholder="Enter your country"
-              className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors ${
-                errors.country ? "border-red-500" : "border-slate-600"
+              className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
+                errors.country ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.country && <p className="text-red-400 text-xs mt-1">{errors.country}</p>}
+            {errors.country && <p className="text-red-600 text-xs mt-1">{errors.country}</p>}
           </div>
 
           {/* Address Type */}
           <div>
-            <label className="block text-sm text-slate-300 mb-2">
+            <label className="block text-sm text-slate-700 mb-2">
               Address Type
             </label>
             <select
               name="address_type"
               value={formData.address_type}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-blue-500"
             >
               <option value="home">Home</option>
               <option value="office">Office</option>
@@ -285,14 +285,14 @@ export default function AddressManager({ userId }) {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 rounded-lg text-white transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 rounded-lg text-white transition-colors"
             >
               <FiSave size={18} />
               {loading ? "Saving..." : "Save"}
             </button>
             <button
               onClick={handleCancel}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-900 transition-colors"
             >
               <FiX size={18} />
               Cancel
@@ -300,19 +300,19 @@ export default function AddressManager({ userId }) {
           </div>
         </div>
       ) : (
-        <div className="bg-slate-700/50 rounded-lg p-4">
+        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
           {address?.village ? (
-            <div className="space-y-2 text-slate-300">
-              <p className="text-white font-semibold">📍 {address.village}</p>
-              {address.address && <p className="text-slate-400">{address.address}</p>}
+            <div className="space-y-2 text-slate-700">
+              <p className="text-slate-900 font-semibold">📍 {address.village}</p>
+              {address.address && <p className="text-slate-600">{address.address}</p>}
               <p>{address.city}, {address.state} {address.postal_code}</p>
               <p>{address.country}</p>
-              <p className="text-xs text-blue-400 uppercase tracking-wide mt-3">
+              <p className="text-xs text-blue-600 uppercase tracking-wide mt-3">
                 {address.address_type}
               </p>
             </div>
           ) : (
-            <p className="text-slate-400 text-center py-4">
+            <p className="text-slate-600 text-center py-4">
               No address saved. Click Edit to add one.
             </p>
           )}

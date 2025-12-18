@@ -26,36 +26,40 @@ export default function NotificationBell() {
   const getNotificationIcon = (type) => {
     switch (type) {
       case "payment":
-        return <FaCreditCard className="text-blue-400" />;
+        return <FaCreditCard className="text-blue-600" />;
       case "booking":
-        return <FiClipboard className="text-green-400" />;
+        return <FiClipboard className="text-emerald-600" />;
       case "pass":
-        return <FiGift className="text-purple-400" />;
+        return <FiGift className="text-purple-600" />;
       case "wallet":
-        return <FiDollarSign className="text-yellow-400" />;
+        return <FiDollarSign className="text-amber-600" />;
       case "pickup":
       case "delivery":
-        return <FiTruck className="text-orange-400" />;
+        return <FiTruck className="text-orange-600" />;
+      case "wash_status":
+        return <FiCheckCircle className="text-emerald-600" />;
       default:
-        return <FiInfo className="text-slate-400" />;
+        return <FiInfo className="text-slate-600" />;
     }
   };
 
   const getNotificationColor = (type) => {
     switch (type) {
       case "payment":
-        return "border-blue-500/30 bg-blue-600/10";
+        return "border-blue-200 bg-blue-50";
       case "booking":
-        return "border-green-500/30 bg-green-600/10";
+        return "border-emerald-200 bg-emerald-50";
       case "pass":
-        return "border-purple-500/30 bg-purple-600/10";
+        return "border-purple-200 bg-purple-50";
       case "wallet":
-        return "border-yellow-500/30 bg-yellow-600/10";
+        return "border-amber-200 bg-amber-50";
       case "pickup":
       case "delivery":
-        return "border-orange-500/30 bg-orange-600/10";
+        return "border-orange-200 bg-orange-50";
+      case "wash_status":
+        return "border-emerald-200 bg-emerald-50";
       default:
-        return "border-slate-600/30 bg-slate-600/10";
+        return "border-slate-200 bg-slate-50";
     }
   };
 
@@ -64,7 +68,7 @@ export default function NotificationBell() {
       {/* Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative text-slate-300 hover:text-blue-400 transition text-xl focus:outline-none"
+        className="relative text-slate-700 hover:text-blue-600 transition text-xl focus:outline-none"
       >
         <FiBell />
         {unreadCount > 0 && (
@@ -76,19 +80,19 @@ export default function NotificationBell() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
+        <div className="absolute right-0 mt-3 w-96 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+          <div className="sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
             <div>
-              <h3 className="text-white font-bold text-sm">Notifications</h3>
+              <h3 className="text-slate-900 font-bold text-sm">Notifications</h3>
               {unreadCount > 0 && (
-                <p className="text-slate-400 text-xs">{unreadCount} unread</p>
+                <p className="text-slate-600 text-xs">{unreadCount} unread</p>
               )}
             </div>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-blue-400 hover:text-blue-300 text-xs font-medium"
+                className="text-blue-600 hover:text-blue-700 text-xs font-medium"
               >
                 Mark all read
               </button>
@@ -96,28 +100,28 @@ export default function NotificationBell() {
           </div>
 
           {/* Notifications List */}
-          <div className="divide-y divide-slate-700">
+          <div className="divide-y divide-slate-200">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <FiBell className="text-4xl text-slate-600 mx-auto mb-2" />
-                <p className="text-slate-400 text-sm">No notifications yet</p>
+                <FiBell className="text-4xl text-slate-400 mx-auto mb-2" />
+                <p className="text-slate-600 text-sm">No notifications yet</p>
               </div>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif.id}
                   onClick={() => !notif.read && markAsRead(notif.id)}
-                  className={`px-4 py-3 cursor-pointer hover:bg-slate-800/50 transition border-l-4 ${
+                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 transition border-l-4 ${
                     notif.read
-                      ? "border-slate-700 opacity-60"
-                      : "border-blue-500 bg-slate-800/30"
+                      ? "border-slate-200 opacity-60"
+                      : getNotificationColor(notif.type)
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-lg mt-1">{getNotificationIcon(notif.type)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm">{notif.title}</p>
-                      <p className="text-slate-300 text-xs mt-1">{notif.message}</p>
+                      <p className="text-slate-900 font-semibold text-sm">{notif.title}</p>
+                      <p className="text-slate-600 text-xs mt-1">{notif.message}</p>
                       <p className="text-slate-500 text-xs mt-2">
                         {new Date(notif.created_at).toLocaleTimeString([], {
                           hour: "2-digit",
@@ -130,7 +134,7 @@ export default function NotificationBell() {
                         e.stopPropagation();
                         deleteNotification(notif.id);
                       }}
-                      className="text-slate-500 hover:text-red-400 transition mt-1 shrink-0"
+                      className="text-slate-500 hover:text-red-600 transition mt-1 shrink-0"
                     >
                       <FiX size={16} />
                     </button>
@@ -142,8 +146,8 @@ export default function NotificationBell() {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="bg-slate-800/50 border-t border-slate-700 px-4 py-2 text-center">
-              <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">
+            <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 text-center">
+              <button className="text-blue-600 hover:text-blue-700 text-xs font-medium">
                 View all notifications
               </button>
             </div>

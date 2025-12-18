@@ -3,25 +3,24 @@ import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useNotifications } from "../context/NotificationContext";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+import NavbarNew from "../components/NavbarNew";
 import {
-  FiMenu,
-  FiBell,
   FiCalendar,
   FiClock,
   FiTag,
   FiTruck,
   FiMessageSquare,
-  FiChevronLeft,
-  FiLogOut,
+  FiCheckCircle,
+  FiMapPin,
+  FiAward,
   FiHome,
   FiClipboard,
   FiUser,
   FiCreditCard,
-  FiAward,
-  FiCheckCircle,
-  FiX,
-  FiMapPin,
   FiSettings,
+  FiAlertCircle,
+  FiGift,
+   
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
@@ -131,12 +130,17 @@ export default function BookingPage() {
       if (!auth?.user) return;
       setUser(auth.user);
 
-      const { data: carList } = await supabase
-        .from("cars")
-        .select("*")
-        .eq("customer_id", auth.user.id);
-
-      setCars(carList || []);
+      // Fetch cars from backend API
+      try {
+        const carResponse = await fetch(
+          `http://localhost:5000/cars/${auth.user.id}`
+        );
+        const carResult = await carResponse.json();
+        setCars(carResult.success ? carResult.data || [] : []);
+      } catch (err) {
+        console.warn("⚠️ Could not fetch cars:", err);
+        setCars([]);
+      }
 
       // Load user address from backend API instead of direct Supabase query
       try {
@@ -602,13 +606,13 @@ export default function BookingPage() {
   // Show payment page if showPayment is true
   if (showPayment && pendingBookingData) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center p-4">
         {/* PAYMENT PAGE */}
         <div className="w-full max-w-2xl">
           {/* Header */}
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-2">Complete Payment</h1>
-            <p className="text-slate-400">Secure payment for your car wash booking</p>
+            <h1 className="text-4xl font-bold mb-2 text-slate-900">Complete Payment</h1>
+            <p className="text-slate-600">Secure payment for your car wash booking</p>
           </div>
 
           {paymentStep === "method" ? (
@@ -616,39 +620,39 @@ export default function BookingPage() {
             <div className="grid md:grid-cols-3 gap-6">
               {/* Order Summary - Left */}
               <div className="md:col-span-1">
-                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-lg font-bold">Order Summary</h3>
+                <div className="bg-white/90 border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">Order Summary</h3>
                   
                   <div className="space-y-3 bg-slate-800/50 p-4 rounded-lg">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Services</span>
+                      <span className="text-slate-500">Services</span>
                       <span className="font-semibold">{selectedServices.length}x</span>
                     </div>
                     {Object.keys(selectedAddons).length > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Add-ons</span>
+                        <span className="text-slate-500">Add-ons</span>
                         <span className="font-semibold">{Object.values(selectedAddons).flat().length}x</span>
                       </div>
                     )}
                     {pickup && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Pickup</span>
+                        <span className="text-slate-500">Pickup</span>
                         <span className="font-semibold">₹100</span>
                       </div>
                     )}
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="border-t border-slate-700 pt-3 space-y-2">
+                  <div className="border-t border-slate-200 pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Subtotal</span>
+                      <span className="text-slate-500">Subtotal</span>
                       <span>₹{(bookingAmount / 1.18).toFixed(0)}</span>
                     </div>
-                    <div className="flex justify-between text-sm pb-2 border-b border-slate-700">
-                      <span className="text-slate-400">GST (18%)</span>
+                    <div className="flex justify-between text-sm pb-2 border-b border-slate-200">
+                      <span className="text-slate-500">GST (18%)</span>
                       <span>₹{(bookingAmount - bookingAmount / 1.18).toFixed(0)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold text-green-400">
+                    <div className="flex justify-between text-lg font-bold text-emerald-600">
                       <span>Total</span>
                       <span>₹{bookingAmount}</span>
                     </div>
@@ -662,12 +666,12 @@ export default function BookingPage() {
 
               {/* Payment Methods - Right */}
               <div className="md:col-span-2">
-                <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-6">
-                  <h3 className="text-lg font-bold">Select Payment Method</h3>
+                <div className="bg-white/90 border border-slate-200 rounded-2xl p-6 space-y-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">Select Payment Method</h3>
 
                   <div className="space-y-3">
                     {/* UPI */}
-                    <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-blue-500 hover:bg-blue-600/10 cursor-pointer transition">
+                    <label className="flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition">
                       <input
                         type="radio"
                         name="payment-method"
@@ -677,14 +681,14 @@ export default function BookingPage() {
                         className="w-5 h-5"
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-lg">📱 UPI</p>
-                        <p className="text-sm text-slate-400">Google Pay, PhonePe, PayTM</p>
+                        <p className="font-semibold text-lg text-slate-900">📱 UPI</p>
+                        <p className="text-sm text-slate-500">Google Pay, PhonePe, PayTM</p>
                       </div>
-                      <span className="text-2xl text-blue-400">→</span>
+                      <span className="text-2xl text-blue-500">→</span>
                     </label>
 
                     {/* Credit/Debit Card */}
-                    <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-purple-500 hover:bg-purple-600/10 cursor-pointer transition">
+                    <label className="flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition">
                       <input
                         type="radio"
                         name="payment-method"
@@ -694,14 +698,14 @@ export default function BookingPage() {
                         className="w-5 h-5"
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-lg">💳 Credit/Debit Card</p>
-                        <p className="text-sm text-slate-400">Visa, MasterCard, Rupay</p>
+                        <p className="font-semibold text-lg text-slate-900">💳 Credit/Debit Card</p>
+                        <p className="text-sm text-slate-500">Visa, MasterCard, Rupay</p>
                       </div>
-                      <span className="text-2xl text-purple-400">→</span>
+                      <span className="text-2xl text-purple-500">→</span>
                     </label>
 
                     {/* Wallet */}
-                    <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-green-500 hover:bg-green-600/10 cursor-pointer transition">
+                    <label className="flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer transition">
                       <input
                         type="radio"
                         name="payment-method"
@@ -711,14 +715,14 @@ export default function BookingPage() {
                         className="w-5 h-5"
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-lg">👛 Wallet</p>
-                        <p className="text-sm text-slate-400">CarWash+ Wallet Balance</p>
+                        <p className="font-semibold text-lg text-slate-900">👛 Wallet</p>
+                        <p className="text-sm text-slate-500">CarWash+ Wallet Balance</p>
                       </div>
-                      <span className="text-2xl text-green-400">→</span>
+                      <span className="text-2xl text-emerald-500">→</span>
                     </label>
 
                     {/* Net Banking */}
-                    <label className="flex items-center gap-4 p-4 border-2 border-slate-700 rounded-xl hover:border-orange-500 hover:bg-orange-600/10 cursor-pointer transition">
+                    <label className="flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 cursor-pointer transition">
                       <input
                         type="radio"
                         name="payment-method"
@@ -728,29 +732,29 @@ export default function BookingPage() {
                         className="w-5 h-5"
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-lg">🏦 Net Banking</p>
-                        <p className="text-sm text-slate-400">All major Indian banks</p>
+                        <p className="font-semibold text-lg text-slate-900">🏦 Net Banking</p>
+                        <p className="text-sm text-slate-500">All major Indian banks</p>
                       </div>
-                      <span className="text-2xl text-orange-400">→</span>
+                      <span className="text-2xl text-orange-500">→</span>
                     </label>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t border-slate-700">
+                  <div className="flex gap-3 pt-4 border-t border-slate-200">
                     <button
                       onClick={() => {
                         setShowPayment(false);
                         setPendingBookingData(null);
                         setPaymentStep("method");
                       }}
-                      className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                      className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition text-slate-700"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => handlePaymentComplete(selectedPaymentMethod)}
                       disabled={loading}
-                      className="flex-1 py-3 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                     >
                       {loading ? (
                         <>
@@ -1104,211 +1108,173 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  routerLocation.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* NAVBAR */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-          items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-2xl font-bold">Book a Wash</h1>
-
-          <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* PAGE CONTENT */}
-        <main className="p-4 md:p-8 space-y-6">
-          {/* Heading */}
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-8">
+        {/* Heading */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold flex items-center gap-2">
-              <FaCar className="text-blue-400" />
-              Car Wash Booking
+            <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-2 tracking-tight text-slate-900">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+                <FaCar />
+              </span>
+              <span>Book a Car Wash</span>
             </h2>
-            <p className="text-slate-400 text-sm mt-1">
-              Choose your car, services, and schedule. We’ll confirm your slot
-              via SMS / WhatsApp.
+            <p className="text-slate-600 text-sm md:text-base mt-2 max-w-xl">
+              Choose your car, services, and schedule a convenient slot. We’ll share live
+              updates on SMS / WhatsApp as your wash progresses.
             </p>
           </div>
 
-          {/* EXISTING BOOKINGS SECTION */}
-          {bookings.length > 0 && (
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <FiClipboard className="text-amber-400" />
-                Your Bookings ({bookings.length})
-              </h3>
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {bookings.map((booking) => {
-                  const statusSteps = ["Pending", "Confirmed", "In Progress", "Completed"];
-                  const currentStatusIdx = statusSteps.findIndex(s => s.toLowerCase() === (booking.status || "pending").toLowerCase());
-                  
-                  return (
-                    <div
-                      key={booking.id}
-                      className="p-4 bg-slate-900/60 border border-slate-700 rounded-lg hover:border-blue-500 hover:bg-slate-900/80 transition"
-                    >
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="font-semibold text-blue-300">
-                          {booking.car_name || "Unknown Car"}
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded-full font-semibold border ${
-                          booking.status === 'Completed' ? 'bg-green-600/30 text-green-300 border-green-500/30' :
-                          booking.status === 'In Progress' ? 'bg-blue-600/30 text-blue-300 border-blue-500/30' :
-                          booking.status === 'Confirmed' ? 'bg-yellow-600/30 text-yellow-300 border-yellow-500/30' :
-                          'bg-slate-600/30 text-slate-300 border-slate-500/30'
-                        }`}>
-                          {booking.status || 'Pending'}
-                        </span>
-                      </div>
-
-                      {/* Status Timeline */}
-                      <div className="mb-3 p-3 bg-slate-800/50 rounded border border-slate-700">
-                        <div className="flex justify-between items-center gap-1">
-                          {statusSteps.map((step, idx) => (
-                            <div key={step} className="flex flex-col items-center flex-1">
-                              <div
-                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                  idx < currentStatusIdx
-                                    ? "bg-green-600 text-white"
-                                    : idx === currentStatusIdx
-                                    ? "bg-blue-600 text-white ring-2 ring-blue-400"
-                                    : "bg-slate-700 text-slate-400"
-                                }`}
-                              >
-                                {idx + 1}
-                              </div>
-                              <p className="text-[10px] text-center mt-1 text-slate-400">{step}</p>
-                              {idx < statusSteps.length - 1 && (
-                                <div className={`h-1 w-2 mt-1 ${idx < currentStatusIdx ? "bg-green-600" : "bg-slate-600"}`} />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Booking Info */}
-                      <p className="text-xs text-slate-400 mb-2">
-                        📅 {booking.date} at {booking.time} • 📍 {booking.location}
-                      </p>
-                      <p className="text-sm text-slate-300">
-                        Amount: <span className="font-semibold text-blue-300">₹{booking.amount}</span>
-                      </p>
-                    </div>
-                  );
-                })}
+          {/* Small stats header */}
+          <div className="flex flex-wrap gap-3 text-sm">
+            <div className="px-4 py-3 rounded-2xl bg-white/80 border border-blue-100 flex items-center gap-3 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <FiClipboard />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  Total Bookings
+                </p>
+                <p className="font-semibold text-slate-900">
+                  {bookings.length || 0}
+                </p>
               </div>
             </div>
-          )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* LEFT: FORM CARD */}
+            
+          </div>
+        </div>
+
+        {/* EXISTING BOOKINGS SECTION */}
+        {bookings.length > 0 && (
+          <div className="bg-white/80 border border-slate-200 rounded-2xl p-6 shadow-md backdrop-blur">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-sm">
+                  <FiClipboard />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Your Recent Bookings</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Track status and timings for your upcoming and past washes.
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700">
+                {bookings.length} active
+              </span>
+            </div>
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+              {bookings.map((booking) => {
+                const statusSteps = ["Pending", "Confirmed", "In Progress", "Completed"];
+                const currentStatusIdx = statusSteps.findIndex(
+                  (s) => s.toLowerCase() === (booking.status || "pending").toLowerCase()
+                );
+
+                return (
+                  <div
+                    key={booking.id}
+                    className="p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-400/80 hover:bg-blue-50/60 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-blue-700 flex items-center gap-2">
+                          <span className="inline-flex w-6 h-6 rounded-full bg-blue-100 text-blue-600 items-center justify-center text-xs">
+                            <FaCar />
+                          </span>
+                          {booking.car_name || "Unknown Car"}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          #{booking.id?.slice?.(0, 8) || "—"}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full font-semibold border ${
+                          booking.status === "Completed"
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : booking.status === "In Progress"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : booking.status === "Confirmed"
+                            ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            : "bg-slate-100 text-slate-700 border-slate-200"
+                        }`}
+                      >
+                        {booking.status || "Pending"}
+                      </span>
+                    </div>
+
+                    {/* Status Timeline */}
+                    <div className="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <div className="flex justify-between items-center gap-1">
+                        {statusSteps.map((step, idx) => (
+                          <div key={step} className="flex flex-col items-center flex-1">
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                                idx < currentStatusIdx
+                                  ? "bg-green-500 text-white"
+                                  : idx === currentStatusIdx
+                                  ? "bg-blue-600 text-white ring-2 ring-blue-200"
+                                  : "bg-slate-200 text-slate-500"
+                              }`}
+                            >
+                              {idx + 1}
+                            </div>
+                            <p className="text-[10px] text-center mt-1 text-slate-500">
+                              {step}
+                            </p>
+                            {idx < statusSteps.length - 1 && (
+                              <div
+                                className={`h-1 w-6 mt-1 rounded-full ${
+                                  idx < currentStatusIdx ? "bg-green-500" : "bg-slate-300"
+                                }`}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Booking Info */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                      <p>
+                        <span className="mr-1">📅</span>
+                        {booking.date} at {booking.time}
+                      </p>
+                      <p className="text-slate-500 flex items-center gap-1">
+                        <FiMapPin className="text-pink-500" />
+                        <span className="truncate max-w-[180px] md:max-w-xs">
+                          {booking.location}
+                        </span>
+                      </p>
+                      <p className="text-sm text-blue-700 font-semibold ml-auto">
+                        ₹{booking.amount}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* LEFT: FORM CARD */}
+          <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-blue-500/60 via-cyan-400/40 to-transparent shadow-xl shadow-blue-200 sticky top-24">
             <form
               onSubmit={handleSubmit}
-              className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl space-y-6"
+              className="bg-white rounded-2xl p-6 md:p-7 space-y-6 border border-slate-200 backdrop-blur-sm shadow-sm"
             >
               {/* Car Selection */}
               <div>
-                <label className="font-semibold flex items-center gap-2 mb-2 text-sm">
-                  <FaCar className="text-blue-400" />
+                <label className="font-bold flex items-center gap-2 mb-3 text-sm text-slate-900">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                    <FaCar />
+                  </div>
                   Your Car
                   <span className="text-red-400">*</span>
                 </label>
@@ -1319,15 +1285,15 @@ export default function BookingPage() {
                     onChange={async (e) => {
                       const carName = e.target.value;
                       setCustomCarName(carName);
-                      
+
                       // Find selected car and fetch its pass
                       const selectedCar = cars.find(
                         (car) => `${car.brand} ${car.model}` === carName
                       );
-                      
+
                       if (selectedCar && user) {
                         setSelectedCarPassId(selectedCar.id);
-                        
+
                         // Fetch pass for this specific car
                         try {
                           const response = await fetch(
@@ -1349,8 +1315,8 @@ export default function BookingPage() {
                       }
                     }}
                     required
-                    className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    className="w-full p-3 rounded-lg bg-white border border-slate-200 text-sm 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 transition"
                   >
                     <option value="">Select a car...</option>
                     {cars.map((car) => (
@@ -1360,8 +1326,14 @@ export default function BookingPage() {
                     ))}
                   </select>
                 ) : (
-                  <div className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 text-sm">
-                    No cars found. <a href="/my-cars" className="text-blue-400 hover:underline">Add a car</a>
+                  <div className="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-sm flex items-center justify-between gap-2">
+                    <span>No cars found.</span>
+                    <a
+                      href="/my-cars"
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-600 text-white text-xs border border-blue-600 hover:bg-blue-700 transition"
+                    >
+                      Add a car
+                    </a>
                   </div>
                 )}
               </div>
@@ -1369,12 +1341,12 @@ export default function BookingPage() {
               {/* Services */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="font-semibold flex items-center gap-2 text-sm">
-                    <FiTag className="text-green-400" />
+                  <label className="font-semibold flex items-center gap-2 text-sm text-slate-900">
+                    <FiTag className="text-emerald-500" />
                     Services
                     <span className="text-red-400">*</span>
                   </label>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-500">
                     Tap a card to select. Use “Add-ons” for extras.
                   </span>
                 </div>
@@ -1391,21 +1363,21 @@ export default function BookingPage() {
                     return (
                       <div
                         key={srv.id}
-                        className={`rounded-lg border p-4 text-sm cursor-pointer transition
+                        className={`rounded-xl border p-4 text-sm cursor-pointer transition-all duration-200 group
                           ${
                             active
-                              ? "bg-blue-600/20 border-blue-500/80 shadow-lg"
-                              : "bg-slate-900 border-slate-700 hover:border-blue-500/70"
+                              ? "bg-blue-50 border-blue-500/70 shadow-md shadow-blue-100"
+                              : "bg-white border-slate-200 hover:border-blue-400 hover:bg-blue-50/40"
                           }`}
                         onClick={() => toggleService(srv.name)}
                       >
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <p className="font-semibold">{srv.name}</p>
-                          <p className="font-semibold text-blue-400">
+                          <p className="font-semibold text-blue-700">
                             ₹{srv.price + addonsPrice}
                           </p>
                         </div>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-slate-500">
                           {srv.name === "Exterior Wash" &&
                             "Foam wash, rinse, wipe, wheels"}
                           {srv.name === "Interior Cleaning" &&
@@ -1420,8 +1392,8 @@ export default function BookingPage() {
                             className={`text-[11px] px-2 py-1 rounded-full border
                               ${
                                 active
-                                  ? "border-green-500 text-green-300 bg-green-600/20"
-                                  : "border-slate-600 text-slate-400"
+                                  ? "border-emerald-500 text-emerald-700 bg-emerald-50"
+                                  : "border-slate-300 text-slate-500 bg-slate-50"
                               }`}
                           >
                             {active ? "Selected" : "Tap to select"}
@@ -1432,14 +1404,14 @@ export default function BookingPage() {
                               e.stopPropagation();
                               openAddonModal(srv.name);
                             }}
-                            className="text-[11px] underline text-slate-300 hover:text-pink-300"
+                            className="text-[11px] underline text-slate-600 hover:text-pink-500"
                           >
                             Add-ons
                           </button>
                         </div>
 
                         {addonsForService.length > 0 && (
-                          <div className="mt-2 text-[11px] text-pink-300">
+                          <div className="mt-2 text-[11px] text-pink-600">
                             Extras:{" "}
                             {addonsForService
                               .map(
@@ -1460,14 +1432,14 @@ export default function BookingPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Calendar date picker */}
                 <div>
-                  <label className="font-semibold flex items-center gap-2 mb-2 text-sm">
-                    <FiCalendar className="text-purple-400" />
+                  <label className="font-semibold flex items-center gap-2 mb-2 text-sm text-slate-900">
+                    <FiCalendar className="text-purple-500" />
                     Date
                     <span className="text-red-400">*</span>
                   </label>
 
-                  <div className="bg-slate-900 border border-slate-700 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2 text-xs">
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2 text-xs text-slate-600">
                       <button
                         type="button"
                         onClick={goToPrevMonth}
@@ -1485,7 +1457,7 @@ export default function BookingPage() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-7 text-[10px] text-slate-400 mb-1">
+                    <div className="grid grid-cols-7 text-[10px] text-slate-500 mb-1">
                       {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
                         <div key={d} className="text-center py-1">
                           {d}
@@ -1512,10 +1484,10 @@ export default function BookingPage() {
                             className={`h-7 rounded flex items-center justify-center border
                               ${
                                 disabled
-                                  ? "border-slate-800 text-slate-600 cursor-not-allowed"
+                                  ? "border-slate-100 text-slate-300 cursor-not-allowed bg-slate-50"
                                   : selected
-                                  ? "border-blue-500 bg-blue-600/30 text-white"
-                                  : "border-slate-700 hover:border-blue-500 hover:bg-slate-800"
+                                  ? "border-blue-500 bg-blue-600/10 text-blue-700"
+                                  : "border-slate-200 hover:border-blue-400 hover:bg-blue-50"
                               }`}
                           >
                             {day.getDate()}
@@ -1524,7 +1496,7 @@ export default function BookingPage() {
                       })}
                     </div>
 
-                    <p className="mt-2 text-[11px] text-slate-400">
+                    <p className="mt-2 text-[11px] text-slate-500">
                       Selected:{" "}
                       {selectedDate ? selectedDate : "No date selected yet"}
                     </p>
@@ -1533,8 +1505,8 @@ export default function BookingPage() {
 
                 {/* Time slot */}
                 <div>
-                  <label className="font-semibold flex items-center gap-2 mb-2 text-sm">
-                    <FiClock className="text-yellow-400" />
+                  <label className="font-semibold flex items-center gap-2 mb-2 text-sm text-slate-900">
+                    <FiClock className="text-yellow-500" />
                     Time Slot
                     <span className="text-red-400">*</span>
                   </label>
@@ -1542,7 +1514,7 @@ export default function BookingPage() {
                     value={timeSlot}
                     onChange={(e) => setTimeSlot(e.target.value)}
                     required
-                    className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 rounded-lg bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                   >
                     <option value="">Select time…</option>
                     {timeSlots.map((slot) => (
@@ -1552,7 +1524,7 @@ export default function BookingPage() {
                     ))}
                   </select>
 
-                  <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                  <p className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-400" />
                     Same-day slots are subject to availability.
                   </p>
@@ -1561,7 +1533,7 @@ export default function BookingPage() {
 
               {/* Pickup / Notes */}
               <div className="flex flex-col gap-3">
-                <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                <label className="inline-flex items-center gap-2 text-sm cursor-pointer text-slate-900">
                   <input
                     type="checkbox"
                     checked={pickup}
@@ -1569,36 +1541,36 @@ export default function BookingPage() {
                     className="accent-blue-500"
                   />
                   <span className="flex items-center gap-1">
-                    <FiTruck className="text-orange-400" />
+                    <FiTruck className="text-orange-500" />
                     Need pickup & drop?{" "}
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       (+₹99 convenience)
                     </span>
                   </span>
                 </label>
                 <div>
-                  <label className="flex items-center gap-2 mb-1 text-sm">
-                    <FiMessageSquare className="text-blue-400" />
+                  <label className="flex items-center gap-2 mb-1 text-sm text-slate-900">
+                    <FiMessageSquare className="text-blue-500" />
                     Location 
                   </label>
                   <input
-  type="text"
-  placeholder="Enter pickup or wash location…"
-  value={location}
-  onChange={(e) => setLocation(e.target.value)}
-  className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-sm 
-  focus:outline-none focus:ring-2 focus:ring-blue-500"
-/>
+                    type="text"
+                    placeholder="Enter pickup or wash location…"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-white border border-slate-200 text-sm 
+  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  />
 
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 mb-1 text-sm">
-                    <FiMessageSquare className="text-pink-400" />
+                  <label className="flex items-center gap-2 mb-1 text-sm text-slate-900">
+                    <FiMessageSquare className="text-pink-500" />
                     Notes (optional)
                   </label>
                   <textarea
-                    className="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 rounded-lg bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     placeholder="Landmark, gate instructions, pet hair, extra dirty, etc."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -1616,15 +1588,15 @@ export default function BookingPage() {
                   !selectedDate ||
                   !timeSlot
                 }
-                className={`w-full py-3 rounded-lg font-semibold mt-2 transition shadow-lg flex items-center justify-center gap-2
+                className={`w-full py-3 rounded-lg font-semibold mt-2 transition shadow-md flex items-center justify-center gap-2
                   ${
                     loading ||
                     !customCarName ||
                     (!usePass && !selectedServices.length) ||
                     !selectedDate ||
                     !timeSlot
-                      ? "bg-slate-700 text-slate-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                   }`}
               >
                 {loading ? (
@@ -1645,12 +1617,13 @@ export default function BookingPage() {
                 WhatsApp.
               </p>
             </form>
+          </div>
 
-            {/* RIGHT: MONTHLY PASS + SUMMARY CARD */}
-            <div className="space-y-6">
-              {/* MONTHLY PASS CARD - Only show if selected car has active pass */}
-              {selectedCarPass && (
-                <div className="bg-linear-to-br from-amber-600/20 to-amber-900/20 border border-amber-500/50 rounded-xl p-6 shadow-xl">
+          {/* RIGHT: MONTHLY PASS + SUMMARY CARD */}
+          <div className="space-y-6">
+            {/* MONTHLY PASS CARD - Only show if selected car has active pass */}
+            {selectedCarPass && (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-md backdrop-blur-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
                       <FiAward className="text-amber-400" />
@@ -1662,14 +1635,14 @@ export default function BookingPage() {
                   </div>
 
                   <div className="space-y-3 mb-4">
-                    <div className="flex justify-between items-center p-2 bg-slate-800/30 rounded">
-                      <span className="text-sm text-slate-300">Remaining Washes:</span>
-                      <span className="text-sm font-bold text-amber-400">
+                    <div className="flex justify-between items-center p-2 bg-white/60 rounded">
+                      <span className="text-sm text-slate-700">Remaining Washes:</span>
+                      <span className="text-sm font-bold text-amber-700">
                         {selectedCarPass.remaining_washes} / {selectedCarPass.total_washes}
                       </span>
                     </div>
 
-                    <div className="w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
+                    <div className="w-full bg-amber-100 rounded-full h-3 overflow-hidden">
                       <div
                         className="bg-amber-500 h-3 rounded-full transition-all"
                         style={{
@@ -1683,16 +1656,16 @@ export default function BookingPage() {
                       ></div>
                     </div>
 
-                    <div className="flex justify-between text-xs text-slate-400">
+                    <div className="flex justify-between text-xs text-slate-600">
                       <span>
                         Expires: {new Date(selectedCarPass.valid_till).toLocaleDateString()}
                       </span>
                     </div>
 
                     {/* Pass Benefits */}
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs">
-                      <p className="font-semibold text-amber-300 mb-2">✨ Pass Benefits:</p>
-                      <ul className="space-y-1 text-amber-200">
+                    <div className="bg-amber-100/80 border border-amber-300 rounded-lg p-3 text-xs">
+                      <p className="font-semibold text-amber-800 mb-2">✨ Pass Benefits:</p>
+                      <ul className="space-y-1 text-amber-700">
                         <li>✓ Free wash service</li>
                         {passbenefits.freeDelivery && (
                           <li>✓ Free pickup & delivery</li>
@@ -1702,20 +1675,20 @@ export default function BookingPage() {
                     </div>
                   </div>
 
-                  <label className="inline-flex items-center gap-3 cursor-pointer w-full">
+                  <label className="inline-flex items-center gap-3 cursor-pointer w-full mt-1">
                     <input
                       type="checkbox"
                       checked={usePass}
                       onChange={(e) => setUsePass(e.target.checked)}
                       className="accent-amber-500 w-4 h-4"
                     />
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-slate-900">
                       Use this pass for this booking
                     </span>
                   </label>
 
                   {usePass && (
-                    <p className="text-xs text-amber-300 mt-2 p-2 bg-amber-600/20 rounded">
+                    <p className="text-xs text-amber-800 mt-2 p-2 bg-amber-100 rounded">
                       ✓ This booking will be free! One wash will be deducted from your pass.
                     </p>
                   )}
@@ -1723,30 +1696,30 @@ export default function BookingPage() {
               )}
 
               {/* BOOKING SUMMARY CARD */}
-              <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl h-fit sticky top-24 space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-md h-fit sticky top-24 space-y-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <FiCheckCircle className="text-green-400" />
+                  <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
+                    <FiCheckCircle className="text-emerald-500" />
                     Booking Summary
                   </h3>
-                  <span className="text-[11px] px-3 py-1 rounded-full bg-blue-600/20 border border-blue-500 text-blue-200 uppercase tracking-wide">
+                  <span className="text-[11px] px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 uppercase tracking-wide">
                     Live
                   </span>
                 </div>
 
                 <div className="space-y-3 text-sm">
                 {/* Car */}
-                <div className="border border-slate-800 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-400 mb-1">Car</p>
-                  <p className="font-semibold flex items-center gap-2">
-                    <FaCar className="text-blue-400" />
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/70">
+                  <p className="text-[11px] text-slate-500 mb-1">Car</p>
+                  <p className="font-semibold flex items-center gap-2 text-slate-900">
+                    <FaCar className="text-blue-500" />
                     {customCarName || "Not selected"}
                   </p>
                 </div>
 
                 {/* Services */}
-                <div className="border border-slate-800 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-400 mb-1">Services</p>
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/70">
+                  <p className="text-[11px] text-slate-500 mb-1">Services</p>
                   {selectedServices.length ? (
                     <ul className="space-y-1">
                       {selectedServices.map((srv) => {
@@ -1769,14 +1742,14 @@ export default function BookingPage() {
                             className="flex justify-between items-start gap-2"
                           >
                             <div>
-                              <p className="font-medium">{srv}</p>
+                              <p className="font-medium text-slate-900">{srv}</p>
                               {addonNames.length > 0 && (
-                                <p className="text-[11px] text-pink-300">
+                                <p className="text-[11px] text-pink-600">
                                   + Extras: {addonNames.join(", ")}
                                 </p>
                               )}
                             </div>
-                            <p className="font-semibold text-blue-300 text-sm">
+                            <p className="font-semibold text-blue-700 text-sm">
                               ₹{(base?.price || 0) + addonPrice}
                             </p>
                           </li>
@@ -1784,24 +1757,25 @@ export default function BookingPage() {
                       })}
                     </ul>
                   ) : (
-                    <p className="text-slate-400 text-xs">
+                    <p className="text-slate-500 text-xs">
                       No services selected yet.
                     </p>
                   )}
                 </div>
+                
 
                 {/* Schedule */}
-                <div className="border border-slate-800 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-400 mb-1">Schedule</p>
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/70">
+                  <p className="text-[11px] text-slate-500 mb-1">Schedule</p>
                   <p className="flex items-center gap-2">
-                    <FiCalendar className="text-purple-400" />
+                    <FiCalendar className="text-purple-500" />
                     {selectedDate || "No date"}{" "}
                     <span className="text-slate-500">•</span>
-                    <FiClock className="text-yellow-400" />
+                    <FiClock className="text-yellow-500" />
                     {timeSlot || "No time"}
                   </p>
                   {selectedDate === todayStr && (
-                    <p className="text-[11px] text-amber-300 mt-1">
+                    <p className="text-[11px] text-amber-700 mt-1">
                       You picked <span className="font-semibold">today</span> —
                       we’ll try to prioritise.
                     </p>
@@ -1809,12 +1783,12 @@ export default function BookingPage() {
                 </div>
 
                 {/* Pickup */}
-                <div className="border border-slate-800 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-400 mb-1">
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/70">
+                  <p className="text-[11px] text-slate-500 mb-1">
                     Pickup & Drop
                   </p>
-                  <p className="flex items-center gap-2 text-sm">
-                    <FiTruck className="text-orange-400" />
+                  <p className="flex items-center gap-2 text-sm text-slate-800">
+                    <FiTruck className="text-orange-500" />
                     {pickup ? (
                       <>
                         Pickup & drop requested{" "}
@@ -1831,15 +1805,15 @@ export default function BookingPage() {
                 </div>
 
                 {/* Total */}
-                <div className="border border-slate-800 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-400 mb-1">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/70">
+                  <p className="text-[11px] text-slate-500 mb-1">
                     Estimated Total
                   </p>
-                  <p className="text-3xl font-bold text-blue-400">
+                  <p className="text-3xl font-bold text-blue-600">
                     ₹{totalPrice || 0}
                   </p>
                   {usePass ? (
-                    <div className="text-[11px] text-amber-300 mt-2 space-y-1">
+                    <div className="text-[11px] text-amber-700 mt-2 space-y-1">
                       {selectedServices.length === 1 ? (
                         <>
                           <p>✓ {selectedServices[0]}: FREE with pass</p>
@@ -1869,21 +1843,22 @@ export default function BookingPage() {
                     </p>
                   )}
                 </div>
-                </div>
               </div>
             </div>
           </div>
+        </div>
+        {/* End of grid layout */}
+          {/* Add-on and Success modals follow */}
         </main>
-      </div>
 
       {/* ADD-ON MODAL */}
       {addonModalOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl backdrop-blur-sm">
             <h3 className="text-lg font-semibold mb-1">
               Add-ons for {modalServiceName}
             </h3>
-            <p className="text-[11px] text-slate-400 mb-4">
+            <p className="text-[11px] text-slate-500 mb-4">
               Make your wash extra premium with these optional extras.
             </p>
 
@@ -1898,8 +1873,8 @@ export default function BookingPage() {
                     className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm cursor-pointer transition
                       ${
                         checked
-                          ? "bg-pink-600/20 border-pink-500"
-                          : "bg-slate-900 border-slate-700 hover:border-pink-500/70"
+                          ? "bg-pink-50 border-pink-400"
+                          : "bg-slate-50 border-slate-200 hover:border-pink-400"
                       }`}
                   >
                     <div className="flex items-center gap-2">
@@ -1911,7 +1886,7 @@ export default function BookingPage() {
                       />
                       <span>{addon.name}</span>
                     </div>
-                    <span className="text-pink-300 font-semibold">
+                    <span className="text-pink-600 font-semibold">
                       +₹{addon.price}
                     </span>
                   </label>
@@ -1923,7 +1898,7 @@ export default function BookingPage() {
               <button
                 type="button"
                 onClick={closeAddonModal}
-                className="px-4 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-800"
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100"
               >
                 Done
               </button>
@@ -1934,18 +1909,18 @@ export default function BookingPage() {
 
       {/* SUCCESS OVERLAY */}
       {showSuccess && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-green-500/60 rounded-2xl p-8 w-full max-w-sm text-center shadow-2xl">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-green-500 flex items-center justify-center animate-bounce">
-              <FiCheckCircle className="text-3xl text-green-400" />
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white border border-emerald-200 rounded-2xl p-8 w-full max-w-sm text-center shadow-2xl backdrop-blur-sm">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-emerald-500 flex items-center justify-center animate-bounce bg-emerald-50">
+              <FiCheckCircle className="text-3xl text-emerald-500" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Booking Confirmed!</h3>
-            <p className="text-sm text-slate-300 mb-4">
+            <h3 className="text-xl font-bold mb-2 text-slate-900">Booking Confirmed!</h3>
+            <p className="text-sm text-slate-600 mb-4">
               Payment successful. Your wash is booked. Redirecting to your bookings page…
             </p>
             <button
               onClick={() => (window.location.href = "/bookings")}
-              className="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-sm font-semibold"
+              className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white"
             >
               Go to My Bookings
             </button>
@@ -1954,4 +1929,4 @@ export default function BookingPage() {
       )}
     </div>
   );
-}
+};

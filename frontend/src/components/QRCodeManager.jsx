@@ -21,13 +21,12 @@ export default function QRCodeManager() {
 
       setUser(auth.user);
 
-      // Fetch customer's cars
-      const { data: customerCars } = await supabase
-        .from("cars")
-        .select("*")
-        .eq("customer_id", auth.user.id);
-
-      setCars(customerCars || []);
+      // Fetch customer's cars from backend API
+      const carResponse = await fetch(
+        `http://localhost:5000/cars/${auth.user.id}`
+      );
+      const carResult = await carResponse.json();
+      setCars(carResult.success ? carResult.data || [] : []);
 
       // Fetch QR codes
       loadQRCodes(auth.user.id);
@@ -77,20 +76,22 @@ export default function QRCodeManager() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">QR Code Management</h1>
-          <p className="text-slate-400">Generate and manage QR codes for your car washes</p>
-        </div>
+    <>
+      <div className="pt-16" />
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">QR Code Management</h1>
+            <p className="text-slate-600">Generate and manage QR codes for your car washes</p>
+          </div>
 
-        {/* Cars List */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-white mb-6">Your Cars</h2>
+          {/* Cars List */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-md">
+            <h2 className="text-2xl font-semibold text-slate-900 mb-6">Your Cars</h2>
 
           {cars.length === 0 ? (
-            <p className="text-slate-400 text-center py-8">No cars found. Add a car first.</p>
+            <p className="text-slate-600 text-center py-8">No cars found. Add a car first.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cars.map((car) => {
@@ -99,14 +100,14 @@ export default function QRCodeManager() {
                 return (
                   <div
                     key={car.id}
-                    className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-blue-600 transition-colors"
+                    className="bg-white border border-slate-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-lg transition-all"
                   >
                     {/* Car Info */}
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className="text-lg font-semibold text-slate-900">
                         {car.brand} {car.model}
                       </h3>
-                      <p className="text-blue-400 font-mono text-sm font-bold">
+                      <p className="text-blue-600 font-mono text-sm font-bold">
                         {car.number_plate}
                       </p>
                     </div>
@@ -124,18 +125,18 @@ export default function QRCodeManager() {
 
                     {/* QR Code Info */}
                     {qrCode && (
-                      <div className="mb-4 text-sm text-slate-300 space-y-1">
+                      <div className="mb-4 text-sm text-slate-700 space-y-1">
                         <p>
-                          <span className="text-slate-400">Customer:</span>{" "}
+                          <span className="text-slate-600">Customer:</span>{" "}
                           {qrCode.customer_name}
                         </p>
                         <p>
-                          <span className="text-slate-400">Email:</span> {qrCode.customer_email}
+                          <span className="text-slate-600">Email:</span> {qrCode.customer_email}
                         </p>
                         <p>
-                          <span className="text-slate-400">Mobile:</span> {qrCode.customer_mobile}
+                          <span className="text-slate-600">Mobile:</span> {qrCode.customer_mobile}
                         </p>
-                        <p className="text-slate-400">
+                        <p className="text-slate-600">
                           Generated: {new Date(qrCode.created_at).toLocaleDateString()}
                         </p>
                       </div>
@@ -146,7 +147,7 @@ export default function QRCodeManager() {
                       <button
                         onClick={() => generateQRCode(car.id)}
                         disabled={loading}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 rounded-lg text-white text-sm font-medium transition"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 rounded-lg text-white text-sm font-medium transition"
                       >
                         <FiRefreshCw size={16} />
                         {qrCode ? "Regenerate" : "Generate"}
@@ -162,7 +163,7 @@ export default function QRCodeManager() {
                               });
                               setShowPreview(true);
                             }}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm font-medium transition"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-900 text-sm font-medium transition"
                           >
                             <FiEye size={16} />
                             Preview
@@ -170,7 +171,7 @@ export default function QRCodeManager() {
 
                           <button
                             onClick={() => downloadQRCode(qrCode.qr_code_image, car.number_plate)}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-medium transition"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm font-medium transition"
                           >
                             <FiDownload size={16} />
                             Download
@@ -184,22 +185,23 @@ export default function QRCodeManager() {
             </div>
           )}
         </div>
+      </div>
 
         {/* QR Code Preview Modal */}
         {showPreview && selectedQR && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-md w-full">
+            <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full shadow-lg">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-white">QR Code Preview</h3>
+                <h3 className="text-2xl font-bold text-slate-900">QR Code Preview</h3>
                 <button
                   onClick={() => setShowPreview(false)}
-                  className="p-2 hover:bg-slate-800 rounded-lg transition"
+                  className="p-2 hover:bg-slate-100 rounded-lg transition"
                 >
-                  <FiX className="text-white" size={24} />
+                  <FiX className="text-slate-900" size={24} />
                 </button>
               </div>
 
-              <div className="bg-white p-6 rounded-lg mb-6">
+              <div className="bg-slate-50 p-6 rounded-lg mb-6 border border-slate-200">
                 <img
                   src={selectedQR.qrCodeImage}
                   alt="QR Code Preview"
@@ -207,22 +209,22 @@ export default function QRCodeManager() {
                 />
               </div>
 
-              <div className="space-y-3 mb-6 text-sm text-slate-300">
+              <div className="space-y-3 mb-6 text-sm text-slate-700">
                 <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-wide">Customer Name</p>
-                  <p className="font-semibold text-white">{selectedQR.customer_name}</p>
+                  <p className="text-slate-600 text-xs uppercase tracking-wide">Customer Name</p>
+                  <p className="font-semibold text-slate-900">{selectedQR.customer_name}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-wide">Email</p>
-                  <p className="font-mono text-sm">{selectedQR.customer_email}</p>
+                  <p className="text-slate-600 text-xs uppercase tracking-wide">Email</p>
+                  <p className="font-mono text-sm text-slate-700">{selectedQR.customer_email}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-wide">Mobile</p>
-                  <p className="font-mono text-sm">{selectedQR.customer_mobile}</p>
+                  <p className="text-slate-600 text-xs uppercase tracking-wide">Mobile</p>
+                  <p className="font-mono text-sm text-slate-700">{selectedQR.customer_mobile}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-wide">Address</p>
-                  <p className="font-mono text-sm">{selectedQR.customer_address}</p>
+                  <p className="text-slate-600 text-xs uppercase tracking-wide">Address</p>
+                  <p className="font-mono text-sm text-slate-700">{selectedQR.customer_address}</p>
                 </div>
               </div>
 
@@ -235,14 +237,14 @@ export default function QRCodeManager() {
                     );
                     setShowPreview(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-medium transition flex items-center justify-center gap-2"
                 >
                   <FiDownload size={18} />
                   Download
                 </button>
                 <button
                   onClick={() => setShowPreview(false)}
-                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-medium transition"
+                  className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-900 font-medium transition"
                 >
                   Close
                 </button>
@@ -251,6 +253,6 @@ export default function QRCodeManager() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

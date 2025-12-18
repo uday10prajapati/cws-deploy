@@ -256,7 +256,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-600 to-purple-600 px-4 py-8">
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Reset Password

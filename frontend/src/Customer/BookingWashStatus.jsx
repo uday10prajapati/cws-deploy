@@ -3,8 +3,7 @@ import { Check, Clock, X, AlertCircle, Eye } from "lucide-react";
 import { FiLogOut } from "react-icons/fi";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import NavbarNew from "../components/NavbarNew";
 
 const BookingWashStatus = () => {
   const [bookings, setBookings] = useState([]);
@@ -114,22 +113,18 @@ const BookingWashStatus = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-900">
-      {/* Navbar */}
-      <Navbar />
-
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <NavbarNew />
 
       {/* Main Content */}
-      <div className="flex-1 mt-20 lg:mt-0 p-4 md:p-8 overflow-auto">
-        <div className="max-w-6xl mx-auto">
+      <main className="pt-4">
+        <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-2">
             Your Bookings & Wash Status
           </h1>
-          <p className="text-slate-400">
+          <p className="text-slate-600">
             Track the status of your car wash bookings in real-time
           </p>
         </div>
@@ -165,7 +160,7 @@ const BookingWashStatus = () => {
               className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                 filterStatus === tab.value
                   ? "bg-blue-600 text-white"
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  : "bg-slate-200 text-slate-700 hover:bg-slate-300"
               }`}
             >
               {tab.label} ({tab.count})
@@ -175,15 +170,15 @@ const BookingWashStatus = () => {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <div className="bg-slate-800/50 backdrop-blur border border-white/10 rounded-2xl p-8 text-center">
-            <p className="text-slate-400">No bookings found</p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-md">
+            <p className="text-slate-600">No bookings found</p>
           </div>
         ) : (
           <div className="grid gap-4">
             {filteredBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="bg-slate-800/50 backdrop-blur border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all"
+                className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-blue-300 hover:shadow-lg transition-all"
               >
                 {/* Main Row */}
                 <div
@@ -192,7 +187,7 @@ const BookingWashStatus = () => {
                       expandedId === booking.id ? null : booking.id
                     )
                   }
-                  className="p-6 cursor-pointer hover:bg-slate-700/30 transition-colors flex items-center justify-between"
+                  className="p-6 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4 flex-1">
                     {/* Status Icon */}
@@ -202,10 +197,10 @@ const BookingWashStatus = () => {
 
                     {/* Booking Info */}
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-1">
                         {booking.car_name}
                       </h3>
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-slate-600">
                         Booked: {new Date(booking.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -220,20 +215,20 @@ const BookingWashStatus = () => {
                     </div>
 
                     {/* View Details Button */}
-                    <button className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-                      <Eye size={20} className="text-slate-300" />
+                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                      <Eye size={20} className="text-slate-700" />
                     </button>
                   </div>
                 </div>
 
                 {/* Expanded Details */}
                 {expandedId === booking.id && (
-                  <div className="border-t border-white/10 bg-slate-900/50 p-6 space-y-4">
+                  <div className="border-t border-slate-200 bg-slate-50 p-6 space-y-4">
                     {/* Booking Details */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-slate-400 mb-1">Booking Date</p>
-                        <p className="text-white font-semibold">
+                        <p className="text-sm text-slate-600 mb-1">Booking Date</p>
+                        <p className="text-slate-900 font-semibold">
                           {new Date(booking.created_at).toLocaleDateString("en-US", {
                             weekday: "long",
                             year: "numeric",
@@ -243,47 +238,47 @@ const BookingWashStatus = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400 mb-1">Appointment Time</p>
-                        <p className="text-white font-semibold">{booking.time}</p>
+                        <p className="text-sm text-slate-600 mb-1">Appointment Time</p>
+                        <p className="text-slate-900 font-semibold">{booking.time}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400 mb-1">Services</p>
-                        <p className="text-white font-semibold">
+                        <p className="text-sm text-slate-600 mb-1">Services</p>
+                        <p className="text-slate-900 font-semibold">
                           {Array.isArray(booking.services)
                             ? booking.services.join(", ")
                             : booking.services}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400 mb-1">Amount</p>
-                        <p className="text-white font-semibold">₹{booking.amount}</p>
+                        <p className="text-sm text-slate-600 mb-1">Amount</p>
+                        <p className="text-slate-900 font-semibold">₹{booking.amount}</p>
                       </div>
                     </div>
 
                     {/* Wash Status Details */}
                     {booking.wash_details ? (
-                      <div className="bg-slate-800/50 border border-white/10 rounded-lg p-4 space-y-3">
-                        <h4 className="font-semibold text-white flex items-center gap-2">
+                      <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+                        <h4 className="font-semibold text-slate-900 flex items-center gap-2">
                           {getStatusIcon(booking.wash_status)}
                           Wash Status Details
                         </h4>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                           <div>
-                            <p className="text-slate-400">Status</p>
+                            <p className="text-slate-600">Status</p>
                             <p className={`font-semibold capitalize ${
                               booking.wash_status === "washed"
-                                ? "text-green-400"
+                                ? "text-emerald-700"
                                 : booking.wash_status === "pending"
-                                ? "text-yellow-400"
-                                : "text-red-400"
+                                ? "text-amber-700"
+                                : "text-red-700"
                             }`}>
                               {booking.wash_status}
                             </p>
                           </div>
                           <div>
-                            <p className="text-slate-400">Started</p>
-                            <p className="text-white font-semibold">
+                            <p className="text-slate-600">Started</p>
+                            <p className="text-slate-900 font-semibold">
                               {new Date(
                                 booking.wash_details.created_at
                               ).toLocaleDateString("en-US", {
@@ -296,8 +291,8 @@ const BookingWashStatus = () => {
                           </div>
                           {booking.wash_details.wash_completed_at && (
                             <div>
-                              <p className="text-slate-400">Completed</p>
-                              <p className="text-white font-semibold">
+                              <p className="text-slate-600">Completed</p>
+                              <p className="text-slate-900 font-semibold">
                                 {new Date(
                                   booking.wash_details.wash_completed_at
                                 ).toLocaleDateString("en-US", {
@@ -313,14 +308,14 @@ const BookingWashStatus = () => {
 
                         {booking.wash_details.notes && (
                           <div>
-                            <p className="text-slate-400 text-sm mb-1">Notes</p>
-                            <p className="text-slate-300">{booking.wash_details.notes}</p>
+                            <p className="text-slate-600 text-sm mb-1">Notes</p>
+                            <p className="text-slate-700">{booking.wash_details.notes}</p>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="bg-slate-800/50 border border-white/10 rounded-lg p-4">
-                        <p className="text-slate-400">
+                      <div className="bg-slate-100 border border-slate-200 rounded-lg p-4">
+                        <p className="text-slate-700">
                           ⏳ Your wash will start soon. Check back for updates.
                         </p>
                       </div>
@@ -328,9 +323,9 @@ const BookingWashStatus = () => {
 
                     {/* Notes */}
                     {booking.notes && (
-                      <div className="bg-slate-800/50 border border-white/10 rounded-lg p-4">
-                        <p className="text-slate-400 text-sm mb-1">Special Requests</p>
-                        <p className="text-white">{booking.notes}</p>
+                      <div className="bg-white border border-slate-200 rounded-lg p-4">
+                        <p className="text-slate-600 text-sm mb-1">Special Requests</p>
+                        <p className="text-slate-900">{booking.notes}</p>
                       </div>
                     )}
                   </div>
@@ -340,7 +335,7 @@ const BookingWashStatus = () => {
           </div>
         )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

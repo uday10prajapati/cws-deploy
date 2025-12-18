@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import NavbarNew from "../components/NavbarNew";
 import {
   FiMenu,
   FiLogOut,
@@ -17,13 +16,14 @@ import {
   FiAward,
   FiMapPin,
   FiSettings,
+  FiAlertCircle ,
+  FiGift,
+  
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
 export default function MyCars() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
 
     useRoleBasedRedirect("customer");
 
@@ -200,219 +200,186 @@ export default function MyCars() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* MOBILE NAVBAR */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-slate-900 px-4 py-4 flex items-center justify-between border-b border-slate-800 z-40">
-        <h1 className="text-xl font-bold">CarWash+</h1>
-        <FiMenu className="text-2xl" onClick={() => setSidebarOpen(true)} />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR (same as dashboard) */}
+      <NavbarNew />
 
-      {/* BACKDROP */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-8">
+        {/* Heading + CTA */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+                <FaCar />
+              </span>
+              <span>My Cars</span>
+            </h1>
+            <p className="text-slate-600 text-sm md:text-base mt-2 max-w-xl">
+              Manage all your saved vehicles. Add, view and link passes to your cars for faster bookings.
+            </p>
+          </div>
 
-      {/* SIDEBAR */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-xl
-          transition-all duration-300 z-50
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        <nav className="px-3 mt-4">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg mb-2
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 rounded-lg cursor-pointer flex items-center gap-3
-            ${collapsed ? "justify-center" : ""}
-          `}
-        >
-          <FiLogOut />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* MAIN */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* NAVBAR */}
-        <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-slate-700 items-center justify-between px-8 sticky top-0 z-20">
-          <h1 className="text-xl font-bold">My Cars</h1>
-          <img
-            src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-            className="w-10 h-10 rounded-full border-2 border-blue-500"
-          />
-        </header>
-
-        {/* CONTENT */}
-        <main className="p-4 md:p-8 space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <FaCar className="text-blue-400" /> Your Cars
-            </h2>
+          <div className="flex gap-3">
             <button
               onClick={() => setModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2 text-sm font-semibold"
+              className="px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2 text-sm"
+            >
+              <FiPlus /> Add Car
+            </button>
+            <Link
+              to="/bookings"
+              className="px-5 py-3 bg-white border border-slate-200 text-slate-800 font-semibold rounded-lg hover:bg-slate-50 hover:shadow-md transition-all duration-300 flex items-center gap-2 text-sm"
+            >
+              <FiClipboard /> View Bookings
+            </Link>
+          </div>
+        </div>
+
+        {/* Empty state or car grid */}
+        {cars.length === 0 ? (
+          <div className="bg-white/80 border border-dashed border-slate-300 rounded-2xl p-10 text-center shadow-sm">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 text-blue-500 mb-4">
+              <FaCar className="text-2xl" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">No cars added yet</h2>
+            <p className="text-slate-600 text-sm mb-4">
+              Add your first car to make bookings even faster and track passes per vehicle.
+            </p>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg hover:shadow-md hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
             >
               <FiPlus /> Add Car
             </button>
           </div>
-
-          {/* CAR LIST */}
-          {cars.length === 0 ? (
-            <p className="text-slate-400">You haven't added any cars yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {cars.map((car) => (
-                <div
-                  key={car.id}
-                  className="rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-slate-800 hover:border-blue-500 hover:shadow-blue-500/20 transition-all duration-300 transform hover:scale-[1.02]"
-                >
-                  {/* Car Image */}
-                  <div className="relative bg-slate-800">
-                    {car.image_url ? (
-                      <img
-                        src={car.image_url}
-                        alt={`${car.brand} ${car.model}`}
-                        className="w-full h-44 object-cover"
-                        onError={(e) => {
-                          e.target.src = "https://dummyimage.com/600x400/1e293b/ffffff&text=Car";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-44 flex items-center justify-center bg-linear-to-br from-slate-700 to-slate-800">
-                        <FaCar className="text-6xl text-slate-500 opacity-50" />
-                      </div>
-                    )}
-
-                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent"></div>
-                  </div>
-
-                  {/* CONTENT */}
-                  <div className="p-5">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h2 className="text-lg font-bold text-white">
-                          {car.brand} {car.model}
-                        </h2>
-                        <p className="text-sm text-slate-400 mt-1">
-                          {car.number_plate}
-                        </p>
-                      </div>
-
-                      <span className="px-3 py-1 text-xs rounded-full bg-blue-600 text-white shadow-lg">
-                        My Car
-                      </span>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {cars.map((car) => (
+              <div
+                key={car.id}
+                className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-md hover:shadow-xl hover:border-blue-300 transition-all duration-300"
+              >
+                {/* Car Image */}
+                <div className="relative bg-slate-100">
+                  {car.image_url ? (
+                    <img
+                      src={car.image_url}
+                      alt={`${car.brand} ${car.model}`}
+                      className="w-full h-44 object-cover"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://dummyimage.com/600x400/e5e7eb/020617&text=Car";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-44 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                      <FaCar className="text-5xl text-slate-400 opacity-70" />
                     </div>
+                  )}
 
-                    <div className="border-t border-slate-700 my-4"></div>
-
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="bg-slate-800/60 p-2 rounded-lg">
-                        <p className="text-[10px] text-slate-400">Brand</p>
-                        <p className="text-sm font-semibold text-white">
-                          {car.brand}
-                        </p>
-                      </div>
-
-                      <div className="bg-slate-800/60 p-2 rounded-lg">
-                        <p className="text-[10px] text-slate-400">Model</p>
-                        <p className="text-sm font-semibold text-white">
-                          {car.model}
-                        </p>
-                      </div>
-
-                      <div className="bg-slate-800/60 p-2 rounded-lg">
-                        <p className="text-[10px] text-slate-400">Plate</p>
-                        <p className="text-sm font-semibold text-white">
-                          {car.number_plate}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Active Pass Section */}
-                    <div className="mt-4 p-3 bg-linear-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg">
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wide">Active Pass</p>
-                      {carPasses[car.id] && carPasses[car.id].active ? (
-                        <div>
-                          <p className="text-sm font-semibold text-green-400 mt-1">
-                            ✓ Monthly Pass • {carPasses[car.id].remaining_washes}/{carPasses[car.id].total_washes} washes
-                          </p>
-                          <p className="text-xs text-slate-400 mt-1">
-                            Valid till: {new Date(carPasses[car.id].valid_till).toLocaleDateString()}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm font-semibold text-yellow-400 mt-1">No Active Pass</p>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => deleteCar(car.id)}
-                      className="w-full mt-5 py-2 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold shadow-lg shadow-red-900/40 transition-all"
-                    >
-                      <FiTrash /> Delete Car
-                    </button>
+                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 text-[11px] font-semibold text-slate-700 border border-slate-200">
+                    #{car.id?.slice?.(0, 6) || "CAR"}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </main>
-      </div>
+
+                {/* CONTENT */}
+                <div className="p-5 space-y-4">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">
+                        {car.brand} {car.model}
+                      </h2>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {car.number_plate}
+                      </p>
+                    </div>
+
+                    <span className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                      My Car
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wide">
+                        Brand
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {car.brand}
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wide">
+                        Model
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {car.model}
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wide">
+                        Plate
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {car.number_plate}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Active Pass Section */}
+                  <div className="mt-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                    <p className="text-[10px] text-slate-600 uppercase tracking-wide">
+                      Active Pass
+                    </p>
+                    {carPasses[car.id] && carPasses[car.id].active ? (
+                      <div className="mt-1 space-y-1">
+                        <p className="text-sm font-semibold text-emerald-600">
+                          ✓ Monthly Pass • {carPasses[car.id].remaining_washes}/
+                          {carPasses[car.id].total_washes} washes
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          Valid till:{" "}
+                          {new Date(
+                            carPasses[car.id].valid_till
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-amber-600 mt-1">
+                        No Active Pass
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => deleteCar(car.id)}
+                    className="w-full mt-3 py-2.5 bg-red-500 hover:bg-red-600 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all"
+                  >
+                    <FiTrash /> Delete Car
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
 
       {/* ADD CAR MODAL */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-xl font-semibold mb-4">Add a New Car</h3>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-semibold mb-4 text-slate-900">
+              Add a New Car
+            </h3>
 
             <div className="space-y-3">
               <input
                 type="text"
                 placeholder="Brand"
-                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg"
+                className="w-full p-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
               />
@@ -420,7 +387,7 @@ export default function MyCars() {
               <input
                 type="text"
                 placeholder="Model"
-                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg"
+                className="w-full p-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
               />
@@ -428,14 +395,16 @@ export default function MyCars() {
               <input
                 type="text"
                 placeholder="Number Plate (e.g., MH12AB1234)"
-                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg"
+                className="w-full p-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={numberPlate}
                 onChange={(e) => setNumberPlate(e.target.value)}
               />
 
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Car Image (optional)</label>
+                <label className="block text-sm font-medium mb-2 text-slate-800">
+                  Car Image (optional)
+                </label>
                 <input
                   type="file"
                   accept="image/*"
@@ -451,16 +420,16 @@ export default function MyCars() {
                       reader.readAsDataURL(file);
                     }
                   }}
-                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-sm"
                 />
                 {imagePreview && (
                   <div className="mt-3 relative">
                     <img
                       src={imagePreview}
                       alt="Preview"
-                      className="w-full h-32 object-cover rounded-lg border border-slate-600"
+                      className="w-full h-32 object-cover rounded-lg border border-slate-300"
                     />
-                    <p className="text-xs text-slate-400 mt-1">✅ Image selected</p>
+                    <p className="text-xs text-slate-500 mt-1">✅ Image selected</p>
                   </div>
                 )}
               </div>
@@ -468,7 +437,7 @@ export default function MyCars() {
               <button
                 onClick={handleAddCar}
                 disabled={loading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg font-semibold flex items-center justify-center gap-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Saving…" : "Add Car"}
               </button>
@@ -482,7 +451,7 @@ export default function MyCars() {
                   setImageFile(null);
                   setImagePreview(null);
                 }}
-                className="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-lg mt-2"
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mt-2 text-sm font-medium"
               >
                 Cancel
               </button>

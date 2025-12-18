@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import { useNotifications } from "../context/NotificationContext";
 import { FiCamera, FiCheck, FiX, FiAlertCircle } from "react-icons/fi";
 
 export default function WashSessionManager() {
+  const { addNotification } = useNotifications();
   const [user, setUser] = useState(null);
   const [qrCodeInput, setQrCodeInput] = useState("");
   const [currentSession, setCurrentSession] = useState(null);
@@ -174,6 +176,25 @@ export default function WashSessionManager() {
 
       if (completeResult.success) {
         setSuccess(`Wash completed! Customer earned 1 loyalty point`);
+        
+        // Send wash completion notification to customer
+        if (currentSession.customer_id) {
+          try {
+            await addNotification(
+              "wash_status",
+              "✨ Wash Completed!",
+              `Your ${customerDetails?.car_model || "car"} wash has been completed. 1 loyalty point earned!`,
+              {
+                washSessionId: currentSession.id,
+                carModel: customerDetails?.car_model,
+                pointsEarned: 1,
+              }
+            );
+          } catch (notifErr) {
+            console.warn("Could not send notification:", notifErr);
+          }
+        }
+        
         setTimeout(() => {
           setCurrentSession(null);
           setCustomerDetails(null);
@@ -191,42 +212,44 @@ export default function WashSessionManager() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Wash Session Manager</h1>
-          <p className="text-slate-400">Scan QR code to start a wash session</p>
-        </div>
+    <>
+      <div className="pt-16" />
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Wash Session Manager</h1>
+            <p className="text-slate-600">Scan QR code to start a wash session</p>
+          </div>
 
         {!currentSession ? (
           /* QR Code Scanner */
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8">
-            <h2 className="text-2xl font-semibold text-white mb-6">Scan QR Code</h2>
+          <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-md">
+            <h2 className="text-2xl font-semibold text-slate-900 mb-6">Scan QR Code</h2>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-600 rounded-lg flex items-start gap-3">
-                <FiAlertCircle className="text-red-400 mt-1 shrink-0" size={20} />
-                <p className="text-red-300">{error}</p>
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <FiAlertCircle className="text-red-600 mt-1 shrink-0" size={20} />
+                <p className="text-red-700">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mb-6 p-4 bg-green-600/20 border border-green-600 rounded-lg">
-                <p className="text-green-300">{success}</p>
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-emerald-700">{success}</p>
               </div>
             )}
 
             <form onSubmit={handleQRCodeScan} className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-300 mb-2">
+                <label className="block text-sm text-slate-700 mb-2">
                   QR Code Data (JSON format or scanned data)
                 </label>
                 <textarea
                   value={qrCodeInput}
                   onChange={(e) => setQrCodeInput(e.target.value)}
                   placeholder={`Paste QR code data here or use QR scanner...`}
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono text-sm"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono text-sm"
                   rows="4"
                 />
               </div>
@@ -234,14 +257,14 @@ export default function WashSessionManager() {
               <button
                 type="submit"
                 disabled={loading || !qrCodeInput.trim()}
-                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
               >
                 {loading ? "Processing..." : "Start Wash Session"}
               </button>
             </form>
 
-            <div className="mt-6 p-4 bg-blue-600/10 border border-blue-600/30 rounded-lg">
-              <p className="text-blue-300 text-sm">
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-900 text-sm">
                 💡 <strong>How to use:</strong> Scan the QR code with your mobile scanner or paste the QR data directly into the field above.
               </p>
             </div>
@@ -250,40 +273,40 @@ export default function WashSessionManager() {
           /* Wash Session Active */
           <div className="space-y-6">
             {/* Customer Details Card */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
               <div className="flex items-start justify-between mb-4">
-                <h2 className="text-2xl font-semibold text-white">Customer Details</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">Customer Details</h2>
                 {customerDetails?.isActive ? (
-                  <div className="px-3 py-1 bg-green-600/20 border border-green-600 rounded-full">
-                    <p className="text-green-300 text-xs font-semibold">✓ PASS ACTIVE</p>
+                  <div className="px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
+                    <p className="text-emerald-700 text-xs font-semibold">✓ PASS ACTIVE</p>
                   </div>
                 ) : (
-                  <div className="px-3 py-1 bg-yellow-600/20 border border-yellow-600 rounded-full">
-                    <p className="text-yellow-300 text-xs font-semibold">⚠ NO ACTIVE PASS</p>
+                  <div className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full">
+                    <p className="text-amber-700 text-xs font-semibold">⚠ NO ACTIVE PASS</p>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-300">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-700">
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Customer Name</p>
-                  <p className="text-white font-semibold">{customerDetails?.customerName}</p>
+                  <p className="text-slate-600 text-sm mb-1">Customer Name</p>
+                  <p className="text-slate-900 font-semibold">{customerDetails?.customerName}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Mobile Number</p>
-                  <p className="text-white font-mono">{customerDetails?.customerMobile}</p>
+                  <p className="text-slate-600 text-sm mb-1">Mobile Number</p>
+                  <p className="text-slate-900 font-mono">{customerDetails?.customerMobile}</p>
                 </div>
                 <div className="md:col-span-2">
-                  <p className="text-slate-400 text-sm mb-1">Email</p>
-                  <p className="text-white font-mono text-sm">{customerDetails?.customerEmail}</p>
+                  <p className="text-slate-600 text-sm mb-1">Email</p>
+                  <p className="text-slate-900 font-mono text-sm">{customerDetails?.customerEmail}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Address</p>
-                  <p className="text-white">{customerDetails?.customerAddress}</p>
+                  <p className="text-slate-600 text-sm mb-1">Address</p>
+                  <p className="text-slate-900">{customerDetails?.customerAddress}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Village</p>
-                  <p className="text-white">{customerDetails?.customerVillage || "N/A"}</p>
+                  <p className="text-slate-600 text-sm mb-1">Village</p>
+                  <p className="text-slate-900">{customerDetails?.customerVillage || "N/A"}</p>
                 </div>
               </div>
             </div>
@@ -291,16 +314,16 @@ export default function WashSessionManager() {
             {/* Image Upload Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Before Images */}
-              <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-white mb-4">Before Wash</h3>
-                <p className="text-slate-400 text-sm mb-4">{beforeImages.length}/4 images</p>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+                <h3 className="text-xl font-semibold text-slate-900 mb-4">Before Wash</h3>
+                <p className="text-slate-600 text-sm mb-4">{beforeImages.length}/4 images</p>
 
                 {beforeImages.map((img, idx) => (
                   <div key={idx} className="mb-4 relative">
                     <img
                       src={img.url}
                       alt={`Before ${idx + 1}`}
-                      className="w-full h-48 object-cover rounded-lg border border-slate-700"
+                      className="w-full h-48 object-cover rounded-lg border border-slate-200"
                     />
                     <button
                       onClick={() => removeImage(idx, "before")}
@@ -312,9 +335,9 @@ export default function WashSessionManager() {
                 ))}
 
                 {beforeImages.length < 4 && (
-                  <label className="block w-full px-4 py-3 border-2 border-dashed border-slate-700 rounded-lg text-center cursor-pointer hover:border-blue-500 transition">
-                    <FiCamera className="mx-auto mb-2 text-slate-400" size={24} />
-                    <p className="text-slate-300 text-sm">Upload before image</p>
+                  <label className="block w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-center cursor-pointer hover:border-blue-500 transition">
+                    <FiCamera className="mx-auto mb-2 text-slate-500" size={24} />
+                    <p className="text-slate-700 text-sm">Upload before image</p>
                     <input
                       type="file"
                       accept="image/*"
@@ -327,16 +350,16 @@ export default function WashSessionManager() {
               </div>
 
               {/* After Images */}
-              <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-white mb-4">After Wash</h3>
-                <p className="text-slate-400 text-sm mb-4">{afterImages.length}/4 images</p>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+                <h3 className="text-xl font-semibold text-slate-900 mb-4">After Wash</h3>
+                <p className="text-slate-600 text-sm mb-4">{afterImages.length}/4 images</p>
 
                 {afterImages.map((img, idx) => (
                   <div key={idx} className="mb-4 relative">
                     <img
                       src={img.url}
                       alt={`After ${idx + 1}`}
-                      className="w-full h-48 object-cover rounded-lg border border-slate-700"
+                      className="w-full h-48 object-cover rounded-lg border border-slate-200"
                     />
                     <button
                       onClick={() => removeImage(idx, "after")}
@@ -348,9 +371,9 @@ export default function WashSessionManager() {
                 ))}
 
                 {afterImages.length < 4 && (
-                  <label className="block w-full px-4 py-3 border-2 border-dashed border-slate-700 rounded-lg text-center cursor-pointer hover:border-blue-500 transition">
-                    <FiCamera className="mx-auto mb-2 text-slate-400" size={24} />
-                    <p className="text-slate-300 text-sm">Upload after image</p>
+                  <label className="block w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-center cursor-pointer hover:border-blue-500 transition">
+                    <FiCamera className="mx-auto mb-2 text-slate-500" size={24} />
+                    <p className="text-slate-700 text-sm">Upload after image</p>
                     <input
                       type="file"
                       accept="image/*"
@@ -381,7 +404,7 @@ export default function WashSessionManager() {
                   setAfterImages([]);
                   setError("");
                 }}
-                className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-900 font-semibold transition flex items-center justify-center gap-2"
               >
                 <FiX size={20} />
                 Cancel Wash
@@ -394,7 +417,7 @@ export default function WashSessionManager() {
                   beforeImages.length === 0 ||
                   afterImages.length === 0
                 }
-                className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
               >
                 <FiCheck size={20} />
                 {loading ? "Completing..." : "Mark as Washed"}
@@ -404,5 +427,6 @@ export default function WashSessionManager() {
         )}
       </div>
     </div>
+    </>
   );
 }

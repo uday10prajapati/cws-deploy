@@ -1,31 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import NotificationBell from "../components/NotificationBell";
+import NavbarNew from "../components/NavbarNew";
 import AddressManager from "../components/AddressManager";
 import CarQRCode from "../components/CarQRCode";
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { FiUser, FiMail, FiPhone, FiClock, FiAlertCircle , FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiMenu, FiChevronLeft, FiHome, FiClipboard, FiBell, FiMapPin, FiGift } from "react-icons/fi";
+import { FiUser, FiMail, FiPhone, FiClock, FiAlertCircle , FiCreditCard, FiSettings, FiTrash2, FiLogOut, FiLock, FiBell } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import { FiAward } from "react-icons/fi";
 
-const customerMenu = [
-  { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
-  { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-  { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-  { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
-  { name: "Profile", icon: <FiUser />, link: "/profile" },
-  { name: "Location", icon: <FiMapPin />, link: "/location" },
-  { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-  { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
-  { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
-  { name: "About Us", icon: <FiGift />, link: "/about-us" },
-];
-
 export default function ProfilePage() {
-  const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);
@@ -57,12 +39,13 @@ export default function ProfilePage() {
     const uid = auth.user.id;
 
     try {
-      // Load Cars from Supabase
-      const { data: carList } = await supabase
-        .from("cars")
-        .select("*")
-        .eq("customer_id", uid);
-      setCars(carList || []);
+      // Load Cars from backend API
+      const carResponse = await fetch(
+        `http://localhost:5000/cars/${uid}`
+      );
+      const carResult = await carResponse.json();
+      const carList = carResult.success ? carResult.data || [] : [];
+      setCars(carList);
 
       // Load Bookings from Supabase
       const { data: bookingList } = await supabase
@@ -161,9 +144,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p>Loading profile...</p>
         </div>
       </div>
@@ -172,147 +155,40 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center">
         <p>Please log in to view your profile</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
-
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* ▓▓▓ NAVBAR ▓▓▓ */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-        items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-2xl font-bold">My Profile</h1>
-
-          <div className="flex items-center gap-8">
-            <NotificationBell />
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
-        <main className="p-4 md:p-8 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <NavbarNew />
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-8">
           {/* PROFILE HEADER */}
-          <div className="bg-linear-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/40 rounded-xl p-8 mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 shadow-md">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center">
-                <FiUser className="text-3xl" />
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                <FiUser className="text-3xl text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">{user.user_metadata?.name || user.email?.split("@")[0] || "User"}</h1>
-                <p className="text-slate-400">{user.email}</p>
+                <h1 className="text-3xl font-bold text-white">{user.user_metadata?.name || user.email?.split("@")[0] || "User"}</h1>
+                <p className="text-blue-100">{user.email}</p>
               </div>
             </div>
 
             {/* PERSONAL INFO SUMMARY */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-white">
               <div className="flex items-center gap-2">
-                <FiMail className="text-blue-400" />
+                <FiMail className="text-blue-100" />
                 <span>{user.email}</span>
               </div>
               <div className="flex items-center gap-2">
-                <FiPhone className="text-green-400" />
+                <FiPhone className="text-blue-100" />
                 <span>{user.phone || "Not added"}</span>
               </div>
               <div className="flex items-center gap-2">
-                <FiClock className="text-yellow-400" />
+                <FiClock className="text-blue-100" />
                 <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
               </div>
             </div>
@@ -324,26 +200,26 @@ export default function ProfilePage() {
           {/* MAIN CONTENT GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* SAVED CARS */}
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <FaCar className="text-blue-400" /> Saved Cars ({cars.length})
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+                <FaCar className="text-blue-600" /> Saved Cars ({cars.length})
               </h2>
 
               {cars.length === 0 ? (
-                <p className="text-slate-400 text-sm">No cars added yet</p>
+                <p className="text-slate-600 text-sm">No cars added yet</p>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {cars.map((car) => (
-                    <div key={car.id} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                    <div key={car.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <p className="font-semibold text-blue-300">{car.brand} {car.model || ""}</p>
-                          <p className="text-sm text-slate-400">Plate: {car.number_plate}</p>
+                          <p className="font-semibold text-blue-700">{car.brand} {car.model || ""}</p>
+                          <p className="text-sm text-slate-600">Plate: {car.number_plate}</p>
                           <p className="text-xs text-slate-500 mt-1">{car.color || "Color not specified"}</p>
                         </div>
                         <button
                           onClick={() => handleOpenQRCode(car)}
-                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold transition"
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition shadow-sm"
                           title="Generate QR Code for this car"
                         >
                           🎫 QR Code
@@ -356,16 +232,16 @@ export default function ProfilePage() {
             </div>
 
             {/* MONTHLY PASS */}
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <FiAward className="text-amber-400" /> Monthly Pass
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+                <FiAward className="text-amber-600" /> Monthly Pass
               </h2>
 
               {monthlyPass ? (
-                <div className="bg-linear-to-br from-amber-600/20 to-amber-900/20 border border-amber-500/40 p-4 rounded-lg space-y-3">
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-3">
                   <div>
-                    <p className="text-sm text-slate-400">Plan</p>
-                    <p className="text-lg font-semibold text-amber-300">
+                    <p className="text-sm text-slate-600">Plan</p>
+                    <p className="text-lg font-semibold text-amber-700">
                       {monthlyPass.total_washes === 4 ? "Basic" :
                        monthlyPass.total_washes === 8 ? "Standard" :
                        monthlyPass.total_washes === 16 ? "Premium" : "Custom"} Plan
@@ -373,29 +249,29 @@ export default function ProfilePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-slate-400">Total Washes</p>
-                      <p className="font-semibold">{monthlyPass.total_washes}</p>
+                      <p className="text-slate-600">Total Washes</p>
+                      <p className="font-semibold text-slate-900">{monthlyPass.total_washes}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400">Remaining</p>
-                      <p className="font-semibold text-green-400">{monthlyPass.remaining_washes}</p>
+                      <p className="text-slate-600">Remaining</p>
+                      <p className="font-semibold text-emerald-600">{monthlyPass.remaining_washes}</p>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-400">Valid Till</p>
-                    <p className="font-semibold">{monthlyPass.valid_till}</p>
+                    <p className="text-sm text-slate-600">Valid Till</p>
+                    <p className="font-semibold text-slate-900">{monthlyPass.valid_till}</p>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-2 mt-2">
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
                     <div
-                      className="bg-amber-500 h-2 rounded-full"
+                      className="bg-amber-600 h-2 rounded-full"
                       style={{ width: `${(monthlyPass.remaining_washes / monthlyPass.total_washes) * 100}%` }}
                     ></div>
                   </div>
                 </div>
               ) : (
-                <div className="text-slate-400 text-sm">
+                <div className="text-slate-600 text-sm">
                   <p>No active monthly pass</p>
-                  <a href="/monthly-pass" className="text-blue-400 hover:text-blue-300 mt-2 inline-block">
+                  <a href="/monthly-pass" className="text-blue-600 hover:text-blue-700 mt-2 inline-block font-medium">
                     Buy a pass →
                   </a>
                 </div>
@@ -404,33 +280,33 @@ export default function ProfilePage() {
           </div>
 
           {/* BOOKING HISTORY */}
-          <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <FiClock className="text-purple-400" /> Booking History ({bookings.length})
+          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+              <FiClock className="text-blue-600" /> Booking History ({bookings.length})
             </h2>
 
             {bookings.length === 0 ? (
-              <p className="text-slate-400 text-sm">No bookings yet</p>
+              <p className="text-slate-600 text-sm">No bookings yet</p>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {bookings.map((booking) => (
-                  <div key={booking.id} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                  <div key={booking.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-purple-300">{booking.car_name}</p>
+                      <p className="font-semibold text-slate-900">{booking.car_name}</p>
                       <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                        booking.status === 'completed' ? 'bg-green-600/30 text-green-300' :
-                        booking.status === 'in_wash' ? 'bg-blue-600/30 text-blue-300' :
-                        booking.status === 'pending' ? 'bg-yellow-600/30 text-yellow-300' :
-                        'bg-slate-600/30 text-slate-300'
+                        booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                        booking.status === 'in_wash' ? 'bg-blue-100 text-blue-700' :
+                        booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                        'bg-slate-200 text-slate-700'
                       }`}>
                         {booking.status || 'Pending'}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-400 mb-2">
+                    <p className="text-sm text-slate-600 mb-2">
                       📅 {booking.date} at {booking.time} • 📍 {booking.location}
                     </p>
                     <p className="text-sm">
-                      Amount: <span className="font-semibold text-blue-300">₹{booking.amount}</span>
+                      Amount: <span className="font-semibold text-blue-700">₹{booking.amount}</span>
                     </p>
                   </div>
                 ))}
@@ -439,28 +315,28 @@ export default function ProfilePage() {
           </div>
 
           {/* PAYMENT HISTORY */}
-          <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <FiCreditCard className="text-green-400" /> Payment History ({transactions.length})
+          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+              <FiCreditCard className="text-emerald-600" /> Payment History ({transactions.length})
             </h2>
 
             {transactions.length === 0 ? (
-              <p className="text-slate-400 text-sm">No transactions yet</p>
+              <p className="text-slate-600 text-sm">No transactions yet</p>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {transactions.map((tx) => (
-                  <div key={tx.id} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                  <div key={tx.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-green-300">₹{tx.amount}</p>
+                      <p className="font-semibold text-emerald-700">₹{tx.amount}</p>
                       <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                        tx.status === 'success' ? 'bg-green-600/30 text-green-300' :
-                        tx.status === 'pending' ? 'bg-yellow-600/30 text-yellow-300' :
-                        'bg-red-600/30 text-red-300'
+                        tx.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                        tx.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
                       }`}>
                         {tx.status}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-slate-600">
                       {tx.type} • {tx.payment_method || 'Unknown'}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
@@ -473,34 +349,34 @@ export default function ProfilePage() {
           </div>
 
           {/* SETTINGS */}
-          <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <FiSettings className="text-cyan-400" /> Settings
+          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+              <FiSettings className="text-blue-600" /> Settings
             </h2>
 
             <div className="space-y-3">
               <button
                 onClick={() => setShowPasswordModal(true)}
-                className="w-full bg-slate-800 hover:bg-slate-700 p-3 rounded-lg flex items-center gap-3 transition border border-slate-700"
+                className="w-full bg-slate-100 hover:bg-slate-200 p-3 rounded-lg flex items-center gap-3 transition border border-slate-300 text-slate-900 font-medium"
               >
-                <FiLock className="text-cyan-400" />
+                <FiLock className="text-blue-600" />
                 <span>Change Password</span>
               </button>
 
               <button
                 onClick={() => window.location.href = "/profile"}
-                className="w-full bg-slate-800 hover:bg-slate-700 p-3 rounded-lg flex items-center gap-3 transition border border-slate-700"
+                className="w-full bg-slate-100 hover:bg-slate-200 p-3 rounded-lg flex items-center gap-3 transition border border-slate-300 text-slate-900 font-medium"
               >
-                <FiBell className="text-amber-400" />
+                <FiBell className="text-amber-600" />
                 <span>Notification Preferences</span>
               </button>
 
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="w-full bg-red-900/30 hover:bg-red-900/50 p-3 rounded-lg flex items-center gap-3 transition border border-red-700/50"
+                className="w-full bg-red-50 hover:bg-red-100 p-3 rounded-lg flex items-center gap-3 transition border border-red-200 text-red-700 font-medium"
               >
-                <FiTrash2 className="text-red-400" />
-                <span className="text-red-400">Delete Account</span>
+                <FiTrash2 className="text-red-600" />
+                <span>Delete Account</span>
               </button>
             </div>
           </div>
@@ -508,38 +384,37 @@ export default function ProfilePage() {
           {/* LOGOUT BUTTON */}
           <button
             onClick={handleLogout}
-            className="w-full py-4 bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg flex items-center justify-center gap-2 font-semibold text-lg transition"
+            className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg flex items-center justify-center gap-2 font-semibold text-lg transition shadow-md"
           >
             <FiLogOut /> Logout
           </button>
         </main>
-      </div>
 
       {/* PASSWORD CHANGE MODAL */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-8 max-w-md w-full shadow-2xl space-y-6">
-            <h3 className="text-2xl font-bold">Change Password</h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full shadow-2xl space-y-6">
+            <h3 className="text-2xl font-bold text-slate-900">Change Password</h3>
             <div>
-              <label className="block text-sm font-medium mb-2">New Password</label>
+              <label className="block text-sm font-medium mb-2 text-slate-900">New Password</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password (min 6 characters)"
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none text-white"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none text-slate-900 placeholder-slate-500"
               />
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowPasswordModal(false)}
-                className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                className="flex-1 px-4 py-3 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold transition text-slate-900"
               >
                 Cancel
               </button>
               <button
                 onClick={handleChangePassword}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition"
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition text-white shadow-sm"
               >
                 Update Password
               </button>
@@ -550,22 +425,22 @@ export default function ProfilePage() {
 
       {/* DELETE ACCOUNT MODAL */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-red-700/50 rounded-xl p-8 max-w-md w-full shadow-2xl space-y-6">
-            <h3 className="text-2xl font-bold text-red-400">Delete Account?</h3>
-            <p className="text-slate-300">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white border border-red-300 rounded-xl p-8 max-w-md w-full shadow-2xl space-y-6">
+            <h3 className="text-2xl font-bold text-red-600">Delete Account?</h3>
+            <p className="text-slate-700">
               This action cannot be undone. All your data will be permanently deleted.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition"
+                className="flex-1 px-4 py-3 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold transition text-slate-900"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
-                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition"
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition text-white shadow-sm"
               >
                 Delete Account
               </button>

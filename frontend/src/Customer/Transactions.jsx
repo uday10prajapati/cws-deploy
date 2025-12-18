@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import NavbarNew from "../components/NavbarNew";
 import {
   FiCreditCard,
   FiDollarSign,
@@ -216,28 +215,12 @@ function formatAmount(amount, currency = "INR") {
  * ===========================
  */
 function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
-  const location = useLocation();
   const [user, setUser] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState("upi");
   const [loading, setLoading] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // null, 'success', 'failed'
   const [paymentVerified, setPaymentVerified] = useState(false); // Track if payment is verified in account
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-
-  const customerMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/customer-dashboard" },
-  { name: "My Bookings", icon: <FiClipboard />, link: "/bookings" },
-  { name: "My Cars", icon: <FaCar />, link: "/my-cars" },
-  { name: "Monthly Pass", icon: <FiAward />, link: "/monthly-pass" },
-  { name: "Profile", icon: <FiUser />, link: "/profile" },
-  { name: "Location", icon: <FiMapPin />, link: "/location" },
-  { name: "Transactions", icon: <FiCreditCard />, link: "/transactions" },
-  { name: "Account Settings", icon: <FiSettings />, link: "/account-settings" },
-  { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/emergency-wash" },
-  { name: "About Us", icon: <FiGift />, link: "/about-us" },
-  ];
 
   const GST_RATE = 0.18; // 18% GST
   const GST_NUMBER = "18AABCT1234H1Z0"; // Company GST Number
@@ -345,145 +328,39 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <NavbarNew />
+      
+      {/* Payment Header */}
+      <div className="max-w-2xl mx-auto px-4 md:px-8 py-8">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium transition"
+        >
+          <FiArrowLeft /> Back
+        </button>
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Complete Payment</h1>
+        <p className="text-slate-600">Secure checkout with 18% GST</p>
       </div>
 
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* NAVBAR */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-          items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-2xl font-bold">Complete Payment</h1>
-
-          <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        <div className="bg-slate-900 border-b border-slate-800 px-4 md:px-8 py-4 lg:hidden">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-4"
-          >
-            <FiArrowLeft /> Back
-          </button>
-          <h1 className="text-2xl md:text-3xl font-bold">Complete Payment</h1>
-          <p className="text-slate-400 text-sm">Secure checkout with 18% GST</p>
-        </div>
-
-        {/* CONTENT */}
-        <div className="max-w-2xl mx-auto p-4 md:p-8 max-h-[calc(100vh-200px)] overflow-y-auto">
+      {/* Payment Content */}
+      <main className="max-w-2xl mx-auto px-4 md:px-8 pb-12">
           {/* AMOUNT SUMMARY */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-md">
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-slate-400">Subtotal</span>
-                <span className="font-semibold">{formatAmount(amount)}</span>
+                <span className="text-slate-600">Subtotal</span>
+                <span className="font-semibold text-slate-900">{formatAmount(amount)}</span>
               </div>
-              <div className="flex justify-between text-orange-400">
+              <div className="flex justify-between text-orange-600">
                 <span>GST (18%)</span>
                 <span className="font-semibold">
                   + {formatAmount(gstAmount)}
                 </span>
               </div>
-              <div className="border-t border-slate-700 pt-3 flex justify-between text-lg">
-                <span className="font-semibold">Total Amount</span>
-                <span className="text-2xl font-bold text-blue-400">
+              <div className="border-t border-slate-200 pt-3 flex justify-between text-lg">
+                <span className="font-semibold text-slate-900">Total Amount</span>
+                <span className="text-2xl font-bold text-blue-600">
                   {formatAmount(totalAmount)}
                 </span>
               </div>
@@ -492,13 +369,13 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
 
           {/* SUCCESS/FAILURE MESSAGE - Only show if verified */}
           {paymentVerified && paymentStatus === "success" && (
-            <div className="bg-green-600/20 border border-green-500/50 rounded-xl p-6 mb-6 flex items-center gap-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 mb-6 flex items-center gap-4">
               <div className="text-4xl">✅</div>
               <div>
-                <h3 className="font-bold text-green-300 mb-1">
+                <h3 className="font-bold text-emerald-700 mb-1">
                   Payment Successful!
                 </h3>
-                <p className="text-sm text-green-200">
+                <p className="text-sm text-emerald-600">
                   Amount received in your account. Processing your order...
                 </p>
               </div>
@@ -507,11 +384,11 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
 
           {/* FAILURE MESSAGE */}
           {paymentStatus === "failed" && (
-            <div className="bg-red-600/20 border border-red-500/50 rounded-xl p-6 mb-6 flex items-center gap-4">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6 flex items-center gap-4">
               <div className="text-4xl">❌</div>
               <div>
-                <h3 className="font-bold text-red-300 mb-1">Payment Failed</h3>
-                <p className="text-sm text-red-200">
+                <h3 className="font-bold text-red-700 mb-1">Payment Failed</h3>
+                <p className="text-sm text-red-600">
                   Unable to process your payment. Please try again.
                 </p>
               </div>
@@ -519,31 +396,31 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
           )}
 
           {/* ORDER DETAILS */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">Order Details</h3>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-md">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Order Details</h3>
             <div className="space-y-2 text-sm">
               {bookingId && (
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Booking ID</span>
-                  <span className="font-mono text-blue-400">#{bookingId}</span>
+                  <span className="text-slate-600">Booking ID</span>
+                  <span className="font-mono text-blue-600">#{bookingId}</span>
                 </div>
               )}
               {passId && (
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Pass ID</span>
-                  <span className="font-mono text-blue-400">#{passId}</span>
+                  <span className="text-slate-600">Pass ID</span>
+                  <span className="font-mono text-blue-600">#{passId}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-slate-400">Type</span>
-                <span>{typeLabel[type]}</span>
+                <span className="text-slate-600">Type</span>
+                <span className="text-slate-900 font-medium">{typeLabel[type]}</span>
               </div>
             </div>
           </div>
 
           {/* PAYMENT METHODS */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
               Select Payment Method
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -554,8 +431,8 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
                   disabled={paymentProcessing}
                   className={`p-4 rounded-lg border-2 transition ${
                     selectedPayment === mode.id
-                      ? "border-blue-500 bg-blue-500/10"
-                      : "border-slate-700 bg-slate-900 hover:border-slate-600"
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                   } ${
                     paymentProcessing ? "opacity-50 cursor-not-allowed" : ""
                   }`}
@@ -563,8 +440,8 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">{mode.icon}</div>
                     <div className="text-left">
-                      <div className="font-semibold">{mode.label}</div>
-                      <div className="text-xs text-slate-400">
+                      <div className="font-semibold text-slate-900">{mode.label}</div>
+                      <div className="text-xs text-slate-600">
                         {mode.id === "upi" && "Instant & Secure"}
                         {mode.id === "card" && "Visa, Mastercard, Amex"}
                         {mode.id === "wallet" && "Use wallet balance"}
@@ -578,25 +455,25 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
           </div>
 
           {/* GST & INVOICE INFO */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4 mb-6 space-y-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 space-y-3">
             <div className="flex gap-2 text-sm">
-              <span className="text-slate-400">📋 GST Number:</span>
-              <span className="font-mono text-blue-300 font-semibold">
+              <span className="text-slate-600">📋 GST Number:</span>
+              <span className="font-mono text-blue-700 font-semibold">
                 {GST_NUMBER}
               </span>
             </div>
             <div className="flex gap-2 text-sm">
-              <span className="text-slate-400">🏢 Business Name:</span>
-              <span className="text-slate-300">CarWash+ Services</span>
+              <span className="text-slate-600">🏢 Business Name:</span>
+              <span className="text-slate-700">CarWash+ Services</span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               Invoice will be generated after successful payment and can be
               downloaded from your transactions page
             </p>
           </div>
 
           {/* TERMS */}
-          <div className="bg-slate-900/50 rounded-lg p-4 mb-6">
+          <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-200">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -604,7 +481,7 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
                 className="rounded"
                 disabled={paymentProcessing}
               />
-              <span className="text-slate-300">
+              <span className="text-slate-700">
                 I agree to the terms & conditions and privacy policy
               </span>
             </label>
@@ -629,11 +506,10 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
           </button>
 
           {/* SECURITY */}
-          <div className="text-center mt-6 text-xs text-slate-400">
+          <div className="text-center mt-6 text-xs text-slate-600">
             🔒 Your payment is secure and encrypted
           </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -910,127 +786,21 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <NavbarNew />
 
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {customerMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div
-        className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${
-          collapsed ? "lg:ml-16" : "lg:ml-56"
-        }`}
-      >
-        {/* NAVBAR */}
-        <header
-          className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-          items-center justify-between px-8 sticky top-0 z-20 shadow-lg"
-        >
-          <h1 className="text-2xl font-bold">My Transactions</h1>
-
-          <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-10">
           {/* WALLET BALANCE */}
-          <div className="bg-linear-to-r from-blue-600 to-blue-700 rounded-xl p-6 mb-8">
-            <div className="text-slate-200 text-sm mb-2">Wallet Balance</div>
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white shadow-md">
+            <div className="text-blue-100 text-sm mb-2 font-medium">Wallet Balance</div>
             <div className="flex items-end justify-between flex-col md:flex-row gap-4">
               <div className="text-4xl font-bold">
                 {formatAmount(walletBalance)}
               </div>
               <button
                 onClick={() => setShowAddMoney(true)}
-                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-slate-100 transition"
+                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition shadow-sm hover:shadow-md"
               >
                 + Add Money
               </button>
@@ -1038,14 +808,14 @@ export default function TransactionsPage() {
           </div>
 
           {/* FILTERS */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 space-y-4 shadow-md">
             <div className="flex flex-col gap-3">
               {/* Search */}
               <input
                 placeholder="Search by ID, Amount, Notes..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
               />
 
               {/* Filters Row */}
@@ -1054,7 +824,7 @@ export default function TransactionsPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 text-sm"
+                  className="px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-blue-500 text-sm transition"
                 >
                   <option value="all">Status: All</option>
                   <option value="success">Success</option>
@@ -1067,7 +837,7 @@ export default function TransactionsPage() {
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 text-sm"
+                  className="px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-blue-500 text-sm transition"
                 >
                   <option value="all">Type: All</option>
                   <option value="booking_payment">Booking Payment</option>
@@ -1080,7 +850,7 @@ export default function TransactionsPage() {
                 <select
                   value={paymentFilter}
                   onChange={(e) => setPaymentFilter(e.target.value)}
-                  className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 text-sm"
+                  className="px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-blue-500 text-sm transition"
                 >
                   <option value="all">Payment: All</option>
                   <option value="upi">UPI</option>
@@ -1097,32 +867,32 @@ export default function TransactionsPage() {
             {loading && (
               <div className="text-center py-12">
                 <div className="inline-block">
-                  <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
                 </div>
-                <p className="text-slate-400 mt-4">Loading transactions...</p>
+                <p className="text-slate-600 mt-4">Loading transactions...</p>
               </div>
             )}
 
             {error && (
-              <div className="bg-red-600/20 border border-red-500/50 rounded-xl p-6 text-center">
-                <p className="text-red-300">⚠️ {error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center shadow-md">
+                <p className="text-red-700">⚠️ {error}</p>
               </div>
             )}
 
             {!loading && !error && filtered.length === 0 && (
-              <div className="bg-slate-900/50 border-2 border-dashed border-slate-700 rounded-xl p-12 text-center">
+              <div className="bg-white border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center shadow-md">
                 <div className="text-5xl mb-4">📋</div>
-                <p className="text-lg font-semibold text-white">
+                <p className="text-lg font-semibold text-slate-900">
                   No Transactions Yet
                 </p>
-                <p className="text-sm text-slate-400 mt-2">
+                <p className="text-sm text-slate-600 mt-2">
                   Your transactions will appear here once you make a payment
                 </p>
                 <button
                   onClick={() =>
                     handleInitiatePayment(399, "booking_payment", null, null)
                   }
-                  className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition"
+                  className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition shadow-sm"
                 >
                   Make Your First Payment
                 </button>
@@ -1239,43 +1009,41 @@ export default function TransactionsPage() {
               );
             })}
           </div>
-        </div>
-      </div>
 
-      {/* DETAIL MODAL - IMPROVED */}
-      {selectedTx && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-linear-to-b from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+        {/* DETAIL MODAL - IMPROVED */}
+        {selectedTx && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-2xl font-bold text-slate-900">
                 Transaction Details
               </h2>
               <button
                 onClick={() => setSelectedTx(null)}
-                className="text-2xl text-slate-400 hover:text-white transition hover:bg-slate-800 w-8 h-8 flex items-center justify-center rounded-lg"
+                className="text-2xl text-slate-400 hover:text-slate-600 transition hover:bg-slate-100 w-8 h-8 flex items-center justify-center rounded-lg"
               >
                 ✕
               </button>
             </div>
 
             {/* Transaction ID */}
-            <p className="text-xs text-slate-400 mb-6 bg-slate-800/50 px-3 py-2 rounded-lg font-mono">
+            <p className="text-xs text-slate-600 mb-6 bg-slate-100 px-3 py-2 rounded-lg font-mono">
               ID: {selectedTx.id}
             </p>
 
             <div className="space-y-4">
               {/* AMOUNT - Large Display */}
-              <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-xl p-6 text-center">
-                <p className="text-sm text-slate-400 mb-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
+                <p className="text-sm text-slate-600 mb-2">
                   Transaction Amount
                 </p>
                 <div className="text-4xl font-black mb-2">
                   <span
                     className={
                       selectedTx.direction === "credit"
-                        ? "text-green-400"
-                        : "text-white"
+                        ? "text-emerald-600"
+                        : "text-slate-900"
                     }
                   >
                     {selectedTx.direction === "debit" ? "-" : "+"}
@@ -1283,16 +1051,16 @@ export default function TransactionsPage() {
                   </span>
                 </div>
                 {selectedTx.gst ? (
-                  <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-blue-500/20">
+                  <div className="text-xs text-slate-600 mt-3 pt-3 border-t border-blue-200">
                     <div className="flex justify-between mb-1">
                       <span>Subtotal</span>
-                      <span className="text-blue-300">
+                      <span className="text-blue-700">
                         {formatAmount(selectedTx.amount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>GST (18%)</span>
-                      <span className="text-orange-300">
+                      <span className="text-orange-600">
                         +{formatAmount(selectedTx.gst)}
                       </span>
                     </div>
@@ -1301,12 +1069,12 @@ export default function TransactionsPage() {
               </div>
 
               {/* STATUS */}
-              <div className="flex items-center gap-3 bg-slate-800/50 p-4 rounded-lg">
+              <div className="flex items-center gap-3 bg-slate-100 p-4 rounded-lg">
                 <span className="text-2xl">
                   {statusConfig[selectedTx.status].icon}
                 </span>
                 <div>
-                  <p className="text-xs text-slate-400">Status</p>
+                  <p className="text-xs text-slate-600">Status</p>
                   <p
                     className={`font-bold text-lg ${
                       statusConfig[selectedTx.status].text
@@ -1318,48 +1086,48 @@ export default function TransactionsPage() {
               </div>
 
               {/* DETAILS GRID */}
-              <div className="space-y-3 bg-slate-800/30 p-4 rounded-xl">
-                <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   Details
                 </p>
 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-                    <span className="text-sm text-slate-400">Type</span>
-                    <span className="font-semibold text-blue-300">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                    <span className="text-sm text-slate-600">Type</span>
+                    <span className="font-semibold text-blue-600">
                       {typeLabel[selectedTx.type]}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-                    <span className="text-sm text-slate-400">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                    <span className="text-sm text-slate-600">
                       Payment Method
                     </span>
-                    <span className="font-semibold text-slate-300 capitalize flex items-center gap-2">
+                    <span className="font-semibold text-slate-900 capitalize flex items-center gap-2">
                       💳 {paymentLabel[selectedTx.paymentMethod]}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-                    <span className="text-sm text-slate-400">Date & Time</span>
-                    <span className="font-semibold text-slate-300">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                    <span className="text-sm text-slate-600">Date & Time</span>
+                    <span className="font-semibold text-slate-900">
                       {formatDate(selectedTx.createdAt)}
                     </span>
                   </div>
 
                   {selectedTx.bookingId && (
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-                      <span className="text-sm text-slate-400">Booking ID</span>
-                      <span className="font-mono text-blue-400 bg-blue-600/20 px-2 py-1 rounded">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                      <span className="text-sm text-slate-600">Booking ID</span>
+                      <span className="font-mono text-blue-600 bg-blue-100 px-2 py-1 rounded">
                         {selectedTx.bookingId.slice(0, 12)}
                       </span>
                     </div>
                   )}
 
                   {selectedTx.passId && (
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-                      <span className="text-sm text-slate-400">Pass ID</span>
-                      <span className="font-mono text-purple-400 bg-purple-600/20 px-2 py-1 rounded">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                      <span className="text-sm text-slate-600">Pass ID</span>
+                      <span className="font-mono text-purple-600 bg-purple-100 px-2 py-1 rounded">
                         {selectedTx.passId.slice(0, 12)}
                       </span>
                     </div>
@@ -1369,11 +1137,11 @@ export default function TransactionsPage() {
 
               {/* NOTES */}
               {selectedTx.notes && (
-                <div className="bg-slate-800/30 p-4 rounded-xl">
-                  <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                     Notes
                   </p>
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                  <p className="text-sm text-slate-700 leading-relaxed">
                     {selectedTx.notes}
                   </p>
                 </div>
@@ -1381,20 +1149,20 @@ export default function TransactionsPage() {
 
               {/* GST INFO */}
               {selectedTx.gstNumber && (
-                <div className="bg-amber-600/20 border border-amber-500/30 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider mb-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider mb-3">
                     💼 GST Information
                   </p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">GST Number</span>
-                      <span className="font-mono text-amber-300">
+                      <span className="text-slate-600">GST Number</span>
+                      <span className="font-mono text-amber-700">
                         {selectedTx.gstNumber}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">GST Amount</span>
-                      <span className="font-bold text-orange-300">
+                      <span className="text-slate-600">GST Amount</span>
+                      <span className="font-bold text-orange-600">
                         {formatAmount(selectedTx.gst || 0)}
                       </span>
                     </div>
@@ -1414,7 +1182,7 @@ export default function TransactionsPage() {
                       };
                       viewTransactionPDF(selectedTx, userInfo, 'customer');
                     }}
-                    className="flex-1 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg flex items-center justify-center gap-2 font-medium transition text-white"
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center gap-2 font-medium transition text-white shadow-sm"
                   >
                     <FiEye size={18} /> View Invoice
                   </button>
@@ -1427,7 +1195,7 @@ export default function TransactionsPage() {
                       };
                       generateTransactionPDF(selectedTx, userInfo, 'customer');
                     }}
-                    className="flex-1 py-3 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg flex items-center justify-center gap-2 font-medium transition text-white"
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg flex items-center justify-center gap-2 font-medium transition text-white shadow-sm"
                   >
                     <FiDownload size={18} /> Download Invoice
                   </button>
@@ -1444,7 +1212,7 @@ export default function TransactionsPage() {
               {/* CLOSE BUTTON */}
               <button
                 onClick={() => setSelectedTx(null)}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition"
+                className="w-full py-3 bg-slate-200 hover:bg-slate-300 rounded-lg font-medium transition text-slate-900"
               >
                 Close
               </button>
@@ -1452,6 +1220,7 @@ export default function TransactionsPage() {
           </div>
         </div>
       )}
+      </main>
 
       {/* ▓▓▓ ADD MONEY MODAL ▓▓▓ */}
       {showAddMoney && (
@@ -1459,8 +1228,8 @@ export default function TransactionsPage() {
           <div className="w-full max-w-2xl">
             {/* Header */}
             <div className="mb-8 text-center">
-              <h1 className="text-4xl font-bold mb-2">💰 Add Money to Wallet</h1>
-              <p className="text-slate-400">Secure payment to your wallet</p>
+              <h1 className="text-4xl font-bold text-slate-900 mb-2">💰 Add Money to Wallet</h1>
+              <p className="text-slate-600">Secure payment to your wallet</p>
             </div>
 
             {/* AMOUNT SELECTION STEP */}
@@ -1468,37 +1237,37 @@ export default function TransactionsPage() {
               <div className="grid md:grid-cols-3 gap-6">
                 {/* Amount Summary - Left */}
                 <div className="md:col-span-1">
-                  <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-4">
-                    <h3 className="text-lg font-bold">Add Money</h3>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-md">
+                    <h3 className="text-lg font-bold text-slate-900">Add Money</h3>
                     
                     {addMoneyAmount && (
-                      <div className="space-y-3 bg-slate-800/50 p-4 rounded-lg">
+                      <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Amount</span>
-                          <span className="font-semibold">₹{parseInt(addMoneyAmount).toLocaleString("en-IN")}</span>
+                          <span className="text-slate-600">Amount</span>
+                          <span className="font-semibold text-slate-900">₹{parseInt(addMoneyAmount).toLocaleString("en-IN")}</span>
                         </div>
                       </div>
                     )}
 
                     {/* Price Breakdown */}
                     {addMoneyAmount && (
-                      <div className="border-t border-slate-700 pt-3 space-y-2">
+                      <div className="border-t border-slate-200 pt-3 space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Subtotal</span>
-                          <span>₹{(parseInt(addMoneyAmount) / 1.18).toFixed(0)}</span>
+                          <span className="text-slate-600">Subtotal</span>
+                          <span className="text-slate-900 font-medium">₹{(parseInt(addMoneyAmount) / 1.18).toFixed(0)}</span>
                         </div>
-                        <div className="flex justify-between text-sm pb-2 border-b border-slate-700">
-                          <span className="text-slate-400">GST (18%)</span>
-                          <span>₹{(parseInt(addMoneyAmount) - parseInt(addMoneyAmount) / 1.18).toFixed(0)}</span>
+                        <div className="flex justify-between text-sm pb-2 border-b border-slate-200">
+                          <span className="text-slate-600">GST (18%)</span>
+                          <span className="text-slate-900 font-medium">₹{(parseInt(addMoneyAmount) - parseInt(addMoneyAmount) / 1.18).toFixed(0)}</span>
                         </div>
-                        <div className="flex justify-between text-lg font-bold text-green-400">
+                        <div className="flex justify-between text-lg font-bold text-emerald-600">
                           <span>Total</span>
                           <span>₹{parseInt(addMoneyAmount)}</span>
                         </div>
                       </div>
                     )}
 
-                    <div className="text-xs text-slate-500 text-center pt-2">
+                    <div className="text-xs text-slate-600 text-center pt-2">
                       🔒 Secure & Encrypted Payment
                     </div>
                   </div>
@@ -1506,10 +1275,10 @@ export default function TransactionsPage() {
 
                 {/* Payment Methods - Right */}
                 <div className="md:col-span-2">
-                  <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-6">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-md">
                     {/* Amount Input */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-medium text-slate-300">
+                      <label className="block text-sm font-medium text-slate-900">
                         Enter Amount (₹)
                       </label>
                       <input
@@ -1517,7 +1286,7 @@ export default function TransactionsPage() {
                         value={addMoneyAmount}
                         onChange={(e) => setAddMoneyAmount(e.target.value)}
                         placeholder="Enter amount (₹100 - ₹1,00,000)"
-                        className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:outline-none text-lg font-semibold"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:border-blue-500 focus:outline-none text-lg font-semibold placeholder-slate-500 transition"
                       />
                     </div>
 
@@ -1527,7 +1296,7 @@ export default function TransactionsPage() {
                         <button
                           key={amt}
                           onClick={() => setAddMoneyAmount(amt.toString())}
-                          className="py-2 px-3 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-500 rounded-lg text-sm font-medium transition"
+                          className="py-2 px-3 bg-slate-100 hover:bg-blue-600 hover:text-white border border-slate-300 hover:border-blue-500 rounded-lg text-sm font-medium transition text-slate-900"
                         >
                           ₹{amt.toLocaleString()}
                         </button>
@@ -1535,7 +1304,7 @@ export default function TransactionsPage() {
                     </div>
 
                     {/* Select Payment Method */}
-                    <h3 className="text-lg font-bold">Select Payment Method</h3>
+                    <h3 className="text-lg font-bold text-slate-900">Select Payment Method</h3>
 
                     <div className="space-y-3">
                       {/* UPI */}

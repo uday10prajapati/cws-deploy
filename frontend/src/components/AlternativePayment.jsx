@@ -340,15 +340,15 @@ export default function AlternativePayment() {
 
   if (verified) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-green-600/20 border border-green-500/50 rounded-lg p-8 text-center">
-            <FiCheck className="text-6xl text-green-400 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-white mb-2">Payment Successful! ✅</h2>
-            <p className="text-green-300 mb-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-8 text-center shadow-md">
+            <FiCheck className="text-6xl text-emerald-600 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-slate-900 mb-2">Payment Successful! ✅</h2>
+            <p className="text-emerald-700 mb-4">
               Your payment of ₹{amount} has been verified and processed.
             </p>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               Transaction ID: {transactionId}
             </p>
             <button
@@ -364,12 +364,12 @@ export default function AlternativePayment() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold text-white mb-8">💳 Payment Methods</h1>
+        <h1 className="text-4xl font-bold text-slate-900 mb-8">💳 Payment Methods</h1>
 
         {error && (
-          <div className="bg-red-600/20 border border-red-500/50 rounded-lg p-4 text-red-300 mb-6 flex items-center gap-2">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 mb-6 flex items-center gap-2">
             <FiAlertCircle /> {error}
           </div>
         )}
@@ -382,35 +382,35 @@ export default function AlternativePayment() {
                 <button
                   key={method.id}
                   onClick={() => setSelectedMethod(method.id)}
-                  className={`p-6 rounded-lg border-2 transition text-left ${
+                  className={`p-6 rounded-lg border-2 transition text-left shadow-md ${
                     selectedMethod === method.id
-                      ? "bg-blue-600/20 border-blue-500/50"
-                      : "bg-slate-900/80 border-slate-700/50 hover:border-blue-500/30"
+                      ? "bg-blue-50 border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100"
+                      : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-lg"
                   }`}
                 >
                   <div className="text-3xl mb-2">{method.icon}</div>
-                  <h3 className="font-bold text-white">{method.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1">{method.description}</p>
+                  <h3 className="font-bold text-slate-900">{method.name}</h3>
+                  <p className="text-xs text-slate-600 mt-1">{method.description}</p>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {method.pros.map((pro, i) => (
-                      <span key={i} className="text-xs bg-green-600/30 text-green-300 px-2 py-1 rounded">
+                      <span key={i} className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-200">
                         {pro}
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">Fee: {method.fees}</p>
+                  <p className="text-xs text-slate-600 mt-2">Fee: {method.fees}</p>
                 </button>
               ))}
             </div>
 
             {/* Payment Details Form */}
             {selectedMethod && (
-              <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-6 mb-6">
-                <h2 className="text-lg font-bold text-white mb-4">Payment Details</h2>
+              <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6 shadow-md">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Payment Details</h2>
 
                 <div className="space-y-4 mb-6">
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">
+                    <label className="block text-slate-700 text-sm font-medium mb-2">
                       Amount (₹) *
                     </label>
                     <input
@@ -418,12 +418,12 @@ export default function AlternativePayment() {
                       placeholder="Enter amount"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">
+                    <label className="block text-slate-700 text-sm font-medium mb-2">
                       Full Name *
                     </label>
                     <input
@@ -431,12 +431,12 @@ export default function AlternativePayment() {
                       placeholder="Your name"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">
+                    <label className="block text-slate-700 text-sm font-medium mb-2">
                       Phone *
                     </label>
                     <input
@@ -445,12 +445,12 @@ export default function AlternativePayment() {
                       maxLength="10"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">
+                    <label className="block text-slate-700 text-sm font-medium mb-2">
                       Email
                     </label>
                     <input
@@ -458,7 +458,7 @@ export default function AlternativePayment() {
                       placeholder="Your email"
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-500"
                       disabled
                     />
                   </div>
@@ -467,7 +467,7 @@ export default function AlternativePayment() {
                 <button
                   onClick={handleInitiatePayment}
                   disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white font-semibold py-3 rounded-lg transition"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-semibold py-3 rounded-lg transition"
                 >
                   {loading ? "Processing..." : "Initiate Payment"}
                 </button>
@@ -477,10 +477,10 @@ export default function AlternativePayment() {
         ) : (
           <>
             {/* Payment Verification */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-6 mb-6">
-              <h2 className="text-lg font-bold text-white mb-4">Verify Payment</h2>
-              <p className="text-slate-400 mb-6">
-                Transaction ID: <span className="text-blue-400 font-mono">{transactionId}</span>
+            <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6 shadow-md">
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Verify Payment</h2>
+              <p className="text-slate-600 mb-6">
+                Transaction ID: <span className="text-blue-600 font-mono">{transactionId}</span>
               </p>
 
               {renderPaymentForm()}
@@ -489,7 +489,7 @@ export default function AlternativePayment() {
                 <button
                   onClick={handleVerifyPayment}
                   disabled={loading}
-                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white font-semibold py-2 rounded-lg transition"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white font-semibold py-2 rounded-lg transition"
                 >
                   {loading ? "Verifying..." : "Verify Payment"}
                 </button>
@@ -499,7 +499,7 @@ export default function AlternativePayment() {
                     setSelectedMethod(null);
                     setVerificationData({});
                   }}
-                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 rounded-lg transition"
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-2 rounded-lg transition"
                 >
                   Back
                 </button>

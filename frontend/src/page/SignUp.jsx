@@ -182,7 +182,7 @@ export default function Signup() {
 
   return (
     <div
-      className={`min-h-screen bg-slate-950 flex items-center justify-center px-4 transition-all duration-700 ${
+      className={`min-h-screen bg-white flex items-center justify-center px-4 transition-all duration-700 ${
         successAnim ? "opacity-0 scale-95" : "opacity-100"
       }`}
     >
@@ -193,7 +193,7 @@ export default function Signup() {
       >
         {/* LEFT: IMAGE */}
         <div
-          className={`relative h-[300px] md:h-[420px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-700 ${
+          className={`relative h-[300px] md:h-[420px] rounded-3xl overflow-hidden shadow-lg transition-all duration-700 ${
             successAnim ? "translate-x-40 opacity-0" : "translate-x-0 opacity-100"
           }`}
         >
@@ -202,7 +202,7 @@ export default function Signup() {
             style={{ backgroundImage: `url(${bgImg})` }}
           ></div>
 
-          <div className="absolute inset-0 bg-linear-to-tr from-black/80 via-black/40 to-blue-600/40"></div>
+          <div className="absolute inset-0 bg-linear-to-tr from-black/75 via-black/45 to-blue-600/35"></div>
 
           <div className="relative h-full flex flex-col justify-between p-6 md:p-8 text-white">
             <div>
@@ -212,9 +212,9 @@ export default function Signup() {
               <h2 className="mt-4 text-3xl md:text-4xl font-extrabold leading-tight">
                 Shine Ready,
                 <br />
-                <span className="text-blue-300">Anytime. Anywhere.</span>
+                <span className="text-blue-100">Anytime. Anywhere.</span>
               </h2>
-              <p className="mt-3 text-sm md:text-base text-slate-200/90">
+              <p className="mt-3 text-sm md:text-base text-slate-100/90">
                 Book doorstep car wash in seconds. Real-time tracking & trusted
                 riders.
               </p>
@@ -240,13 +240,13 @@ export default function Signup() {
             successAnim ? "-translate-x-40 opacity-0" : "translate-x-0 opacity-100"
           }`}
         >
-          <div className="hidden md:block absolute -inset-1 bg-linear-to-r from-blue-500/40 via-cyan-400/30 to-blue-700/40 blur-2xl opacity-60"></div>
+          <div className="hidden md:block absolute -inset-1 bg-linear-to-r from-blue-200/40 via-blue-100/30 to-blue-300/40 blur-2xl opacity-60"></div>
 
-          <div className="relative bg-slate-900/80 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,0.75)] max-h-[85vh] md:max-h-none overflow-y-auto md:overflow-visible">
-            <h1 className="text-xl md:text-3xl font-extrabold bg-linear-to-r from-white to-blue-200 bg-clip-text text-transparent">
+          <div className="relative bg-white border border-blue-200 rounded-3xl p-6 md:p-8 shadow-xl max-h-[85vh] md:max-h-none overflow-y-auto md:overflow-visible">
+            <h1 className="text-xl md:text-3xl font-extrabold bg-linear-to-r from-blue-700 to-blue-600 bg-clip-text text-transparent">
               Create your account
             </h1>
-            <p className="mt-1 text-slate-300 text-xs md:text-sm">
+            <p className="mt-1 text-slate-600 text-xs md:text-sm">
               Join CarWash+ and manage your bookings easily.
             </p>
 
@@ -257,7 +257,7 @@ export default function Signup() {
               {/* ROLE SELECTION STEP */}
               {roleStep ? (
                 <div className="space-y-1.5 md:space-y-2">
-                  <p className="text-xs text-slate-200 font-medium">Select your account type:</p>
+                  <p className="text-xs text-slate-700 font-medium">Select your account type:</p>
                   
                   <button
                     type="button"
@@ -265,10 +265,10 @@ export default function Signup() {
                       setForm({ ...form, role: "customer" });
                       setRoleStep(false);
                     }}
-                    className="w-full p-2.5 md:p-3 text-left rounded-2xl border-2 border-white/20 hover:border-blue-400 bg-white/5 hover:bg-blue-500/10 text-white transition-all"
+                    className="w-full p-2.5 md:p-3 text-left rounded-2xl border-2 border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 text-slate-900 transition-all"
                   >
                     <div className="font-semibold text-xs md:text-sm">👤 Customer</div>
-                    <div className="text-xs text-slate-300 mt-0 md:mt-0.5">Book car wash services</div>
+                    <div className="text-xs text-slate-600 mt-0 md:mt-0.5">Book car wash services</div>
                   </button>
 
                   <button
@@ -277,23 +277,23 @@ export default function Signup() {
                       setForm({ ...form, role: "employee" });
                       setRoleStep(false);
                     }}
-                    className="w-full p-2.5 md:p-3 text-left rounded-2xl border-2 border-white/20 hover:border-green-400 bg-white/5 hover:bg-green-500/10 text-white transition-all"
+                    className="w-full p-2.5 md:p-3 text-left rounded-2xl border-2 border-green-200 hover:border-green-400 bg-green-50 hover:bg-green-100 text-slate-900 transition-all"
                   >
                     <div className="font-semibold text-xs md:text-sm">💼 Employee</div>
-                    <div className="text-xs text-slate-300 mt-0 md:mt-0.5">Join our service team (requires admin approval)</div>
+                    <div className="text-xs text-slate-600 mt-0 md:mt-0.5">Join our service team (requires admin approval)</div>
                   </button>
                 </div>
               ) : (
                 <>
                   {/* Show selected role */}
-                  <div className="flex items-center justify-between p-2 md:p-3 bg-blue-500/20 rounded-2xl border border-blue-400/30">
-                    <span className="text-xs md:text-sm text-blue-200">
+                  <div className="flex items-center justify-between p-2 md:p-3 bg-blue-100 rounded-2xl border border-blue-300">
+                    <span className="text-xs md:text-sm text-blue-700">
                       {form.role === "customer" ? "👤 Customer" : "💼 Employee"}
                     </span>
                     <button
                       type="button"
                       onClick={() => setRoleStep(true)}
-                      className="text-xs text-blue-300 hover:text-blue-100"
+                      className="text-xs text-blue-600 hover:text-blue-800"
                     >
                       Change
                     </button>
@@ -302,9 +302,9 @@ export default function Signup() {
                   {/* EMPLOYEE SUB-ROLE SELECTION */}
                   {form.role === "employee" && (
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-300 font-medium">Select position:</label>
+                      <label className="text-xs text-slate-700 font-medium">Select position:</label>
                       <div className="space-y-1">
-                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-white/15 hover:border-blue-400/50 bg-white/5 hover:bg-blue-500/10 cursor-pointer transition-all">
+                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all">
                           <input
                             type="radio"
                             name="employeeType"
@@ -313,10 +313,10 @@ export default function Signup() {
                             onChange={(e) => setForm({ ...form, employeeType: e.target.value })}
                             className="w-3 h-3"
                           />
-                          <span className="ml-2 text-white text-xs md:text-sm">🧹 Car Washer</span>
+                          <span className="ml-2 text-slate-900 text-xs md:text-sm">🧹 Car Washer</span>
                         </label>
 
-                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-white/15 hover:border-blue-400/50 bg-white/5 hover:bg-blue-500/10 cursor-pointer transition-all">
+                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all">
                           <input
                             type="radio"
                             name="employeeType"
@@ -325,10 +325,10 @@ export default function Signup() {
                             onChange={(e) => setForm({ ...form, employeeType: e.target.value })}
                             className="w-3 h-3"
                           />
-                          <span className="ml-2 text-white text-xs md:text-sm">🏍️ Rider</span>
+                          <span className="ml-2 text-slate-900 text-xs md:text-sm">🏍️ Rider</span>
                         </label>
 
-                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-white/15 hover:border-blue-400/50 bg-white/5 hover:bg-blue-500/10 cursor-pointer transition-all">
+                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all">
                           <input
                             type="radio"
                             name="employeeType"
@@ -337,7 +337,7 @@ export default function Signup() {
                             onChange={(e) => setForm({ ...form, employeeType: e.target.value })}
                             className="w-3 h-3"
                           />
-                          <span className="ml-2 text-white text-xs md:text-sm">💰 Sales Executive</span>
+                          <span className="ml-2 text-slate-900 text-xs md:text-sm">💰 Sales Executive</span>
                         </label>
                       </div>
                     </div>
@@ -349,10 +349,10 @@ export default function Signup() {
                       <input
                         name="name"
                         onChange={handleChange}
-                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-white/5 border border-white/15 text-white placeholder-transparent focus:ring-2 focus:ring-blue-500/40 outline-none"
+                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-slate-50 border border-blue-200 text-slate-900 placeholder-transparent focus:ring-2 focus:ring-blue-500/40 focus:border-blue-400 outline-none transition-all"
                         placeholder="Full Name"
                       />
-                      <label className="absolute left-3 top-3 text-xs text-slate-300 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-300 transition-all">
+                      <label className="absolute left-3 top-3 text-xs text-slate-600 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-600 transition-all">
                         Full Name
                       </label>
                     </div>
@@ -362,10 +362,10 @@ export default function Signup() {
                         name="email"
                         type="email"
                         onChange={handleChange}
-                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-white/5 border border-white/15 text-white placeholder-transparent focus:ring-2 focus:ring-blue-500/40 outline-none"
+                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-slate-50 border border-blue-200 text-slate-900 placeholder-transparent focus:ring-2 focus:ring-blue-500/40 focus:border-blue-400 outline-none transition-all"
                         placeholder="Email"
                       />
-                      <label className="absolute left-3 top-3 text-xs text-slate-300 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-300 transition-all">
+                      <label className="absolute left-3 top-3 text-xs text-slate-600 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-600 transition-all">
                         Email Address
                       </label>
                     </div>
@@ -374,10 +374,10 @@ export default function Signup() {
                       <input
                         name="phone"
                         onChange={handleChange}
-                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-white/5 border border-white/15 text-white placeholder-transparent focus:ring-2 focus:ring-blue-500/40 outline-none"
+                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-slate-50 border border-blue-200 text-slate-900 placeholder-transparent focus:ring-2 focus:ring-blue-500/40 focus:border-blue-400 outline-none transition-all"
                         placeholder="Phone Number"
                       />
-                      <label className="absolute left-3 top-3 text-xs text-slate-300 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-300 transition-all">
+                      <label className="absolute left-3 top-3 text-xs text-slate-600 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-600 transition-all">
                         Phone Number
                       </label>
                     </div>
@@ -387,10 +387,10 @@ export default function Signup() {
                         name="password"
                         type="password"
                         onChange={handleChange}
-                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-white/5 border border-white/15 text-white placeholder-transparent focus:ring-2 focus:ring-blue-500/40 outline-none"
+                        className="peer w-full px-3 pt-4 pb-1.5 text-sm rounded-2xl bg-slate-50 border border-blue-200 text-slate-900 placeholder-transparent focus:ring-2 focus:ring-blue-500/40 focus:border-blue-400 outline-none transition-all"
                         placeholder="Password"
                       />
-                      <label className="absolute left-3 top-3 text-xs text-slate-300 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-300 transition-all">
+                      <label className="absolute left-3 top-3 text-xs text-slate-600 peer-focus:text-xs peer-focus:top-1.5 peer-focus:text-blue-600 transition-all">
                         Password
                       </label>
                     </div>
@@ -402,16 +402,16 @@ export default function Signup() {
             {/* BUTTON */}
             <button
               onClick={handleSignup}
-              className="mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-2xl bg-linear-to-r from-blue-600 to-cyan-400 hover:from-blue-500 hover:to-cyan-300 text-white font-semibold text-sm md:text-base shadow-lg shadow-blue-900/50 active:scale-[0.98] transition-all"
+              className="mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-2xl bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-sm md:text-base shadow-lg shadow-blue-200/50 active:scale-[0.98] transition-all"
             >
               {form.role === "employee" ? "Request Account (Approval Required)" : "Create Account"}
             </button>
 
-            <p className="text-blue-300 text-center mt-2 text-xs">{message}</p>
+            <p className="text-blue-600 text-center mt-2 text-xs">{message}</p>
 
-            <p className="mt-3 md:mt-4 text-xs text-slate-300 text-center">
+            <p className="mt-3 md:mt-4 text-xs text-slate-600 text-center">
               Already have an account?{" "}
-              <a href="/login" className="text-blue-300 hover:underline">
+              <a href="/login" className="text-blue-600 hover:underline font-semibold">
                 Log in
               </a>
             </p>
@@ -421,13 +421,13 @@ export default function Signup() {
 
       {/* OTP POPUP */}
       {otpMode && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl w-full max-w-sm shadow-2xl">
-            <h2 className="text-2xl font-bold text-white text-center mb-4">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-blue-200 p-8 rounded-3xl w-full max-w-sm shadow-2xl">
+            <h2 className="text-2xl font-bold text-slate-900 text-center mb-4">
               Verify OTP
             </h2>
 
-            <p className="text-center text-sm text-slate-300 mb-4">
+            <p className="text-center text-sm text-slate-600 mb-4">
               We've sent an OTP to <strong>{form.email || form.phone}</strong>
             </p>
 
@@ -436,13 +436,13 @@ export default function Signup() {
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full text-center text-2xl tracking-widest p-3 bg-white/20 text-white rounded-xl border border-white/20 focus:ring-2 focus:ring-blue-400 outline-none"
+              className="w-full text-center text-2xl tracking-widest p-3 bg-slate-50 text-slate-900 rounded-xl border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all"
               placeholder="______"
             />
 
             <button
               onClick={handleVerifyOtp}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all"
+              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-200/50"
             >
               Verify OTP
             </button>
@@ -453,8 +453,8 @@ export default function Signup() {
                 disabled={resendTimer > 0 || isResending}
                 className={`flex-1 py-2 rounded-xl font-semibold text-sm transition-all ${
                   resendTimer > 0 || isResending
-                    ? "bg-slate-600 text-slate-400 cursor-not-allowed"
-                    : "bg-slate-700 text-blue-300 hover:bg-slate-600"
+                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    : "bg-slate-100 text-blue-600 hover:bg-slate-200"
                 }`}
               >
                 {isResending
@@ -465,7 +465,7 @@ export default function Signup() {
               </button>
             </div>
 
-            <p className="mt-4 text-center text-sm text-slate-300">{message}</p>
+            <p className="mt-4 text-center text-sm text-slate-600">{message}</p>
           </div>
         </div>
       )}

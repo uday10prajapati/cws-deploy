@@ -7,6 +7,7 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Get current user
   useEffect(() => {
@@ -17,21 +18,30 @@ export const NotificationProvider = ({ children }) => {
     getUser();
   }, []);
 
-  // Load notifications from database
+  // Load notifications from database via API
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const loadNotifications = async () => {
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:5000/notifications/user/${user.id}`);
+        const result = await response.json();
 
-      if (data) {
-        setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.read).length);
+        if (result.success) {
+          setNotifications(result.data || []);
+          const unread = (result.data || []).filter((n) => !n.read).length;
+          setUnreadCount(unread);
+        }
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+        setNotifications([]);
+        setUnreadCount(0);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -76,84 +86,109 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [user]);
 
-  // Add notification
+  // Add notification via API
   const addNotification = useCallback(
     async (type, title, message, data = {}) => {
       if (!user) return;
 
-      const notificationData = {
-        user_id: user.id,
-        type, // 'payment', 'booking', 'pass', 'wallet', 'pickup', 'delivery'
-        title,
-        message,
-        data: JSON.stringify(data),
-        read: false,
-        created_at: new Date().toISOString(),
-      };
+      try {
+        const response = await fetch("http://localhost:5000/notifications/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user.id,
+            type,
+            title,
+            message,
+            data,
+          }),
+        });
 
-      const { data: newNotif } = await supabase
-        .from("notifications")
-        .insert([notificationData])
-        .select()
-        .single();
+        const result = await response.json();
 
-      if (newNotif) {
-        setNotifications((prev) => [newNotif, ...prev]);
-        setUnreadCount((prev) => prev + 1);
+        if (result.success) {
+          // Notification will be added via real-time subscription
+          console.log("✅ Notification created:", title);
+        } else {
+          console.error("Failed to create notification:", result.error);
+        }
+      } catch (err) {
+        console.error("Error adding notification:", err);
       }
     },
     [user]
   );
 
-  // Mark as read
+  // Mark as read via API
   const markAsRead = useCallback(async (notificationId) => {
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("id", notificationId);
-
-    if (!error) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+    try {
+      const response = await fetch(
+        `http://localhost:5000/notifications/${notificationId}/read`,
+        { method: "PUT" }
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      const result = await response.json();
+
+      if (result.success) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
     }
   }, []);
 
-  // Mark all as read
+  // Mark all as read via API
   const markAllAsRead = useCallback(async () => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", user.id)
-      .eq("read", false);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/notifications/user/${user.id}/read-all`,
+        { method: "PUT" }
+      );
 
-    if (!error) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
+      const result = await response.json();
+
+      if (result.success) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error("Error marking all notifications as read:", err);
     }
   }, [user]);
 
-  // Delete notification
+  // Delete notification via API
   const deleteNotification = useCallback(async (notificationId) => {
-    const { error } = await supabase
-      .from("notifications")
-      .delete()
-      .eq("id", notificationId);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/notifications/${notificationId}`,
+        { method: "DELETE" }
+      );
 
-    if (!error) {
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      const result = await response.json();
+
+      if (result.success) {
+        const notification = notifications.find((n) => n.id === notificationId);
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+        if (notification && !notification.read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      }
+    } catch (err) {
+      console.error("Error deleting notification:", err);
     }
-  }, []);
+  }, [notifications]);
 
   return (
     <NotificationContext.Provider
       value={{
         notifications,
         unreadCount,
+        loading,
         addNotification,
         markAsRead,
         markAllAsRead,
