@@ -109,38 +109,38 @@ export default function NavbarNew() {
 
   /* ADMIN MENU */
   const adminMainMenu = [
-    { label: "Dashboard", link: "/admin/dashboard", icon: <FiHome /> },
+    { label: "Dashboard", link: "/admin-dashboard", icon: <FiHome /> },
     { label: "Bookings", link: "/admin/bookings", icon: <FiClipboard /> },
   ];
 
   const operationsMenu = [
-    { label: "Approvals", link: "/admin/operations/approvals", icon: <FiAlertCircle /> },
-    { label: "Users", link: "/admin/operations/users", icon: <FiUsers /> },
-    { label: "Riders", link: "/admin/operations/riders", icon: <FiTruck /> },
-    { label: "Customer Accounts", link: "/admin/operations/customer-accounts", icon: <FiUsers /> },
-    { label: "Cars", link: "/admin/operations/cars", icon: <FaCar /> },
-    { label: "Washer Documents", link: "/admin/operations/washer-documents", icon: <FiAlertCircle /> },
-    { label: "Emergency Wash", link: "/admin/operations/emergency-wash", icon: <FiWind /> },
-    { label: "Scan QR", link: "/admin/operations/scan-qr", icon: <FiAlertCircle /> },
+    { label: "Approvals", link: "/admin/approvals", icon: <FiAlertCircle /> },
+    { label: "Users", link: "/admin/users", icon: <FiUsers /> },
+    { label: "Riders", link: "/admin/riders", icon: <FiTruck /> },
+    { label: "Customer Accounts", link: "/admin/customer-accounts", icon: <FiUsers /> },
+    { label: "Cars", link: "/admin/cars", icon: <FaCar /> },
+    { label: "WasherDocuments", link: "/admin/washer-documents", icon: <FiAlertCircle /> },
+    { label: "Emergency Wash", link: "/admin/emergency-wash", icon: <FiWind /> },
+    { label: "Scan QR", link: "/admin/scan-qr", icon: <FiAlertCircle /> },
   ];
 
   const financeMenu = [
-    { label: "Revenue", link: "/admin/finance/revenue", icon: <FiDollarSign /> },
-    { label: "Earnings", link: "/admin/finance/earnings", icon: <FiTrendingUp /> },
-    { label: "Bank Account", link: "/admin/finance/bank-account", icon: <FiCreditCard /> },
-    { label: "Pass Expirations", link: "/admin/finance/pass-expirations", icon: <FiAward /> },
-    { label: "Loyalty Points", link: "/admin/finance/loyalty-points", icon: <FiGift /> },
+    { label: "Revenue", link: "/admin/AllRevenue", icon: <FiDollarSign /> },
+    { label: "Earnings", link: "/admin/earnings", icon: <FiTrendingUp /> },
+    { label: "Bank Account", link: "/admin/bank-account", icon: <FiCreditCard /> },
+    { label: "Pass Expirations", link: "/admin/pass-expirations", icon: <FiAward /> },
+    { label: "Loyalty Dashboard", link: "/admin/loyalty-dashboard", icon: <FiGift /> },
   ];
 
   const reportsMenu = [
-    { label: "Analytics", link: "/admin/reports/analytics", icon: <FiTrendingUp /> },
-    { label: "Booking Reports", link: "/admin/reports/booking-reports", icon: <FiClipboard /> },
-    { label: "Revenue Reports", link: "/admin/reports/revenue-reports", icon: <FiDollarSign /> },
+    { label: "Analytics", link: "/admin/analytics", icon: <FiTrendingUp /> },
+    { label: "Booking Reports", link: "/admin/booking-reports", icon: <FiClipboard /> },
+    { label: "Revenue Reports", link: "/admin/revenue-reports", icon: <FiDollarSign /> },
   ];
 
   const adminAccountMenu = [
     { label: "Settings", link: "/admin/settings", icon: <FiSettings /> },
-    { label: "Profile", link: "/admin/profile", icon: <FiUser /> },
+    { label: "Profile", link: "/profile", icon: <FiUser /> },
     { label: "About Us", link: "/about-us", icon: <FiInfo /> },
   ];
 

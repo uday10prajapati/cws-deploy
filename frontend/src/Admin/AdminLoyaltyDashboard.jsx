@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FiAward, FiTrendingUp, FiUsers, FiBarChart2 } from "react-icons/fi";
+import NavbarNew from "../components/NavbarNew";
+
 
 const AdminLoyaltyDashboard = () => {
   const [dailySummary, setDailySummary] = useState(null);
@@ -45,246 +47,241 @@ const AdminLoyaltyDashboard = () => {
   }
 
   return (
-    <div className="w-full space-y-6">
-      {/* Header */}
-      <div className="bg-linear-to-r from-yellow-600 to-orange-600 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FiAward size={32} />
-            <div>
-              <h2 className="text-2xl font-bold">Washer Loyalty Points</h2>
-              <p className="text-yellow-100 text-sm">
-                Monitor daily wash activity and points earned
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    {/* Navbar (same as Riders page) */}
+    <NavbarNew />
+
+    <main className="flex-1 overflow-auto">
+      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FiAward size={32} />
+              <div>
+                <h2 className="text-2xl font-bold">Washer Loyalty Points</h2>
+                <p className="text-yellow-100 text-sm">
+                  Monitor daily wash activity and points earned
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-4xl font-bold">
+                {dailySummary?.summary.total_cars_washed || 0}
+              </p>
+              <p className="text-yellow-100 text-sm">Cars Washed Today</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <FiUsers className="text-blue-600" />
+              <p className="text-slate-600 font-semibold text-sm">
+                Active Washers
               </p>
             </div>
+            <p className="text-3xl font-bold text-blue-600">
+              {dailySummary?.summary.active_washers || 0}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">Worked today</p>
           </div>
-          <div className="text-right">
-            <p className="text-4xl font-bold">{dailySummary?.summary.total_cars_washed || 0}</p>
-            <p className="text-yellow-100 text-sm">Cars Washed Today</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Active Washers */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <FiUsers className="text-blue-400" size={20} />
-            <p className="text-slate-300 font-semibold text-sm">Active Washers</p>
-          </div>
-          <p className="text-3xl font-bold text-blue-400">
-            {dailySummary?.summary.active_washers || 0}
-          </p>
-          <p className="text-slate-400 text-xs mt-2">Worked today</p>
-        </div>
-
-        {/* Total Cars Washed */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <FiBarChart2 className="text-green-400" size={20} />
-            <p className="text-slate-300 font-semibold text-sm">Total Washes</p>
-          </div>
-          <p className="text-3xl font-bold text-green-400">
-            {dailySummary?.summary.total_cars_washed || 0}
-          </p>
-          <p className="text-slate-400 text-xs mt-2">Today's total</p>
-        </div>
-
-        {/* Points Earned Today */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <FiAward className="text-yellow-400" size={20} />
-            <p className="text-slate-300 font-semibold text-sm">Points Earned</p>
-          </div>
-          <p className="text-3xl font-bold text-yellow-400">
-            {dailySummary?.summary.total_points_earned || 0}
-          </p>
-          <p className="text-slate-400 text-xs mt-2">Today's points</p>
-        </div>
-
-        {/* Average Per Washer */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <FiTrendingUp className="text-purple-400" size={20} />
-            <p className="text-slate-300 font-semibold text-sm">Avg/Washer</p>
-          </div>
-          <p className="text-3xl font-bold text-purple-400">
-            {dailySummary?.summary.average_cars_per_washer || 0}
-          </p>
-          <p className="text-slate-400 text-xs mt-2">Cars per washer</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-slate-700">
-        <button
-          onClick={() => setActiveTab("summary")}
-          className={`px-6 py-3 font-semibold transition border-b-2 ${
-            activeTab === "summary"
-              ? "border-blue-500 text-blue-400"
-              : "border-transparent text-slate-400 hover:text-white"
-          }`}
-        >
-          Today's Summary
-        </button>
-        <button
-          onClick={() => setActiveTab("leaderboard")}
-          className={`px-6 py-3 font-semibold transition border-b-2 ${
-            activeTab === "leaderboard"
-              ? "border-blue-500 text-blue-400"
-              : "border-transparent text-slate-400 hover:text-white"
-          }`}
-        >
-          All-Time Leaderboard
-        </button>
-      </div>
-
-      {/* Today's Summary */}
-      {activeTab === "summary" && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-          <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <FiBarChart2 className="text-blue-400" />
-            Today's Active Washers
-          </h3>
-
-          {!dailySummary?.washers || dailySummary.washers.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-400">No washers worked today</p>
+          <div className="bg-white border border-slate-200 rounded-lg p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <FiBarChart2 className="text-green-600" />
+              <p className="text-slate-600 font-semibold text-sm">
+                Total Washes
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {dailySummary.washers.map((washer, index) => (
-                <div
-                  key={washer.id}
-                  className="flex items-center justify-between p-4 bg-slate-700/20 rounded-lg hover:bg-slate-700/40 transition"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">
-                      #{index + 1}
+            <p className="text-3xl font-bold text-green-600">
+              {dailySummary?.summary.total_cars_washed || 0}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">Today</p>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-lg p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <FiAward className="text-yellow-600" />
+              <p className="text-slate-600 font-semibold text-sm">
+                Points Earned
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-yellow-600">
+              {dailySummary?.summary.total_points_earned || 0}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">Today</p>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-lg p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <FiTrendingUp className="text-purple-600" />
+              <p className="text-slate-600 font-semibold text-sm">
+                Avg / Washer
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-purple-600">
+              {dailySummary?.summary.average_cars_per_washer || 0}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">Cars per washer</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-6 border-b border-slate-200">
+          <button
+            onClick={() => setActiveTab("summary")}
+            className={`pb-3 font-semibold transition ${
+              activeTab === "summary"
+                ? "border-b-2 border-blue-600 text-blue-600"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Today’s Summary
+          </button>
+          <button
+            onClick={() => setActiveTab("leaderboard")}
+            className={`pb-3 font-semibold transition ${
+              activeTab === "leaderboard"
+                ? "border-b-2 border-blue-600 text-blue-600"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            All-Time Leaderboard
+          </button>
+        </div>
+
+        {/* Today's Summary */}
+        {activeTab === "summary" && (
+          <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900">
+              <FiBarChart2 className="text-blue-600" />
+              Today’s Active Washers
+            </h3>
+
+            {!dailySummary?.washers?.length ? (
+              <p className="text-center text-slate-500 py-10">
+                No washers worked today
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {dailySummary.washers.map((washer, index) => (
+                  <div
+                    key={washer.id}
+                    className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                        #{index + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {washer.profiles?.full_name || "Unknown Washer"}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {washer.profiles?.email}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-white">
-                        {washer.profiles?.full_name || "Unknown Washer"}
-                      </p>
-                      <p className="text-sm text-slate-400">
-                        {washer.profiles?.email}
-                      </p>
+
+                    <div className="flex items-center gap-8 text-right">
+                      <div>
+                        <p className="text-xl font-bold text-green-600">
+                          {washer.cars_washed_today}
+                        </p>
+                        <p className="text-xs text-slate-500">Today</p>
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold text-yellow-600">
+                          {washer.total_points}
+                        </p>
+                        <p className="text-xs text-slate-500">Points</p>
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold text-purple-600">
+                          {washer.cars_washed_all_time}
+                        </p>
+                        <p className="text-xs text-slate-500">All-time</p>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-                  <div className="flex items-center gap-6 text-right">
-                    <div>
-                      <p className="text-2xl font-bold text-green-400">
-                        {washer.cars_washed_today}
-                      </p>
-                      <p className="text-xs text-slate-400">Today</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-400">
-                        {washer.total_points}
-                      </p>
-                      <p className="text-xs text-slate-400">Total</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-purple-400">
-                        {washer.cars_washed_all_time}
-                      </p>
-                      <p className="text-xs text-slate-400">All-time</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        {/* Leaderboard */}
+        {activeTab === "leaderboard" && (
+          <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900">
+              <FiAward className="text-yellow-600" />
+              All-Time Loyalty Leaderboard
+            </h3>
 
-      {/* Leaderboard */}
-      {activeTab === "leaderboard" && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-          <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <FiAward className="text-yellow-400" />
-            All-Time Loyalty Points Leaderboard
-          </h3>
-
-          {leaderboard.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-400">No leaderboard data yet</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="px-4 py-3 text-left text-slate-300 font-semibold">Rank</th>
-                    <th className="px-4 py-3 text-left text-slate-300 font-semibold">Washer</th>
-                    <th className="px-4 py-3 text-right text-slate-300 font-semibold">
-                      Total Points
-                    </th>
-                    <th className="px-4 py-3 text-right text-slate-300 font-semibold">
-                      All-Time Washes
-                    </th>
-                    <th className="px-4 py-3 text-right text-slate-300 font-semibold">
-                      Today's Washes
-                    </th>
-                    <th className="px-4 py-3 text-right text-slate-300 font-semibold">
-                      Last Wash
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((washer, index) => {
-                    let medalEmoji = "";
-                    if (index === 0) medalEmoji = "🥇";
-                    else if (index === 1) medalEmoji = "🥈";
-                    else if (index === 2) medalEmoji = "🥉";
-
-                    return (
+            {!leaderboard.length ? (
+              <p className="text-center text-slate-500 py-10">
+                No leaderboard data yet
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Rank</th>
+                      <th className="px-4 py-3 text-left">Washer</th>
+                      <th className="px-4 py-3 text-right">Points</th>
+                      <th className="px-4 py-3 text-right">All-Time</th>
+                      <th className="px-4 py-3 text-right">Today</th>
+                      <th className="px-4 py-3 text-right">Last Wash</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((washer, index) => (
                       <tr
                         key={washer.id}
-                        className="border-b border-slate-700 hover:bg-slate-700/20 transition"
+                        className="border-t border-slate-200 hover:bg-slate-50"
                       >
-                        <td className="px-4 py-3 font-bold text-slate-300">
-                          {medalEmoji || `#${index + 1}`}
+                        <td className="px-4 py-3 font-bold">
+                          #{index + 1}
                         </td>
                         <td className="px-4 py-3">
-                          <div>
-                            <p className="text-white font-semibold">
-                              {washer.profiles?.full_name}
-                            </p>
-                            <p className="text-xs text-slate-400">
-                              {washer.profiles?.email}
-                            </p>
-                          </div>
+                          <p className="font-semibold text-slate-900">
+                            {washer.profiles?.full_name}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {washer.profiles?.email}
+                          </p>
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full font-bold">
-                            {washer.total_points}
-                          </span>
+                        <td className="px-4 py-3 text-right font-bold text-yellow-600">
+                          {washer.total_points}
                         </td>
-                        <td className="px-4 py-3 text-right text-green-400 font-semibold">
+                        <td className="px-4 py-3 text-right text-green-600 font-semibold">
                           {washer.cars_washed_all_time}
                         </td>
-                        <td className="px-4 py-3 text-right text-blue-400 font-semibold">
+                        <td className="px-4 py-3 text-right text-blue-600 font-semibold">
                           {washer.cars_washed_today}
                         </td>
-                        <td className="px-4 py-3 text-right text-slate-400">
+                        <td className="px-4 py-3 text-right text-slate-500">
                           {washer.last_wash_date
                             ? new Date(washer.last_wash_date).toLocaleDateString()
                             : "N/A"}
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </main>
+  </div>
+);
 };
 
 export default AdminLoyaltyDashboard;

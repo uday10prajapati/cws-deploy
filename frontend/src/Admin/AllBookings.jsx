@@ -1,21 +1,25 @@
 import { useEffect, useState } from "react";
-import { FiSearch, FiRefreshCw, FiFilter, FiMenu, FiLogOut, FiChevronLeft, FiHome, FiClipboard, FiUsers, FiDollarSign, FiTrendingUp, FiSettings, FiCreditCard, FiBell, FiX } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiFilter, FiLogOut } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { FaCar } from "react-icons/fa";
+import NavbarNew from "../components/NavbarNew";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 
 export default function AllBookings() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [villageSearch, setVillageSearch] = useState("");
+  const [citySearch, setCitySearch] = useState("");
+  const [stateSearch, setStateSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [villageSuggestions, setVillageSuggestions] = useState([]);
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [stateSuggestions, setStateSuggestions] = useState([]);
+  const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showStateSuggestions, setShowStateSuggestions] = useState(false);
   useRoleBasedRedirect("admin");
   useEffect(() => {
     const loadUser = async () => {
@@ -36,8 +40,52 @@ export default function AllBookings() {
     try {
       const response = await fetch("http://localhost:5000/admin/recent-bookings");
       const result = await response.json();
-      if (result.success) {
-        setBookings(result.data);
+      console.log("API Response:", result); // Debug: Check API response
+      
+      if (result.success && result.data) {
+        // Fetch profiles for each booking to get customer details
+        const bookingsWithProfiles = await Promise.all(
+          result.data.map(async (booking) => {
+            try {
+              console.log("Processing booking:", booking); // Debug: Check booking structure
+              
+              // Try to get profile from Supabase if customer_id exists
+              if (booking.customer_id) {
+                console.log("Fetching profile for customer_id:", booking.customer_id);
+                
+                const { data: profile, error } = await supabase
+                  .from("profiles")
+                  .select("*")
+                  .eq("id", booking.customer_id)
+                  .single();
+
+                console.log("Profile result:", { profile, error }); // Debug: Check profile fetch
+
+                if (profile && !error) {
+                  const enrichedBooking = {
+                    ...booking,
+                    customer_name: profile.full_name || profile.name || booking.customer_name || "N/A",
+                    village: profile.village || booking.village || "",
+                    city: profile.city || booking.city || "",
+                    state: profile.state || booking.state || "",
+                    location: profile.city || booking.location || "",
+                  };
+                  console.log("Enriched booking:", enrichedBooking);
+                  return enrichedBooking;
+                }
+              }
+              console.log("Returning original booking (no profile):", booking);
+              return booking;
+            } catch (error) {
+              console.error("Error fetching profile:", error);
+              return booking;
+            }
+          })
+        );
+        console.log("Final bookings with profiles:", bookingsWithProfiles);
+        setBookings(bookingsWithProfiles);
+      } else {
+        console.error("API response not successful or no data:", result);
       }
     } catch (error) {
       console.error("Error loading bookings:", error);
@@ -47,25 +95,136 @@ export default function AllBookings() {
   };
 
   const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.car_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.id?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Use profile data for filtering
+    const villageValue = booking.village || "";
+    const cityValue = booking.city || booking.location || "";
+    const stateValue = booking.state || "";
+
+    const matchesVillage =
+      !villageSearch.trim() ||
+      villageValue.toLowerCase().includes(villageSearch.toLowerCase());
+    
+    const matchesCity =
+      !citySearch.trim() ||
+      cityValue.toLowerCase().includes(citySearch.toLowerCase());
+    
+    const matchesState =
+      !stateSearch.trim() ||
+      stateValue.toLowerCase().includes(stateSearch.toLowerCase());
 
     const matchesStatus =
       statusFilter === "All" || booking.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesVillage && matchesCity && matchesState && matchesStatus;
   });
+
+  // Generate village suggestions
+  const generateVillageSuggestions = (input) => {
+    if (!input.trim()) {
+      setVillageSuggestions([]);
+      return;
+    }
+
+    const lowerInput = input.toLowerCase();
+    const uniqueSuggestions = new Set();
+
+    bookings.forEach((booking) => {
+      const village = booking.village || "";
+      if (village.toLowerCase().includes(lowerInput)) {
+        uniqueSuggestions.add(village);
+      }
+    });
+
+    setVillageSuggestions(Array.from(uniqueSuggestions).sort());
+  };
+
+  // Generate city suggestions
+  const generateCitySuggestions = (input) => {
+    if (!input.trim()) {
+      setCitySuggestions([]);
+      return;
+    }
+
+    const lowerInput = input.toLowerCase();
+    const uniqueSuggestions = new Set();
+
+    bookings.forEach((booking) => {
+      const city = booking.city || booking.location || "";
+      if (city.toLowerCase().includes(lowerInput)) {
+        uniqueSuggestions.add(city);
+      }
+    });
+
+    setCitySuggestions(Array.from(uniqueSuggestions).sort());
+  };
+
+  // Generate state suggestions
+  const generateStateSuggestions = (input) => {
+    if (!input.trim()) {
+      setStateSuggestions([]);
+      return;
+    }
+
+    const lowerInput = input.toLowerCase();
+    const uniqueSuggestions = new Set();
+
+    bookings.forEach((booking) => {
+      const state = booking.state || "";
+      if (state.toLowerCase().includes(lowerInput)) {
+        uniqueSuggestions.add(state);
+      }
+    });
+
+    setStateSuggestions(Array.from(uniqueSuggestions).sort());
+  };
+
+  const handleVillageChange = (e) => {
+    const value = e.target.value;
+    setVillageSearch(value);
+    generateVillageSuggestions(value);
+    setShowVillageSuggestions(true);
+  };
+
+  const handleCityChange = (e) => {
+    const value = e.target.value;
+    setCitySearch(value);
+    generateCitySuggestions(value);
+    setShowCitySuggestions(true);
+  };
+
+  const handleStateChange = (e) => {
+    const value = e.target.value;
+    setStateSearch(value);
+    generateStateSuggestions(value);
+    setShowStateSuggestions(true);
+  };
+
+  const handleVillageSuggestionClick = (suggestion) => {
+    setVillageSearch(suggestion);
+    setVillageSuggestions([]);
+    setShowVillageSuggestions(false);
+  };
+
+  const handleCitySuggestionClick = (suggestion) => {
+    setCitySearch(suggestion);
+    setCitySuggestions([]);
+    setShowCitySuggestions(false);
+  };
+
+  const handleStateSuggestionClick = (suggestion) => {
+    setStateSearch(suggestion);
+    setStateSuggestions([]);
+    setShowStateSuggestions(false);
+  };
 
   const getStatusColor = (status) => {
     const colors = {
-      Pending: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-      Confirmed: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      "In Progress": "bg-purple-500/20 text-purple-300 border-purple-500/30",
-      Completed: "bg-green-500/20 text-green-300 border-green-500/30",
+      Pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
+      Confirmed: "bg-blue-100 text-blue-700 border-blue-300",
+      "In Progress": "bg-purple-100 text-purple-700 border-purple-300",
+      Completed: "bg-green-100 text-green-700 border-green-300",
     };
-    return colors[status] || "bg-slate-500/20 text-slate-300";
+    return colors[status] || "bg-slate-100 text-slate-700 border-slate-300";
   };
 
   const handleLogout = async () => {
@@ -73,182 +232,133 @@ export default function AllBookings() {
     window.location.href = "/login";
   };
 
-  const adminMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard" },
-    { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings" },
-    { name: "Users", icon: <FiUsers />, link: "/admin/users" },
-    { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings" },
-    { name: "Cars", icon: <FaCar />, link: "/admin/cars" },
-    { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue" },
-    { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics" },
-    { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account" },
-    { name: "Settings", icon: <FiSettings />, link: "/admin/settings" },
-  ];
-
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu className="text-2xl cursor-pointer" onClick={() => setSidebarOpen(true)} />
-      </div>
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">{collapsed ? "CW" : "CarWash+"}</span>
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">All Bookings</h1>
+            <p className="text-slate-600">Manage and track all service bookings</p>
+          </div>
+          <button
+            onClick={loadBookings}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition shadow-md"
+          >
+            <FiRefreshCw /> Refresh
+          </button>
         </div>
 
-        <nav className="mt-4 px-3 pb-24">
-          {adminMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg mb-2 font-medium transition-all 
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            px-4 py-2 rounded-lg cursor-pointer flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
-        {/* ▓▓▓ NAVBAR ▓▓▓ */}
-        <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
-          <h1 className="text-2xl font-bold">All Bookings</h1>
-
-          <div className="flex items-center gap-8 relative">
-            {/* NOTIFICATIONS BELL */}
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="text-xl text-slate-300 hover:text-blue-400 transition relative group"
-            >
-              <FiBell />
-              {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-              )}
-            </button>
-
-            {/* NOTIFICATIONS DROPDOWN */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-96 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto top-12">
-                <div className="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
-                  <h3 className="font-semibold text-white text-sm">Notifications</h3>
-                  <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-white transition">
-                    <FiX />
-                  </button>
-                </div>
-                {notifications.length > 0 ? (
-                  notifications.map((notif, idx) => (
-                    <div key={idx} className="p-4 border-b border-slate-800 hover:bg-slate-800/50 transition last:border-b-0">
-                      <div className="flex items-start gap-3">
-                        <span className="text-xl">{notif.icon}</span>
-                        <div className="flex-1">
-                          <p className="font-medium text-white text-sm">{notif.title}</p>
-                          <p className="text-xs text-slate-400 mt-1">{notif.message}</p>
-                          <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
-                        </div>
+        {/* FILTERS */}
+        <div className="bg-white rounded-xl p-6 shadow-md border border-slate-200 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* VILLAGE SEARCH */}
+            <div className="relative">
+              <label className="block text-xs font-semibold text-slate-700 mb-2">🏘️ Village</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search village..."
+                  value={villageSearch}
+                  onChange={handleVillageChange}
+                  onFocus={() => villageSearch && setShowVillageSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowVillageSuggestions(false), 200)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                />
+                
+                {/* VILLAGE SUGGESTIONS */}
+                {showVillageSuggestions && villageSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                    {villageSuggestions.slice(0, 8).map((suggestion, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => handleVillageSuggestionClick(suggestion)}
+                        className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-slate-900 text-sm border-b border-slate-200 last:border-b-0 transition"
+                      >
+                        <span className="font-medium">{suggestion}</span>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center">
-                    <p className="text-slate-400 text-sm">No notifications yet</p>
+                    ))}
                   </div>
                 )}
               </div>
-            )}
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
-        <main className="p-4 md:p-8 space-y-6">
-          {/* HEADER */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">All Bookings</h1>
-              <p className="text-slate-400">Total bookings: {bookings.length}</p>
             </div>
-            <button
-              onClick={loadBookings}
-              className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg flex items-center gap-2 transition"
-            >
-              <FiRefreshCw /> Refresh
-            </button>
-          </div>
 
-          {/* FILTERS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* CITY SEARCH */}
             <div className="relative">
-              <FiSearch className="absolute left-3 top-3 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search booking ID, customer, car..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              />
+              <label className="block text-xs font-semibold text-slate-700 mb-2">🏙️ City</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search city..."
+                  value={citySearch}
+                  onChange={handleCityChange}
+                  onFocus={() => citySearch && setShowCitySuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                />
+                
+                {/* CITY SUGGESTIONS */}
+                {showCitySuggestions && citySuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                    {citySuggestions.slice(0, 8).map((suggestion, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => handleCitySuggestionClick(suggestion)}
+                        className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-slate-900 text-sm border-b border-slate-200 last:border-b-0 transition"
+                      >
+                        <span className="font-medium">{suggestion}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <FiFilter className="text-slate-400" />
+            {/* STATE SEARCH */}
+            <div className="relative">
+              <label className="block text-xs font-semibold text-slate-700 mb-2">🏛️ State</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search state..."
+                  value={stateSearch}
+                  onChange={handleStateChange}
+                  onFocus={() => stateSearch && setShowStateSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowStateSuggestions(false), 200)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                />
+                
+                {/* STATE SUGGESTIONS */}
+                {showStateSuggestions && stateSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                    {stateSuggestions.slice(0, 8).map((suggestion, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => handleStateSuggestionClick(suggestion)}
+                        className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-slate-900 text-sm border-b border-slate-200 last:border-b-0 transition"
+                      >
+                        <span className="font-medium">{suggestion}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* STATUS FILTER */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-2">✓ Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-900/80 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-blue-500"
               >
                 <option>All</option>
                 <option>Pending</option>
@@ -257,79 +367,78 @@ export default function AllBookings() {
                 <option>Completed</option>
               </select>
             </div>
-
-            <div className="text-right pt-2">
-              <p className="text-sm text-slate-400">
-                Showing {filteredBookings.length} of {bookings.length} bookings
-              </p>
-            </div>
           </div>
+          
+          {/* RESULTS COUNT */}
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <p className="text-sm text-slate-600 font-medium">
+              📊 Showing <span className="text-blue-600 font-bold">{filteredBookings.length}</span> of <span className="font-bold">{bookings.length}</span> bookings
+            </p>
+          </div>
+        </div>
 
-          {/* TABLE */}
-          {loading ? (
-            <div className="text-center py-12">
-              <FiRefreshCw className="text-4xl animate-spin mx-auto mb-4 text-blue-400" />
-              <p>Loading bookings...</p>
-            </div>
-          ) : (
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-800/50 border-b border-slate-700">
+        {/* TABLE */}
+        {loading ? (
+          <div className="text-center py-12 bg-white rounded-xl shadow-md">
+            <FiRefreshCw className="text-4xl animate-spin mx-auto mb-4 text-blue-600" />
+            <p className="text-slate-600 font-medium">Loading bookings...</p>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-md">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Customer Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Car</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Service</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Date & Time</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Amount</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBookings.length === 0 ? (
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Booking ID</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Customer</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Car</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Service</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Date & Time</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Amount</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                      <td colSpan="6" className="px-6 py-12 text-center text-slate-600">
+                        No bookings found
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBookings.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
-                          No bookings found
+                  ) : (
+                    filteredBookings.map((booking) => (
+                      <tr
+                        key={booking.id}
+                        className="border-b border-slate-200 hover:bg-slate-50 transition"
+                      >
+                        <td className="px-6 py-4 text-sm text-slate-900 font-semibold">{booking.customer_name || booking.customer || "N/A"}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{booking.car_name || booking.car || "N/A"}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          {Array.isArray(booking.services) ? booking.services[0] : booking.services || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {booking.date} {booking.time}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold text-green-600">
+                          ₹{(booking.amount || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                              booking.status
+                            )}`}
+                          >
+                            {booking.status}
+                          </span>
                         </td>
                       </tr>
-                    ) : (
-                      filteredBookings.map((booking) => (
-                        <tr
-                          key={booking.id}
-                          className="border-b border-slate-800 hover:bg-slate-800/50 transition"
-                        >
-                          <td className="px-6 py-4 text-sm font-mono text-blue-400">{booking.id}</td>
-                          <td className="px-6 py-4 text-sm">{booking.customer_name || "N/A"}</td>
-                          <td className="px-6 py-4 text-sm">{booking.car_name || "N/A"}</td>
-                          <td className="px-6 py-4 text-sm">
-                            {Array.isArray(booking.services) ? booking.services[0] : booking.services || "N/A"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-400">
-                            {booking.date} {booking.time}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-semibold text-green-400">
-                            ₹{(booking.amount || 0).toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                                booking.status
-                              )}`}
-                            >
-                              {booking.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
-        </main>
-      </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

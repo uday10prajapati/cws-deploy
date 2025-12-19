@@ -43,11 +43,16 @@ import Analytics from "./Admin/Analytics.jsx";
 import Settings from "./Admin/Settings.jsx";
 import AllCars from "./Admin/AllCars.jsx";
 import AdminEarnings from "./Admin/Earnings.jsx";
+import AdminDocumentVerification from "./Admin/AdminDocumentVerification.jsx";
 import ScanCustomerQR from "./Employee/ScanCustomerQR.jsx";
 import AboutUs from "./AboutUs.jsx";
 import EmergencyWashRequest from "./Customer/EmergencyWashRequest.jsx";
 import AdminEmergencyWashManagement from "./Admin/AdminEmergencyWashManagement.jsx";
 import EmployeeEmergencyWash from "./Employee/EmployeeEmergencyWash.jsx";
+import ApprovalPanel from "./Admin/ApprovalPanel.jsx";
+import AdminLoyaltyDashboard from "./Admin/AdminLoyaltyDashboard.jsx";
+import BookingReports from "./Admin/BookingReports.jsx";
+import RevenueReports from "./Admin/RevenueReports.jsx";
 
 export default function App() {
   // Initialize storage bucket on app load
@@ -94,7 +99,7 @@ export default function App() {
         <Route path="/my-cars" element={<Cars />} />
         <Route path="/employee/cars" element={<Cars />} />
         <Route path="/admin/bookings" element={<AllBookings />} />
-        <Route path="/admin/revenue" element={<AllRevenue />} />
+        <Route path="/admin/AllRevenue" element={<AllRevenue />} />
         <Route path="/admin/earnings" element={<AdminEarnings />} />
         <Route path="/admin/users" element={<AllUser />} />
         <Route path="/admin/analytics" element={<Analytics />} />
@@ -106,6 +111,11 @@ export default function App() {
         <Route path="/emergency-wash" element={<EmergencyWashRequest />} />
         <Route path="/admin/emergency-wash" element={<AdminEmergencyWashManagement />} />
         <Route path="/employee/emergency-wash" element={<EmployeeEmergencyWash />} />
+        <Route path="/admin/approvals" element={<ApprovalPanel />} />
+        <Route path="/admin/washer-documents" element={<AdminDocumentVerification />} />
+        <Route path="/admin/loyalty-dashboard" element={<AdminLoyaltyDashboard />} />
+        <Route path="/admin/booking-reports" element={<BookingReports />} />
+        <Route path="/admin/revenue-reports" element={<RevenueReports />} />
       </Routes>
     </NotificationProvider>
   );

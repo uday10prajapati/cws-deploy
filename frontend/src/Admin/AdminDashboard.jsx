@@ -1,33 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import ApprovalPanel from "./ApprovalPanel";
 import ExpiredPassesNotification from "./ExpiredPassesNotification";
 import AdminLoyaltyDashboard from "./AdminLoyaltyDashboard";
 import AdminDocumentVerification from "./AdminDocumentVerification";
+import NavbarNew from "../components/NavbarNew";
 import {
-  FiHome,
-  FiUsers,
-  FiGift,
   FiTrendingUp,
   FiDollarSign,
-  FiBell,
-  FiMenu,
   FiSettings,
   FiClipboard,
-  FiLogOut,
-  FiChevronLeft,
-  FiCreditCard,
   FiAlertCircle,
   FiAward,
+  FiTruck,
+  FiUsers,
+  FiStar,
+  FiBarChart2,
+  FiCheckCircle,
+  FiActivity,
+  FiMapPin,
+  FiHome
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
 export default function AdminDashboard() {
-  const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState("dashboard");
 
@@ -36,8 +34,10 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [recentBookingsData, setRecentBookingsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [bookingTrendData, setBookingTrendData] = useState([]);
+  const [locationData, setLocationData] = useState([]);
+  const [performanceData, setPerformanceData] = useState([]);
+  const [satisfactionData, setSatisfactionData] = useState({});
 
   useEffect(() => {
     const loadUser = async () => {
@@ -56,48 +56,37 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [overviewRes, bookingsRes] = await Promise.all([
+      const [overviewRes, bookingsRes, trendRes, locRes, perfRes, satRes] = await Promise.all([
         fetch("http://localhost:5000/admin/analytics/overview").then((r) => r.json()),
         fetch("http://localhost:5000/admin/recent-bookings").then((r) => r.json()),
+        fetch("http://localhost:5000/admin/booking-trend").then((r) => r.json()).catch(() => ({ success: false })),
+        fetch("http://localhost:5000/admin/location-stats").then((r) => r.json()).catch(() => ({ success: false })),
+        fetch("http://localhost:5000/admin/washer-performance").then((r) => r.json()).catch(() => ({ success: false })),
+        fetch("http://localhost:5000/admin/satisfaction-metrics").then((r) => r.json()).catch(() => ({ success: false })),
       ]);
 
       if (overviewRes.success) {
         setDashboardData(overviewRes.data);
-        // Create notifications from data
-        const notifs = [];
-        if (overviewRes.data.today.bookings > 0) {
-          notifs.push({
-            id: 1,
-            type: "booking",
-            title: `${overviewRes.data.today.bookings} Bookings Today`,
-            message: `Total revenue: ₹${overviewRes.data.today.revenue.toLocaleString()}`,
-            time: "Just now",
-            icon: "📅",
-          });
-        }
-        if (overviewRes.data.today.newUsers > 0) {
-          notifs.push({
-            id: 2,
-            type: "user",
-            title: `${overviewRes.data.today.newUsers} New Users`,
-            message: "Welcome to CarWash+",
-            time: "Few minutes ago",
-            icon: "👤",
-          });
-        }
-        notifs.push({
-          id: 3,
-          type: "info",
-          title: "Active Washers",
-          message: `${overviewRes.data.today.washers} washers are currently active`,
-          time: "Live",
-          icon: "🧑‍🔧",
-        });
-        setNotifications(notifs);
       }
 
       if (bookingsRes.success) {
         setRecentBookingsData(bookingsRes.data.slice(0, 5));
+      }
+
+      if (trendRes.success) {
+        setBookingTrendData(trendRes.data || []);
+      }
+
+      if (locRes.success) {
+        setLocationData(locRes.data || []);
+      }
+
+      if (perfRes.success) {
+        setPerformanceData(perfRes.data || []);
+      }
+
+      if (satRes.success) {
+        setSatisfactionData(satRes.data || {});
       }
     } catch (error) {
       console.error("Error loading dashboard:", error);
@@ -112,9 +101,47 @@ export default function AdminDashboard() {
   };
 
   const stats = [
-    { title: "Today's Bookings", value: dashboardData?.today.bookings || "0", change: "+20%" },
-    { title: "Revenue Today", value: `₹${dashboardData?.today.revenue.toLocaleString() || "0"}`, change: "+12%" },
-    { title: "Active Washers", value: dashboardData?.today.washers || "0", change: "+2" },
+    { 
+      title: "Today's Bookings", 
+      value: dashboardData?.today.bookings || "0", 
+      change: `+${dashboardData?.today.bookings || "0"} services completed`,
+      icon: <FiTruck />,
+      colors: "from-blue-600 to-cyan-600",
+      bgGradient: "from-blue-50 to-cyan-50"
+    },
+    { 
+      title: "Active Washers", 
+      value: dashboardData?.today.washers || "0", 
+      change: "Serving customers now",
+      icon: <FiActivity />,
+      colors: "from-emerald-600 to-green-600",
+      bgGradient: "from-emerald-50 to-green-50"
+    }, 
+    { 
+      title: "Total Users", 
+      value: dashboardData?.total.users || "0", 
+      change: `+${dashboardData?.total.newUsers || "0"} joined today`,
+      icon: <FiUsers />,
+      colors: "from-purple-600 to-pink-600",
+      bgGradient: "from-purple-50 to-pink-50"
+    },
+    { 
+      title: "Completion Rate", 
+      value: `${Math.round((dashboardData?.completionRate || 85))}%`, 
+      change: "Services completed on time",
+      icon: <FiCheckCircle />,
+      colors: "from-orange-600 to-red-600",
+      bgGradient: "from-orange-50 to-red-50"
+    },
+  ];
+
+  const quickActions = [
+    { to: "/admin/approvals", icon: FiAlertCircle, label: "Approvals", colors: "from-red-600 to-pink-600", bg: "from-red-50 to-pink-50", border: "border-red-200" },
+    { to: "/admin/bookings", icon: FiClipboard, label: "Bookings", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" },
+    { to: "/admin/users", icon: FiUsers, label: "Users", colors: "from-purple-600 to-pink-600", bg: "from-purple-50 to-pink-50", border: "border-purple-200" },
+    { to: "/admin/earnings", icon: FiDollarSign, label: "Earnings", colors: "from-emerald-600 to-green-600", bg: "from-emerald-50 to-green-50", border: "border-emerald-200" },
+    { to: "/admin/analytics", icon: FiTrendingUp, label: "Analytics", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
+    { to: "/admin/settings", icon: FiSettings, label: "Settings", colors: "from-indigo-600 to-purple-600", bg: "from-indigo-50 to-purple-50", border: "border-indigo-200" },
   ];
 
   const recentBookings = recentBookingsData.map((booking) => ({
@@ -127,350 +154,313 @@ export default function AdminDashboard() {
   }));
 
   const adminMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/admin/dashboard", id: "dashboard" },
+    { name: "Dashboard", icon: <FiHome />, link: "/admin-dashboard", id: "dashboard" },
     { name: "Approvals", icon: <FiAlertCircle />, link: null, id: "approvals" },
     { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings", id: "bookings" },
     { name: "Users", icon: <FiUsers />, link: "/admin/users", id: "users" },
     { name: "Riders", icon: <FiUsers />, link: "/admin/riders", id: "riders" },
-    { name: "Customer Accounts", icon: <FiSettings />, link: "/admin/customer-accounts", id: "customer-accounts" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings", id: "earnings" },
     { name: "Cars", icon: <FaCar />, link: "/admin/cars", id: "cars" },
-    { name: "Pass Expirations", icon: <FiAlertCircle />, link: null, id: "pass-expiration" },
-    { name: "Loyalty Points", icon: <FiAward />, link: null, id: "loyalty-points" },
-    { name: "Washer Documents", icon: <FiClipboard />, link: null, id: "washer-documents" },
-    { name: "Scan QR", icon: <FiClipboard />, link: "/scan-customer-qr", id: "scan-qr" },
-    { name: "Revenue", icon: <FiDollarSign />, link: "/admin/revenue", id: "revenue" },
     { name: "Analytics", icon: <FiTrendingUp />, link: "/admin/analytics", id: "analytics" },
-    { name: "Bank Account", icon: <FiCreditCard />, link: "/admin/bank-account", id: "bank" },
     { name: "Settings", icon: <FiSettings />, link: "/admin/settings", id: "settings" },
-    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/admin/emergency-wash" },
-    { name: "About Us", icon: <FiGift />, link: "/about-us" },
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">CarWash+</h1>
-        <FiMenu className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setSidebarOpen(true)} />
-      </div>
-
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && (
-            <FiChevronLeft className="text-slate-400" />
-          )}
-        </div>
-
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {adminMenu.map((item) => {
-            if (item.link) {
-              return (
-                <Link
-                  key={item.name}
-                  to={item.link}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`
-                    flex items-center gap-4 px-3 py-2 rounded-lg 
-                    mb-2 font-medium transition-all
-                    ${
-                      location.pathname === item.link
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                    }
-                    ${collapsed ? "justify-center" : ""}
-                  `}
-                  title={collapsed ? item.name : ""}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  {!collapsed && <span className="text-sm">{item.name}</span>}
-                </Link>
-              );
-            } else {
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => {
-                    setActiveSection(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`
-                    w-full flex items-center gap-4 px-3 py-2 rounded-lg 
-                    mb-2 font-medium transition-all
-                    ${
-                      activeSection === item.id
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                    }
-                    ${collapsed ? "justify-center" : ""}
-                  `}
-                  title={collapsed ? item.name : ""}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  {!collapsed && <span className="text-sm">{item.name}</span>}
-                </button>
-              );
-            }
-          })}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
-
-        {/* ▓▓▓ NAVBAR ▓▓▓ */}
-        <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-        items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
-
-          <h1 className="text-2xl font-bold">
-            {activeSection === "approvals" ? "Employee Approvals" : "Admin Dashboard"}
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
+        {/* Welcome Section */}
+        <div className="mb-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight">
+            Admin Dashboard 🎯
           </h1>
+          <p className="text-slate-600 text-base">
+            Manage bookings, users, and track your business metrics in real-time
+          </p>
+        </div>
 
-          <div className="flex items-center gap-8">
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="text-xl text-slate-300 hover:text-blue-400 transition relative"
-              >
-                <FiBell />
-                {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </button>
+        {/* 🎯 QUICK ACTIONS */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+          {quickActions.map(({ to, icon: Icon, label, colors, bg, border }) => (
+            <Link
+              key={label}
+              to={to}
+              className={`group rounded-xl p-5 border ${border} bg-gradient-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
+            >
+              <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
+                <Icon />
+              </div>
+              <p className="text-sm font-bold text-slate-900">{label}</p>
+            </Link>
+          ))}
+        </div>
 
-              {/* NOTIFICATIONS DROPDOWN */}
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
-                  <div className="p-4 border-b border-slate-800">
-                    <h3 className="font-semibold text-white">Notifications</h3>
-                  </div>
-
-                  {notifications.length === 0 ? (
-                    <div className="p-6 text-center text-slate-400">
-                      <p>No notifications</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-800">
-                      {notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className="p-4 hover:bg-slate-800/50 transition cursor-pointer"
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className="text-xl">{notif.icon}</span>
-                            <div className="flex-1">
-                              <p className="font-medium text-white text-sm">
-                                {notif.title}
-                              </p>
-                              <p className="text-xs text-slate-400 mt-1">
-                                {notif.message}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                {notif.time}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+        {/* 📊 STAT CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+          {stats.map((item) => (
+            <div
+              key={item.title}
+              className={`bg-gradient-to-br ${item.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-slate-700 text-sm font-semibold tracking-wide">
+                  {item.title}
+                </p>
+                <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${item.colors} text-white flex items-center justify-center text-xl opacity-90`}>
+                  {item.icon}
                 </div>
+              </div>
+              <p className={`text-4xl font-black bg-gradient-to-r ${item.colors} bg-clip-text text-transparent`}>
+                {item.value}
+              </p>
+              <p className="text-slate-600 text-xs font-medium mt-3 leading-relaxed">
+                {item.change}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* 📈 CHARTS SECTION */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          {/* Booking Trend Chart */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                <FiTrendingUp />
+              </div>
+              Booking Trends
+            </h3>
+            <div className="h-64 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 flex items-center justify-center">
+              {bookingTrendData.length > 0 ? (
+                <div className="w-full h-full flex items-end gap-2 justify-center px-2">
+                  {bookingTrendData.slice(-7).map((item, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center group">
+                      <div
+                        className="w-full bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t-lg transition-all hover:from-blue-600 hover:to-cyan-500 group-hover:shadow-lg"
+                        style={{ height: `${(item.count / Math.max(...bookingTrendData.map(x => x.count))) * 100}%` }}
+                      />
+                      <p className="text-xs text-slate-600 mt-2 text-center">{item.day}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-400 font-medium">No data available</p>
               )}
             </div>
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
-        <main className="p-4 md:p-8 space-y-8">
-
-          {/* APPROVALS SECTION */}
-          {activeSection === "approvals" && <ApprovalPanel />}
-
-          {/* PASS EXPIRATION SECTION */}
-          {activeSection === "pass-expiration" && <ExpiredPassesNotification />}
-
-          {/* LOYALTY POINTS SECTION */}
-          {activeSection === "loyalty-points" && <AdminLoyaltyDashboard />}
-
-          {/* WASHER DOCUMENTS SECTION */}
-          {activeSection === "washer-documents" && <AdminDocumentVerification />}
-
-          {/* DASHBOARD CONTENT */}
-          {activeSection === "dashboard" && (
-            <>
-          {/* Title */}
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard Overview</h1>
-            <p className="text-slate-400 text-sm mt-1">Live business insights</p>
           </div>
 
-          {/* 🌈 STAT CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {stats.map((item, index) => (
-              <div
-                key={item.title}
-                className={`rounded-xl p-6 shadow-lg border border-slate-800 
-                bg-linear-to-br
-                ${index % 2 === 0 ? "from-blue-600/20 to-blue-900/20" : "from-purple-600/20 to-pink-900/20"} 
-                hover:scale-105 transition-transform duration-300 cursor-pointer`}
-              >
-                <p className="text-slate-400 text-sm font-medium">{item.title}</p>
-                <p className="text-4xl font-bold mt-3 text-white">{item.value}</p>
-                <p className="text-green-400 text-xs mt-2 font-medium">{item.change}</p>
+          {/* Location Distribution Chart */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center">
+                <FiMapPin />
               </div>
-            ))}
-          </div>
-
-          {/* 📊 BOOKINGS TREND CHART */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-white text-lg font-semibold mb-4">Daily Bookings Trend</h2>
-            {dashboardData?.total.bookings === 0 ? (
-              <div className="h-56 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-500 border border-slate-700">
-                <div className="text-center">
-                  <FiTrendingUp className="text-4xl mx-auto mb-2 opacity-50" />
-                  <p>No booking data available yet</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-end justify-between gap-1 h-64 p-4 bg-slate-800/50 rounded-lg overflow-x-auto">
-                {Array.from({ length: 7 }).map((_, idx) => {
-                  const randomHeight = Math.random() * 100 + 20;
+              Top Locations
+            </h3>
+            <div className="space-y-4">
+              {locationData.length > 0 ? (
+                locationData.slice(0, 5).map((location, idx) => {
+                  const maxCount = Math.max(...locationData.map(x => x.count));
+                  const percentage = (location.count / maxCount) * 100;
                   return (
-                    <div
-                      key={idx}
-                      className="flex flex-col items-center gap-2 flex-1 min-w-12"
-                    >
-                      <div
-                        className="w-full bg-linear-to-t from-blue-500 to-cyan-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
-                        style={{ height: `${randomHeight}%`, minHeight: "8px" }}
-                      >
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                          {Math.floor(randomHeight / 10)} bookings
-                        </div>
+                    <div key={idx} className="group">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-semibold text-slate-700">{location.name}</span>
+                        <span className="text-sm font-bold text-purple-600">{location.count} bookings</span>
                       </div>
-                      <p className="text-xs text-slate-500">
-                        {new Date(Date.now() - (6 - idx) * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </p>
+                      <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all group-hover:from-purple-600 group-hover:to-pink-600"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
                   );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 📝 Recent Bookings */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-semibold text-white">Recent Bookings</h2>
-              <Link to="/admin/all-bookings" className="text-blue-400 text-sm hover:text-blue-300 transition font-medium">
-                View All →
-              </Link>
+                })
+              ) : (
+                <p className="text-slate-400 font-medium text-center py-4">No location data</p>
+              )}
             </div>
-
-            {loading ? (
-              <div className="h-48 flex items-center justify-center">
-                <p className="text-slate-400">Loading bookings...</p>
-              </div>
-            ) : recentBookings.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-slate-400">
-                <p>No bookings yet</p>
-              </div>
-            ) : (
-              <div className="overflow-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700 text-slate-400">
-                      <th className="py-3 text-left font-medium">ID</th>
-                      <th className="py-3 text-left font-medium">Customer</th>
-                      <th className="py-3 text-left font-medium">Car</th>
-                      <th className="py-3 text-left font-medium">City</th>
-                      <th className="py-3 text-left font-medium">Time</th>
-                      <th className="py-3 text-left font-medium">Status</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {recentBookings.map((b) => (
-                      <tr key={b.id} className="border-b border-slate-800 text-slate-300 hover:bg-slate-800/50 transition">
-                        <td className="py-3 font-medium text-blue-400 font-mono text-xs">{b.id}</td>
-                        <td className="py-3">{b.customer}</td>
-                        <td className="py-3">{b.car}</td>
-                        <td className="py-3">{b.city}</td>
-                        <td className="py-3 text-slate-400">{b.slot}</td>
-                        <td className="py-3">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              b.status === "Completed"
-                                ? "bg-green-600/25 text-green-300"
-                                : b.status === "In Progress"
-                                ? "bg-yellow-600/25 text-yellow-300"
-                                : b.status === "Confirmed"
-                                ? "bg-blue-600/25 text-blue-300"
-                                : "bg-slate-600/25 text-slate-300"
-                            }`}
-                          >
-                            {b.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
-            </>
-          )}
+        </div>
 
-        </main>
-      </div>
+        {/* 🏆 PERFORMANCE & SATISFACTION */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          {/* Washer Performance */}
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white flex items-center justify-center">
+                <FiAward />
+              </div>
+              Top Performers
+            </h3>
+            <div className="space-y-4">
+              {performanceData.length > 0 ? (
+                performanceData.slice(0, 5).map((washer, idx) => (
+                  <div key={idx} className="bg-white rounded-xl p-4 border border-amber-100 hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900">{washer.name || `Washer ${idx + 1}`}</p>
+                        <p className="text-xs text-slate-600">{washer.bookings || 0} bookings completed</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FiStar className="text-amber-500" />
+                        <span className="font-bold text-amber-600">{washer.rating || "4.5"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-600 text-center py-4">No performance data</p>
+              )}
+            </div>
+          </div>
+
+          {/* Customer Satisfaction */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-center">
+                <FiStar />
+              </div>
+              Satisfaction Metrics
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl p-4 border border-green-100">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-semibold text-slate-700">Overall Rating</span>
+                  <span className="text-2xl font-black text-green-600">{satisfactionData.overallRating || "4.8"}/5</span>
+                </div>
+                <p className="text-xs text-slate-600">Based on customer reviews</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-green-100">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-semibold text-slate-700">Positive Feedback</span>
+                  <span className="text-2xl font-black text-emerald-600">{satisfactionData.positiveFeedback || "92"}%</span>
+                </div>
+                <p className="text-xs text-slate-600">Customer satisfaction rate</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 border border-green-100">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-semibold text-slate-700">Response Time</span>
+                  <span className="text-2xl font-black text-green-600">2 min</span>
+                </div>
+                <p className="text-xs text-slate-600">Average booking confirmation</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 📈 TEAM OVERVIEW SECTION */}
+        <div className="mb-10">
+          {/* Users & Washers */}
+          <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all max-w-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-center text-2xl">
+                  <FiUsers />
+                </div>
+                Team Overview
+              </h3>
+              <span className="text-xs bg-emerald-600 text-white px-4 py-2 rounded-full font-bold tracking-wide">
+                ACTIVE
+              </span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-slate-700">Total Users</span>
+                  <span className="text-3xl font-black text-emerald-600">{dashboardData?.total.users || "0"}</span>
+                </div>
+                <p className="text-xs text-slate-600">{dashboardData?.today.newUsers || "0"} new users today</p>
+              </div>
+              <div className="border-t border-emerald-200 pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-slate-700">Active Washers</span>
+                  <span className="text-3xl font-black text-green-600">{dashboardData?.today.washers || "0"}</span>
+                </div>
+                <p className="text-xs text-slate-600">Currently working on bookings</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 📝 Recent Bookings */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                <FiClipboard />
+              </div>
+              Recent Bookings
+            </h2>
+            <Link to="/admin/bookings" className="text-blue-600 text-sm hover:text-blue-700 transition font-bold">
+              View All →
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="h-48 flex items-center justify-center">
+              <p className="text-slate-400 font-medium">Loading bookings...</p>
+            </div>
+          ) : recentBookings.length === 0 ? (
+            <div className="h-48 flex items-center justify-center text-slate-400">
+              <p className="font-medium">No bookings yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-600 bg-slate-50">
+                    <th className="py-4 px-4 text-left font-bold">Booking ID</th>
+                    <th className="py-4 px-4 text-left font-bold">Customer</th>
+                    <th className="py-4 px-4 text-left font-bold">Car</th>
+                    <th className="py-4 px-4 text-left font-bold">Location</th>
+                    <th className="py-4 px-4 text-left font-bold">Time</th>
+                    <th className="py-4 px-4 text-left font-bold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentBookings.map((b) => (
+                    <tr key={b.id} className="border-b border-slate-200 text-slate-700 hover:bg-slate-50 transition">
+                      <td className="py-4 px-4 font-bold text-blue-600 font-mono text-xs">{b.id.substring(0, 8)}</td>
+                      <td className="py-4 px-4 font-semibold">{b.customer}</td>
+                      <td className="py-4 px-4">{b.car}</td>
+                      <td className="py-4 px-4 text-slate-600">{b.city}</td>
+                      <td className="py-4 px-4 text-slate-600">{b.slot}</td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`px-4 py-2 rounded-full text-xs font-bold ${
+                            b.status === "Completed"
+                              ? "bg-green-100 text-green-700"
+                              : b.status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : b.status === "Confirmed"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {b.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* SECTIONS */}
+        {activeSection === "approvals" && <ApprovalPanel />}
+        {activeSection === "pass-expiration" && <ExpiredPassesNotification />}
+        {activeSection === "loyalty-points" && <AdminLoyaltyDashboard />}
+        {activeSection === "washer-documents" && <AdminDocumentVerification />}
+      </main>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FiAlertCircle, FiClock, FiX } from "react-icons/fi";
+import NavbarNew from "../components/NavbarNew";
 
 const ExpiredPassesNotification = () => {
   const [expiredPasses, expireingPasses] = useState([]);
@@ -66,9 +67,13 @@ const ExpiredPassesNotification = () => {
   const icon = activeTab === "expired" ? "🔴" : "⏱️";
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <NavbarNew />
+      
+      <main className="flex-1 overflow-auto">
+        <div className="w-full max-w-6xl mx-auto p-4 md:p-6">
       {/* Header */}
-      <div className="bg-linear-to-r from-red-600 to-orange-600 rounded-lg p-6 text-white mb-6">
+      <div className="bg-gradient-to-r from-red-500 to-orange-500 rounded-lg p-6 text-white mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FiAlertCircle size={32} />
@@ -95,7 +100,7 @@ const ExpiredPassesNotification = () => {
           className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition ${
             activeTab === "expired"
               ? "bg-red-600 text-white"
-              : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+              : "bg-white text-slate-700 border border-slate-200 hover:border-slate-300"
           }`}
         >
           <FiAlertCircle size={18} />
@@ -106,7 +111,7 @@ const ExpiredPassesNotification = () => {
           className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition ${
             activeTab === "expiring"
               ? "bg-orange-600 text-white"
-              : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+              : "bg-white text-slate-700 border border-slate-200 hover:border-slate-300"
           }`}
         >
           <FiClock size={18} />
@@ -117,10 +122,10 @@ const ExpiredPassesNotification = () => {
       {/* Content */}
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-slate-500">Loading pass data...</p>
+          <p className="text-slate-600">Loading pass data...</p>
         </div>
       ) : displayData.length === 0 ? (
-        <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-12 text-center">
+        <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-12 text-center">
           <p className="text-slate-600 text-lg">
             {icon} No {title.toLowerCase()} found
           </p>
@@ -233,6 +238,8 @@ const ExpiredPassesNotification = () => {
           })}
         </div>
       )}
+        </div>
+      </main>
     </div>
   );
 };

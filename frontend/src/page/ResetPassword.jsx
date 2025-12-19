@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiMail, FiLock, FiArrowLeft, FiCheckCircle, FiAlertCircle, FiClock } from "react-icons/fi";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -256,120 +257,113 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-600 to-purple-600 px-4 py-8">
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-          Reset Password
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 px-4 py-8 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+      <div className="absolute -bottom-8 right-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
 
-        {/* Progress Indicator */}
-        <div className="flex items-center justify-between mb-8 gap-2">
-          {/* Step 1 */}
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all ${
-                step >= 1
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-gray-200 text-gray-500"
-              }`}
-            >
-              1
+      <div className="relative z-10 w-full max-w-md">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/login")}
+          className="flex items-center gap-2 text-white hover:text-blue-400 transition mb-8 text-sm font-medium"
+        >
+          <FiArrowLeft size={18} />
+          Back to Login
+        </button>
+
+        {/* Main Card */}
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 md:p-10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <FiLock className="text-white text-2xl" />
+              </div>
             </div>
-            <p
-              className={`text-xs font-semibold text-center transition-colors ${
-                step >= 1 ? "text-blue-600" : "text-gray-500"
-              }`}
-            >
-              Email
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Reset Password</h1>
+            <p className="text-blue-200 text-sm">
+              {step === 1 && "Enter your email to get started"}
+              {step === 2 && "Enter the code sent to your email"}
+              {step === 3 && "Create a strong new password"}
             </p>
           </div>
 
-          {/* Progress Line */}
-          <div
-            className={`flex-1 h-0.5 transition-colors ${
-              step >= 2 ? "bg-blue-600" : "bg-gray-200"
-            }`}
-          ></div>
+          {/* Progress Steps */}
+          <div className="flex items-center justify-between mb-10">
+            {[1, 2, 3].map((stepNum) => (
+              <React.Fragment key={stepNum}>
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 ${
+                      step > stepNum
+                        ? "bg-green-500 text-white shadow-lg shadow-green-500/50"
+                        : step === stepNum
+                        ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
+                        : "bg-white/10 text-white/50 border border-white/20"
+                    }`}
+                  >
+                    {step > stepNum ? (
+                      <FiCheckCircle size={20} />
+                    ) : (
+                      stepNum
+                    )}
+                  </div>
+                  <p
+                    className={`text-xs font-semibold mt-2 transition-colors ${
+                      step >= stepNum ? "text-blue-400" : "text-white/50"
+                    }`}
+                  >
+                    {stepNum === 1 ? "Email" : stepNum === 2 ? "Code" : "Password"}
+                  </p>
+                </div>
+                {stepNum < 3 && (
+                  <div
+                    className={`flex-1 h-1 mx-2 transition-colors duration-300 ${
+                      step > stepNum ? "bg-green-500" : "bg-white/10"
+                    }`}
+                  ></div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
 
-          {/* Step 2 */}
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all ${
-                step >= 2
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-gray-200 text-gray-500"
-              }`}
-            >
-              2
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl flex items-start gap-3 animate-slideDown">
+              <FiAlertCircle className="text-red-400 mt-0.5 flex-shrink-0" size={18} />
+              <p className="text-red-200 text-sm">{error}</p>
             </div>
-            <p
-              className={`text-xs font-semibold text-center transition-colors ${
-                step >= 2 ? "text-blue-600" : "text-gray-500"
-              }`}
-            >
-              Code
-            </p>
-          </div>
+          )}
 
-          {/* Progress Line */}
-          <div
-            className={`flex-1 h-0.5 transition-colors ${
-              step >= 3 ? "bg-blue-600" : "bg-gray-200"
-            }`}
-          ></div>
-
-          {/* Step 3 */}
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all ${
-                step >= 3
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-gray-200 text-gray-500"
-              }`}
-            >
-              3
+          {/* Success Alert */}
+          {success && (
+            <div className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-xl flex items-start gap-3 animate-slideDown">
+              <FiCheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={18} />
+              <p className="text-green-200 text-sm">{success}</p>
             </div>
-            <p
-              className={`text-xs font-semibold text-center transition-colors ${
-                step >= 3 ? "text-blue-600" : "text-gray-500"
-              }`}
-            >
-              Password
-            </p>
-          </div>
-        </div>
+          )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700 text-sm rounded animate-slideDown">
-            {error}
-          </div>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <div className="mb-4 p-3 bg-green-100 border-l-4 border-green-500 text-green-700 text-sm rounded animate-slideDown">
-            {success}
-          </div>
-        )}
-
-        {/* Step 1: Email Input */}
-        {step === 1 && (
-          <form onSubmit={handleSendOtp} className="space-y-5">
+          {/* Step 1: Email Input */}
+          {step === 1 && (
+          <form onSubmit={handleSendOtp} className="space-y-6 animate-fadeIn">
             <div className="space-y-2">
-              <label htmlFor="email" className="block font-semibold text-gray-700 text-sm">
+              <label htmlFor="email" className="block font-semibold text-white text-sm">
                 Email Address
               </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                disabled={loading}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-              />
-              <p className="text-xs text-gray-600">
+              <div className="relative">
+                <FiMail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 pointer-events-none" size={18} />
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none focus:border-blue-500 focus:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+              <p className="text-xs text-blue-200">
                 We'll send a 6-digit verification code to this email.
               </p>
             </div>
@@ -377,14 +371,21 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
             >
-              {loading ? "Sending Code..." : "Send Verification Code"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Sending Code...
+                </span>
+              ) : (
+                "Send Verification Code"
+              )}
             </button>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-blue-200">
               Remember your password?{" "}
-              <a href="/login" className="text-blue-600 font-semibold hover:text-blue-700">
+              <a href="/login" className="text-white font-semibold hover:text-blue-300 transition">
                 Back to Login
               </a>
             </p>
@@ -393,9 +394,9 @@ const ResetPassword = () => {
 
         {/* Step 2: OTP Verification */}
         {step === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="otp" className="block font-semibold text-gray-700 text-sm">
+          <form onSubmit={handleVerifyOtp} className="space-y-6 animate-fadeIn">
+            <div className="space-y-3">
+              <label htmlFor="otp" className="block font-semibold text-white text-sm">
                 Verification Code
               </label>
               <input
@@ -406,33 +407,41 @@ const ResetPassword = () => {
                 placeholder="000000"
                 maxLength="6"
                 disabled={loading || otpTimer === 0}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-center text-2xl font-mono font-bold tracking-widest focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-lg text-center text-4xl font-mono font-bold tracking-widest text-white placeholder-white/30 focus:outline-none focus:border-blue-500 focus:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <p className="text-xs text-gray-600">
-                Enter the 6-digit code sent to <strong>{email}</strong>
+              <p className="text-xs text-blue-200">
+                Enter the 6-digit code sent to <span className="font-semibold">{email}</span>
               </p>
-              <p className={`text-xs font-semibold ${otpTimer > 0 ? "text-blue-600" : "text-red-600"}`}>
+              <div className={`flex items-center gap-2 text-sm font-semibold ${otpTimer > 0 ? "text-blue-400" : "text-red-400"}`}>
+                <FiClock size={16} />
                 {otpTimer > 0 ? (
-                  <>Code expires in: <strong>{formatTimer(otpTimer)}</strong></>
+                  <>Code expires in: <span className="font-mono">{formatTimer(otpTimer)}</span></>
                 ) : (
-                  <span>Code has expired</span>
+                  <span>Code has expired - Request a new one</span>
                 )}
-              </p>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading || otpTimer === 0}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
             >
-              {loading ? "Verifying..." : "Verify Code"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Verifying...
+                </span>
+              ) : (
+                "Verify Code"
+              )}
             </button>
 
             <button
               type="button"
               onClick={handleResendOtp}
               disabled={loading}
-              className="w-full bg-transparent text-blue-600 hover:text-blue-700 font-semibold py-2 transition disabled:text-gray-400 disabled:cursor-not-allowed underline"
+              className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-blue-300 hover:text-blue-200 font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Didn't receive code? Resend
             </button>
@@ -446,65 +455,79 @@ const ResetPassword = () => {
                 setSuccess("");
               }}
               disabled={loading}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 rounded-lg transition disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-transparent text-blue-300 hover:text-blue-200 font-semibold py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Change Email
+              ← Change Email Address
             </button>
           </form>
         )}
 
         {/* Step 3: New Password */}
         {step === 3 && (
-          <form onSubmit={handleResetPassword} className="space-y-5">
+          <form onSubmit={handleResetPassword} className="space-y-6 animate-fadeIn">
             <div className="space-y-2">
-              <label htmlFor="newPassword" className="block font-semibold text-gray-700 text-sm">
+              <label htmlFor="newPassword" className="block font-semibold text-white text-sm">
                 New Password
               </label>
-              <input
-                type="password"
-                id="newPassword"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                disabled={loading}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-              />
-              <p className="text-xs text-gray-600">
+              <div className="relative">
+                <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 pointer-events-none" size={18} />
+                <input
+                  type="password"
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none focus:border-blue-500 focus:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+              <p className="text-xs text-blue-200">
                 Must be at least 6 characters long.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block font-semibold text-gray-700 text-sm">
+              <label htmlFor="confirmPassword" className="block font-semibold text-white text-sm">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm password"
-                disabled={loading}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-              />
+              <div className="relative">
+                <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 pointer-events-none" size={18} />
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none focus:border-blue-500 focus:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
             >
-              {loading ? "Updating Password..." : "Reset Password"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Updating Password...
+                </span>
+              ) : (
+                "Reset Password"
+              )}
             </button>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-blue-200">
               Remember your password?{" "}
-              <a href="/login" className="text-blue-600 font-semibold hover:text-blue-700">
+              <a href="/login" className="text-white font-semibold hover:text-blue-300 transition">
                 Back to Login
               </a>
             </p>
           </form>
         )}
+        </div>
       </div>
     </div>
   );
