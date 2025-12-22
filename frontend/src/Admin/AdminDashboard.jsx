@@ -146,7 +146,7 @@ export default function AdminDashboard() {
 
   const recentBookings = recentBookingsData.map((booking) => ({
     id: booking.id,
-    customer: booking.customer_name || "N/A",
+    customer: booking.name || "N/A",
     car: booking.car_name || "N/A",
     city: booking.location || "N/A",
     slot: `${booking.time || "N/A"}`,

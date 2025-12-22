@@ -20,7 +20,7 @@ router.get("/generate/:carId", async (req, res) => {
     // Fetch car with customer details
     const { data: car, error: carError } = await supabase
       .from("cars")
-      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, village)")
+      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
       .eq("id", carId)
       .single();
 
@@ -44,7 +44,7 @@ router.get("/generate/:carId", async (req, res) => {
       customerEmail: customer.email,
       customerPhone: customer.phone,
       customerAddress: customer.address || car.number_plate,
-      customerVillage: customer.village,
+      customerTaluko: customer.taluko,
       carBrand: car.brand,
       carModel: car.model,
       numberPlate: car.number_plate,
@@ -73,7 +73,7 @@ router.get("/generate/:carId", async (req, res) => {
           customer_email: customer.email,
           customer_mobile: customer.phone,
           customer_address: customer.address || car.number_plate,
-          customer_village: customer.village,
+          customer_taluko: customer.taluko,
           car_brand: car.brand,
           car_model: car.model,
           car_number_plate: car.number_plate,
@@ -105,7 +105,7 @@ router.get("/generate/:carId", async (req, res) => {
         customer_email: customer.email,
         customer_mobile: customer.phone,
         customer_address: customer.address || car.number_plate,
-        customer_village: customer.village,
+        customer_taluko: customer.taluko,
         car_brand: car.brand,
         car_model: car.model,
         car_number_plate: car.number_plate,
@@ -427,7 +427,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
     // Fetch car with customer details
     const { data: car, error: carError } = await supabase
       .from("cars")
-      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, village)")
+      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
       .eq("id", carId)
       .single();
 
@@ -457,7 +457,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
       customerEmail: customer.email,
       customerPhone: customer.phone,
       customerAddress: customer.address || car.number_plate,
-      customerVillage: customer.village,
+      customerTaluko: customer.taluko,
       carBrand: car.brand,
       carModel: car.model,
       numberPlate: car.number_plate,
@@ -487,7 +487,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
           customer_email: customer.email,
           customer_mobile: customer.phone,
           customer_address: customer.address || car.number_plate,
-          customer_village: customer.village,
+          customer_taluko: customer.taluko,
           monthly_pass_id: monthlyPassId,
           monthly_pass_active: monthlyPassActive,
           monthly_pass_expiry: monthlyPass.expiry_date,
@@ -528,7 +528,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
         customer_email: customer.email,
         customer_mobile: customer.phone,
         customer_address: customer.address || car.number_plate,
-        customer_village: customer.village,
+        customer_taluko: customer.taluko,
         monthly_pass_active: monthlyPassActive,
         monthly_pass_expiry: monthlyPass.expiry_date,
         car_brand: car.brand,
@@ -569,7 +569,7 @@ router.post("/sync-monthly-pass/:carId", async (req, res) => {
     // Fetch car with customer details
     const { data: car, error: carError } = await supabase
       .from("cars")
-      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, village)")
+      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
       .eq("id", carId)
       .single();
 
@@ -607,7 +607,7 @@ router.post("/sync-monthly-pass/:carId", async (req, res) => {
       customerEmail: customer.email,
       customerPhone: customer.phone,
       customerAddress: customer.address || car.number_plate,
-      customerVillage: customer.village,
+      customerTaluko: customer.taluko,
       carBrand: car.brand,
       carModel: car.model,
       numberPlate: car.number_plate,

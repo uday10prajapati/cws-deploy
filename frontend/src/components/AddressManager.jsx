@@ -7,7 +7,7 @@ export default function AddressManager({ userId }) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    village: "",
+    taluko: "",
     address: "",
     city: "",
     state: "",
@@ -32,7 +32,7 @@ export default function AddressManager({ userId }) {
       if (result.success && result.address) {
         setAddress(result.address);
         setFormData({
-          village: result.address.village || "",
+          taluko: result.address.taluko || "",
           address: result.address.address || "",
           city: result.address.city || "",
           state: result.address.state || "",
@@ -50,7 +50,7 @@ export default function AddressManager({ userId }) {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -67,12 +67,12 @@ export default function AddressManager({ userId }) {
 
   const validateForm = () => {
     const newErrors = {};
-    const requiredFields = ["village", "city", "state", "country"];
+    const requiredFields = ["taluko", "city", "state", "country"];
 
     requiredFields.forEach((field) => {
       if (!formData[field] || formData[field].trim() === "") {
-        if (field === "village") {
-          newErrors[field] = "Village is required";
+        if (field === "taluko") {
+          newErrors[field] = "Taluko is required";
         } else {
           newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
         }
@@ -85,7 +85,7 @@ export default function AddressManager({ userId }) {
 
   const handleSave = async () => {
     if (!validateForm()) {
-      alert("Please fill in all required fields: Village, City, State, and Country");
+      alert("Please fill in all required fields: Taluko, City, State, and Country");
       return;
     }
 
@@ -96,7 +96,7 @@ export default function AddressManager({ userId }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          village: formData.village,
+          taluko: formData.taluko,
           address: formData.address,
           city: formData.city,
           state: formData.state,
@@ -125,7 +125,7 @@ export default function AddressManager({ userId }) {
 
   const handleCancel = () => {
     setFormData(address || {
-      village: "",
+      taluko: "",
       address: "",
       city: "",
       state: "",
@@ -158,22 +158,22 @@ export default function AddressManager({ userId }) {
         <p className="text-slate-600">Loading address...</p>
       ) : isEditing ? (
         <div className="space-y-4">
-          {/* Village */}
+          {/* Taluko */}
           <div>
-            <label className="block text-sm text-slate-700 mb-2">
-              Village <span className="text-red-600">*</span>
+            <label className="block text-sm font-semibold mb-2">
+              Taluko <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
-              name="village"
-              value={formData.village}
-              onChange={handleInputChange}
-              placeholder="Enter your village name"
+              name="taluko"
+              value={formData.taluko}
+              onChange={handleChange}
+              placeholder="Enter your taluko name"
               className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
-                errors.village ? "border-red-500" : "border-slate-300"
+                errors.taluko ? "border-red-500" : "border-slate-300"
               }`}
             />
-            {errors.village && <p className="text-red-600 text-xs mt-1">{errors.village}</p>}
+            {errors.taluko && <p className="text-red-600 text-xs mt-1">{errors.taluko}</p>}
           </div>
 
           {/* Address (Street Address) */}
@@ -185,7 +185,7 @@ export default function AddressManager({ userId }) {
               type="text"
               name="address"
               value={formData.address}
-              onChange={handleInputChange}
+              onChange={handleChange}
               placeholder="Enter your street address (optional)"
               className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
                 errors.address ? "border-red-500" : "border-slate-300"
@@ -203,7 +203,7 @@ export default function AddressManager({ userId }) {
               type="text"
               name="city"
               value={formData.city}
-              onChange={handleInputChange}
+              onChange={handleChange}
               placeholder="Enter your city"
               className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
                 errors.city ? "border-red-500" : "border-slate-300"
@@ -221,7 +221,7 @@ export default function AddressManager({ userId }) {
               type="text"
               name="state"
               value={formData.state}
-              onChange={handleInputChange}
+              onChange={handleChange}
               placeholder="Enter your state"
               className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
                 errors.state ? "border-red-500" : "border-slate-300"
@@ -239,7 +239,7 @@ export default function AddressManager({ userId }) {
               type="text"
               name="postal_code"
               value={formData.postal_code}
-              onChange={handleInputChange}
+              onChange={handleChange}
               placeholder="Enter your postal code (optional)"
               className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500"
             />
@@ -254,7 +254,7 @@ export default function AddressManager({ userId }) {
               type="text"
               name="country"
               value={formData.country}
-              onChange={handleInputChange}
+              onChange={handleChange}
               placeholder="Enter your country"
               className={`w-full px-4 py-2 bg-slate-50 border rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors ${
                 errors.country ? "border-red-500" : "border-slate-300"
@@ -271,7 +271,7 @@ export default function AddressManager({ userId }) {
             <select
               name="address_type"
               value={formData.address_type}
-              onChange={handleInputChange}
+              onChange={handleChange}
               className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-blue-500"
             >
               <option value="home">Home</option>
@@ -301,9 +301,9 @@ export default function AddressManager({ userId }) {
         </div>
       ) : (
         <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-          {address?.village ? (
+          {address?.taluko ? (
             <div className="space-y-2 text-slate-700">
-              <p className="text-slate-900 font-semibold">📍 {address.village}</p>
+              <p className="text-slate-900 font-semibold">📍 {address.taluko}</p>
               {address.address && <p className="text-slate-600">{address.address}</p>}
               <p>{address.city}, {address.state} {address.postal_code}</p>
               <p>{address.country}</p>

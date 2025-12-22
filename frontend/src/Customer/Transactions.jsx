@@ -792,7 +792,7 @@ export default function TransactionsPage() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-10">
           {/* WALLET BALANCE */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white shadow-md">
+          {/* <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white shadow-md">
             <div className="text-blue-100 text-sm mb-2 font-medium">Wallet Balance</div>
             <div className="flex items-end justify-between flex-col md:flex-row gap-4">
               <div className="text-4xl font-bold">
@@ -805,7 +805,7 @@ export default function TransactionsPage() {
                 + Add Money
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* FILTERS */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 space-y-4 shadow-md">
@@ -841,7 +841,6 @@ export default function TransactionsPage() {
                 >
                   <option value="all">Type: All</option>
                   <option value="booking_payment">Booking Payment</option>
-                  <option value="wallet_topup">Wallet Top-up</option>
                   <option value="monthly_pass">Monthly Pass</option>
                   <option value="refund">Refund</option>
                 </select>
@@ -855,7 +854,6 @@ export default function TransactionsPage() {
                   <option value="all">Payment: All</option>
                   <option value="upi">UPI</option>
                   <option value="card">Card</option>
-                  <option value="wallet">Wallet</option>
                   <option value="netbanking">Netbanking</option>
                 </select>
               </div>

@@ -45,7 +45,7 @@ export default function ProfilePage() {
       // Fetch user role from profiles table
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("role, address, city, state, postal_code, country, village")
+        .select("role, address, city, state, postal_code, country, taluko")
         .eq("id", uid)
         .maybeSingle();
       
@@ -361,7 +361,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* BOOKING HISTORY */}
+              {/* BOOKING HISTORY
               <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-md">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
                   <FiClock className="text-blue-600" /> Booking History ({bookings.length})
@@ -394,7 +394,7 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* PAYMENT HISTORY */}
               <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-md">

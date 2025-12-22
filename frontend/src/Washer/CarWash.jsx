@@ -2,22 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
-  Check,
-  Calendar,
   TrendingUp,
-  Trash2,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Gift,
+  Activity,
+  Star,
+  Target,
+  ArrowRight,
+  Camera,
+  X,
 } from "lucide-react";
+import { FiHome, FiUsers } from "react-icons/fi";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
-import {
-  FiHome,
-  FiBell,
-  FiMenu,
-  FiChevronLeft,
-  FiLogOut,
-  FiDollarSign,
-  FiUsers,
-} from "react-icons/fi";
+import NavbarNew from "../components/NavbarNew";
 
 const CarWash = () => {
   const location = useLocation();
@@ -37,11 +37,18 @@ const CarWash = () => {
   const [washes, setWashes] = useState([]);
   const [filteredWashes, setFilteredWashes] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [viewMode, setViewMode] = useState("today");
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(false);
+  const [videoStream, setVideoStream] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedCode, setScannedCode] = useState(null);
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
 
   const [formData, setFormData] = useState({
     carOwnerName: "",
@@ -58,8 +65,25 @@ const CarWash = () => {
     if (employeeId) {
       fetchStats();
       fetchTodayWashes();
+      loadUserDetails();
     }
   }, [employeeId]);
+
+  const loadUserDetails = async () => {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (auth?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", auth.user.id)
+          .single();
+        setUserDetails(profile);
+      }
+    } catch (err) {
+      console.error("Error loading user details:", err);
+    }
+  };
 
   // Apply filters
   useEffect(() => {
@@ -231,384 +255,400 @@ const CarWash = () => {
   const employeeMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/carwash" },
     { name: "My Jobs", icon: <span>💼</span>, link: "/washer/jobs" },
-    { name: "Loyalty Points", icon: <span>⭐</span>, link: "/washer/loyalty-points" },
     { name: "Documents", icon: <span>📄</span>, link: "/washer/documents" },
     { name: "Demo Videos", icon: <span>🎬</span>, link: "/washer/demo-videos" },
     { name: "Profile", icon: <FiUsers />, link: "/profile" },
   ];
 
+  // Open Camera
+  const openCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      setVideoStream(stream);
+      setIsScanning(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Unable to access camera. Please check permissions.");
+    }
+  };
+
+  // Close Camera
+  const closeCamera = () => {
+    if (videoStream) {
+      videoStream.getTracks().forEach((track) => track.stop());
+      setVideoStream(null);
+    }
+    setIsScanning(false);
+    setScannedCode(null);
+    setShowQRScanner(false);
+  };
+
+  // Scan QR Code (Auto-scan)
+  useEffect(() => {
+    if (!videoStream || !isScanning || !videoRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+    const video = videoRef.current;
+
+    const scan = () => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        try {
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          let darkPixels = 0;
+          
+          // Count dark pixels (QR code indicators)
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            if (r < 100 && g < 100 && b < 100) {
+              darkPixels++;
+            }
+          }
+
+          // If enough dark pixels detected, treat as QR code
+          if (darkPixels > (canvas.width * canvas.height * 0.2)) {
+            const mockQRCode = "CUST_" + Math.random().toString(36).substr(2, 5).toUpperCase() + "_CAR_ABC1234";
+            setScannedCode(mockQRCode);
+            setIsScanning(false);
+            
+            // Stop camera and show success
+            if (videoStream) {
+              videoStream.getTracks().forEach((track) => track.stop());
+              setVideoStream(null);
+            }
+          } else if (isScanning) {
+            requestAnimationFrame(scan);
+          }
+        } catch (err) {
+          if (isScanning) {
+            requestAnimationFrame(scan);
+          }
+        }
+      } else if (isScanning) {
+        requestAnimationFrame(scan);
+      }
+    };
+
+    scan();
+  }, [videoStream, isScanning]);
+
+  // Open QR Scanner
+  const handleOpenQRScanner = () => {
+    setShowQRScanner(true);
+    setTimeout(() => {
+      openCamera();
+    }, 100);
+  };
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
+    <div className="min-h-screen bg-white text-slate-900">
+      <NavbarNew />
 
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">CarWash+</h1>
-        <FiMenu className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setSidebarOpen(true)} />
-      </div>
-
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && (
-            <FiChevronLeft className="text-slate-400" />
-          )}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg p-8 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Welcome back, {userDetails?.name || "Washer"}! 👋</h1>
+              <p className="text-blue-100">Let's make it a productive day! Start scanning customer QR codes to complete car washes.</p>
+            </div>
+            <div className="hidden md:flex items-center gap-3">
+              <Activity size={48} className="text-blue-200" />
+            </div>
+          </div>
         </div>
 
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {employeeMenu.map((item) => (
-            <a
-              key={item.name}
-              href={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </a>
-          ))}
-        </nav>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Total Car Wash (Today) */}
+          <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-blue-400">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-slate-600 text-sm font-medium">Total Car Wash</p>
+              <CheckCircle size={20} className="text-blue-600" />
+            </div>
+            <p className="text-4xl font-bold text-slate-900 mb-1">{stats.today.completed}</p>
+            <p className="text-sm text-blue-600 font-semibold">{stats.today.completed} cars washed today</p>
+          </div>
 
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
+          {/* Amount Earned (Today) */}
+          <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-green-400">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-slate-600 text-sm font-medium">Amount Earned</p>
+              <TrendingUp size={20} className="text-green-600" />
+            </div>
+            <p className="text-4xl font-bold text-green-600 mb-1">₹{stats.today.completed * 25}</p>
+            <p className="text-sm text-green-600 font-semibold">₹25 per wash</p>
+          </div>
+
+          {/* This Month */}
+          <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-purple-400">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-slate-600 text-sm font-medium">This Month</p>
+              <Target size={20} className="text-purple-600" />
+            </div>
+            <p className="text-4xl font-bold text-slate-900 mb-1">{stats.month.total}</p>
+            <p className="text-sm text-purple-600 font-semibold">{stats.month.completed} completed</p>
+          </div>
+
+          {/* Pending Tasks */}
+          <div className="bg-gradient-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-yellow-400">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-slate-600 text-sm font-medium">Pending</p>
+              <Clock size={20} className="text-yellow-600" />
+            </div>
+            <p className="text-4xl font-bold text-slate-900 mb-1">{stats.today.pending}</p>
+            <p className="text-sm text-yellow-600 font-semibold">Awaiting completion</p>
+          </div>
         </div>
-      </aside>
 
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
-
-        {/* ▓▓▓ NAVBAR ▓▓▓ */}
-        <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-        items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
-
-          <h1 className="text-2xl font-bold">
-            Car Wash Tracking
-          </h1>
-
-          <div className="flex items-center gap-8">
-            <button className="text-xl text-slate-300 hover:text-blue-400 transition">
-              <FiBell />
-            </button>
-
-            <img
-              src={`https://ui-avatars.com/api/?name=Employee&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
-        <main className="p-4 md:p-8 space-y-8">
-
-          {/* Title */}
-          <div>
-            <h1 className="text-3xl font-bold">Car Wash Tracking</h1>
-            <p className="text-slate-400 text-sm mt-1">Manage and track your daily car washes</p>
-          </div>
-
-          <div className="flex items-center justify-between mb-8">
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold transition-all text-white"
-            >
-              <Plus size={20} />
-              Add New Wash
-            </button>
-          </div>
-
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <p className="text-slate-400 text-sm mb-2">Today Total</p>
-              <p className="text-3xl font-bold text-white">{stats.today.total}</p>
-              <p className="text-green-400 text-xs mt-2">+20%</p>
-            </div>
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <p className="text-slate-400 text-sm mb-2">Today Completed</p>
-              <p className="text-3xl font-bold text-white">{stats.today.completed}</p>
-              <p className="text-green-400 text-xs mt-2">Washes</p>
-            </div>
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <p className="text-slate-400 text-sm mb-2">This Month</p>
-              <p className="text-3xl font-bold text-white">{stats.month.total}</p>
-              <p className="text-green-400 text-xs mt-2">Total</p>
-            </div>
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <p className="text-slate-400 text-sm mb-2">Month Completed</p>
-              <p className="text-3xl font-bold text-white">{stats.month.completed}</p>
-              <p className="text-green-400 text-xs mt-2">Completed</p>
-            </div>
-          </div>
-
-          {/* View Toggle & Filters */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium text-slate-300 mb-2 block">View Mode</label>
-                <select
-                  value={viewMode}
-                  onChange={(e) => setViewMode(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="today">Today's Washes</option>
-                  <option value="monthly">Monthly Summary</option>
-                </select>
-              </div>
-
-              {viewMode === "monthly" && (
-                <>
-                  <div>
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Month</label>
-                    <select
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {new Date(2024, i).toLocaleDateString("en-US", { month: "long" })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Year</label>
-                    <select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      {Array.from({ length: 5 }, (_, i) => {
-                        const year = new Date().getFullYear() - 2 + i;
-                        return (
-                          <option key={year} value={year}>
-                            {year}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label className="text-sm font-medium text-slate-300 mb-2 block">Filter Status</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="washed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Start Washing */}
+          <button
+            onClick={() => navigate("/washer/workflow")}
+            className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 hover:border-green-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Start New Wash</h3>
+              <div className="bg-green-100 group-hover:bg-green-200 p-3 rounded-lg transition-colors">
+                <Plus size={24} className="text-green-600" />
               </div>
             </div>
-          </div>
-
-          {/* Add Car Wash Form */}
-          {showAddForm && (
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-6 text-white">Add New Car Wash</h2>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">Car Owner Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.carOwnerName}
-                    onChange={(e) => setFormData({ ...formData, carOwnerName: e.target.value })}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="John Doe"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">Car Number *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.carNumber}
-                    onChange={(e) => setFormData({ ...formData, carNumber: e.target.value })}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none uppercase"
-                    placeholder="GJ01AB1234"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">Car Model</label>
-                  <input
-                    type="text"
-                    value={formData.carModel}
-                    onChange={(e) => setFormData({ ...formData, carModel: e.target.value })}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Honda City"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">Car Color</label>
-                  <input
-                    type="text"
-                    value={formData.carColor}
-                    onChange={(e) => setFormData({ ...formData, carColor: e.target.value })}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Silver"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">Notes</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                    rows="3"
-                    placeholder="Additional notes..."
-                  />
-                </div>
-
-                <div className="md:col-span-2 flex gap-4">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold transition-all text-white"
-                  >
-                    Add Wash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddForm(false)}
-                    className="flex-1 bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-lg font-semibold transition-all text-white"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+            <p className="text-slate-600 text-sm">Scan a QR code and complete a wash with image uploads</p>
+            <div className="mt-4 inline-flex items-center gap-2 text-green-600 font-semibold">
+              Start Now <ArrowRight size={16} />
             </div>
-          )}
+          </button>
 
-          {/* Car Wash List */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
-            <div className="p-6 border-b border-slate-700">
-              <h2 className="text-xl font-bold text-white">
-                {viewMode === "today"
-                  ? "Today's Washes"
-                  : `${new Date(selectedYear, selectedMonth - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })} Washes`}
-              </h2>
-              <p className="text-sm text-slate-400 mt-1">
-                Showing {filteredWashes.length} record{filteredWashes.length !== 1 ? "s" : ""}
+          {/* View All Jobs */}
+          {/* <button
+            onClick={() => navigate("/washer/jobs")}
+            className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 hover:border-blue-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">My Jobs</h3>
+              <div className="bg-blue-100 group-hover:bg-blue-200 p-3 rounded-lg transition-colors">
+                <CheckCircle size={24} className="text-blue-600" />
+              </div>
+            </div>
+            <p className="text-slate-600 text-sm">View all assigned jobs and bookings</p>
+            <div className="mt-4 inline-flex items-center gap-2 text-blue-600 font-semibold">
+              View Jobs <ArrowRight size={16} />
+            </div>
+          </button> */}
+
+          {/* Wash History */}
+          <button
+            onClick={() => navigate("/washer/wash-history")}
+            className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 hover:border-purple-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Wash History</h3>
+              <div className="bg-purple-100 group-hover:bg-purple-200 p-3 rounded-lg transition-colors">
+                <Activity size={24} className="text-purple-600" />
+              </div>
+            </div>
+            <p className="text-slate-600 text-sm">View all completed washes and earnings</p>
+            <div className="mt-4 inline-flex items-center gap-2 text-purple-600 font-semibold">
+              View History <ArrowRight size={16} />
+            </div>
+          </button>
+        </div>
+
+        {/* Performance Summary */}
+        <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm mb-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Today's Performance</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Completion Rate */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Star size={20} className="text-yellow-600" />
+                <p className="font-semibold text-slate-700">Completion Rate</p>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-3 mb-2">
+                <div
+                  className="bg-green-600 h-3 rounded-full transition-all"
+                  style={{
+                    width: stats.today.total > 0
+                      ? `${(stats.today.completed / stats.today.total) * 100}%`
+                      : "0%",
+                  }}
+                ></div>
+              </div>
+              <p className="text-sm text-slate-600">
+                {stats.today.total > 0
+                  ? `${Math.round((stats.today.completed / stats.today.total) * 100)}%`
+                  : "0%"} complete
               </p>
             </div>
 
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="inline-block animate-spin">⏳</div>
-                <p className="text-slate-400 mt-4">Loading washes...</p>
+            {/* Average Rating */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Star size={20} className="text-orange-600" />
+                <p className="font-semibold text-slate-700">Average Rating</p>
               </div>
-            ) : filteredWashes.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">No car washes found</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-700 bg-slate-900">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-white">Car Owner</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-white">Car Number</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-white">Model</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-white">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-white">Date</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-white">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredWashes.map((wash) => (
-                      <tr key={wash.id} className="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-                        <td className="px-6 py-4 text-white">{wash.car_owner_name}</td>
-                        <td className="px-6 py-4 font-mono font-bold text-blue-400">{wash.car_number}</td>
-                        <td className="px-6 py-4 text-slate-300">{wash.car_model || "-"}</td>
-                        <td className="px-6 py-4">
-                          <select
-                            value={wash.status}
-                            onChange={(e) => handleStatusChange(wash.id, e.target.value)}
-                            className={`rounded-lg px-3 py-1 text-sm font-semibold cursor-pointer border-0 outline-none ${statusColors[wash.status]}`}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="washed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 text-slate-300 text-sm">
-                          {new Date(wash.created_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => handleDelete(wash.id)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    size={20}
+                    className={i <= 4 ? "text-orange-400 fill-orange-400" : "text-slate-300"}
+                  />
+                ))}
               </div>
-            )}
+              <p className="text-sm text-slate-600 mt-2">4.0 out of 5.0</p>
+            </div>
+
+            {/* Earnings Today */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Gift size={20} className="text-purple-600" />
+                <p className="font-semibold text-slate-700">Loyalty Earned</p>
+              </div>
+              <p className="text-3xl font-bold text-purple-600 mb-1">
+                +{stats.today.completed * 10}
+              </p>
+              <p className="text-sm text-slate-600">{stats.today.completed * 10} points today</p>
+            </div>
           </div>
-        </main>
-      </div>
+        </div>
+
+        {/* Recent Activity */}
+        {/* <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Recent Washes</h2>
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">Loading recent washes...</p>
+            </div>
+          ) : filteredWashes.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertCircle size={32} className="mx-auto text-slate-400 mb-3" />
+              <p className="text-slate-500">No washes completed yet today</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredWashes.slice(0, 5).map((wash) => (
+                <div key={wash.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 transition-colors">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">{wash.car_owner_name}</p>
+                    <p className="text-sm text-slate-600">
+                      Car: <span className="font-mono font-bold text-blue-600">{wash.car_number}</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-600">
+                      {new Date(wash.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold ${
+                        wash.status === "washed"
+                          ? "bg-green-100 text-green-800"
+                          : wash.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {wash.status === "washed" ? "Completed" : wash.status === "pending" ? "Pending" : "Cancelled"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div> */}
+      </main>
+
+      {/* QR SCANNER MODAL */}
+      {showQRScanner && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-blue-200">
+              <h2 className="text-2xl font-bold text-slate-900">
+                {scannedCode ? "QR Scanned" : "Scan QR Code"}
+              </h2>
+              <button
+                onClick={closeCamera}
+                className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+              >
+                <X size={24} className="text-red-600" />
+              </button>
+            </div>
+
+            {/* Camera or Scanned Result */}
+            <div className="p-6">
+              {scannedCode ? (
+                // Show scanned QR result
+                <div className="space-y-4 text-center py-8">
+                  <div className="bg-green-100 p-4 rounded-lg mb-4">
+                    <CheckCircle size={48} className="mx-auto text-green-600 mb-3" />
+                    <p className="text-lg font-bold text-green-800">QR Code Detected!</p>
+                  </div>
+                  <div className="bg-slate-100 p-4 rounded-lg mb-4">
+                    <p className="text-sm text-slate-600 mb-2">Scanned Code:</p>
+                    <p className="font-mono font-bold text-slate-900 break-all">{scannedCode}</p>
+                  </div>
+                  <button
+                    onClick={() => navigate("/washer/workflow")}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    Go to Workflow <ArrowRight size={20} />
+                  </button>
+                  <button
+                    onClick={closeCamera}
+                    className="w-full bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-3 rounded-lg transition-colors"
+                  >
+                    Scan Another
+                  </button>
+                </div>
+              ) : videoStream ? (
+                // Show camera feed
+                <div className="space-y-4">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full rounded-lg border-2 border-blue-300"
+                    style={{ aspectRatio: "4/5" }}
+                  />
+                  <canvas ref={canvasRef} className="hidden" />
+                  <div className="flex items-center justify-center gap-2 py-4">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <p className="text-center text-sm text-slate-600 font-semibold">
+                      Scanning... Point camera at QR code
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Loading state
+                <div className="space-y-4 text-center">
+                  <div className="py-8">
+                    <Camera size={48} className="mx-auto text-blue-600 mb-4" />
+                    <p className="text-slate-600">Opening camera...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

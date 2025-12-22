@@ -25,7 +25,8 @@ import {
   FiWind,
   FiPhone,
   FiMail,
-  FiX
+  FiX,
+  FiClock
 } from "react-icons/fi";
 import { FaCar, FaStar } from "react-icons/fa";
 
@@ -46,6 +47,9 @@ export default function CustomerDashboard() {
   const [washTracking, setWashTracking] = useState([]);
   const [monthlyWashes, setMonthlyWashes] = useState(0);
   const [nonWashDays, setNonWashDays] = useState(0);
+  const [customerCars, setCustomerCars] = useState([]);
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [carPasses, setCarPasses] = useState({});
   
   // Rating modal state
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -91,6 +95,17 @@ export default function CustomerDashboard() {
 
         setUser(auth.user);
 
+        // Fetch customer profile for address
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("address")
+          .eq("id", auth.user.id)
+          .single();
+
+        if (profile) {
+          setCustomerAddress(profile.address || "");
+        }
+
         // Fetch bookings from backend API instead of direct Supabase query to avoid RLS issues
         try {
           const response = await fetch(
@@ -110,6 +125,9 @@ export default function CustomerDashboard() {
 
             // Fetch wash tracking data from car_wash_tracking table
             await fetchWashTrackingData(auth.user.id);
+
+            // Fetch customer cars
+            await fetchCustomerCars(auth.user.id);
           } else {
             console.error("❌ Error fetching bookings:", result.error);
             setBookings([]);
@@ -119,7 +137,7 @@ export default function CustomerDashboard() {
           setBookings([]);
         }
 
-        // Fetch wallet balance
+        // Fetch wallet balance and total spent from transactions
         await fetchWalletBalance(auth.user.id);
       } catch (err) {
         console.error("❌ Error loading customer data:", err);
@@ -133,21 +151,30 @@ export default function CustomerDashboard() {
   // Fetch wallet balance from transactions
   const fetchWalletBalance = async (customerId) => {
     try {
-      // Send userId in query params for backend authentication
-      const url = new URL(
-        `http://localhost:5000/transactions/customer/${customerId}`
-      );
-      url.searchParams.append('user_id', customerId);
+      // Get the session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `http://localhost:5000/transactions/customer/${customerId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          }
         }
-      });
+      );
+      
+      if (!response.ok) {
+        console.error("❌ API Error:", response.status, response.statusText);
+        setWalletBalance(0);
+        setTotalSpent(0);
+        return;
+      }
+      
       const result = await response.json();
 
       if (result.success && result.transactions) {
-        // Calculate wallet balance (credit transactions only)
+        // Calculate wallet balance (credit transactions only - pending & success)
         const balance = result.transactions
           .filter(
             (tx) =>
@@ -156,17 +183,26 @@ export default function CustomerDashboard() {
           )
           .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
-        // Calculate total spent (debit transactions + card payments)
+        // Calculate total spent (all successful debit/payment transactions)
         const spent = result.transactions
           .filter(
             (tx) =>
-              (tx.direction === "debit" && tx.status === "success") ||
-              (tx.payment_method === "card" && tx.status === "success")
+              tx.status === "success" &&
+              (tx.direction === "debit" || 
+               tx.payment_method === "card" || 
+               tx.type === "booking_payment" ||
+               tx.type === "payment" ||
+               tx.type === "pass_purchase")
           )
-          .reduce((sum, tx) => sum + (tx.total_amount || tx.amount || 0), 0);
+          .reduce((sum, tx) => sum + (parseFloat(tx.total_amount) || parseFloat(tx.amount) || 0), 0);
 
         setWalletBalance(balance);
         setTotalSpent(spent);
+        console.log("✅ Wallet balance fetched:", { balance, spent, allTransactions: result.transactions });
+      } else {
+        console.warn("⚠️ No transactions found");
+        setWalletBalance(0);
+        setTotalSpent(0);
       }
     } catch (err) {
       console.warn("⚠️ Could not fetch wallet balance:", err);
@@ -250,6 +286,53 @@ export default function CustomerDashboard() {
       console.warn("⚠️ Error fetching wash tracking:", err);
       setMonthlyWashes(0);
       setNonWashDays(0);
+    }
+  };
+
+  // Fetch customer cars
+  const fetchCustomerCars = async (customerId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/cars/${customerId}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setCustomerCars(result.data);
+        
+        // Fetch passes for each car individually from monthly_pass table
+        const passes = {};
+        for (const car of result.data) {
+          try {
+            const { data: passData, error } = await supabase
+              .from('monthly_pass')
+              .select('*')
+              .eq('car_id', car.id)
+              .eq('active', true)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
+            
+            if (passData) {
+              passes[car.id] = passData;
+              console.log(`✅ Active pass found for car ${car.id}:`, passData);
+            } else {
+              passes[car.id] = null;
+              console.log(`ℹ️ No active pass for car ${car.id}`);
+            }
+          } catch (err) {
+            console.log(`ℹ️ No active pass for car ${car.id}`);
+            passes[car.id] = null;
+          }
+        }
+        
+        setCarPasses(passes);
+        console.log("✅ Customer cars loaded:", result.data);
+      } else {
+        console.log("ℹ️ No cars found");
+        setCustomerCars([]);
+      }
+    } catch (err) {
+      console.warn("⚠️ Error fetching customer cars:", err);
+      setCustomerCars([]);
     }
   };
 
@@ -527,23 +610,23 @@ export default function CustomerDashboard() {
                 Track your bookings, manage your pass & earn loyalty points
               </p>
             </div>
-            <div className="mt-6 md:mt-0 flex gap-3">
+            {/* <div className="mt-6 md:mt-0 flex gap-3">
               <Link
                 to="/bookings"
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
               >
                 <FiTruck size={20} /> Book a Wash
               </Link>
-            </div>
+            </div> */}
           </div>
 
           {/* 🎯 QUICK ACTIONS */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
             {[
-              { to: "/bookings", icon: FiTruck, label: "Book Wash", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" },
+              { to: "/wash-history", icon: FiClock, label: "Wash History", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" },
               { to: "/monthly-pass", icon: FiAward, label: "My Pass", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
               { to: "/my-cars", icon: FaCar, label: "My Cars", colors: "from-green-600 to-emerald-600", bg: "from-green-50 to-emerald-50", border: "border-green-200" },
-              { to: "/transactions", icon: FiCreditCard, label: "Wallet", colors: "from-pink-600 to-rose-600", bg: "from-pink-50 to-rose-50", border: "border-pink-200" },
+              { to: "/transactions", icon: FiCreditCard, label: "Transactions", colors: "from-pink-600 to-rose-600", bg: "from-pink-50 to-rose-50", border: "border-pink-200" },
               { to: "/location", icon: FiMapPin, label: "Location", colors: "from-indigo-600 to-purple-600", bg: "from-indigo-50 to-purple-50", border: "border-indigo-200" },
               { to: "/emergency-wash", icon: FiAlertCircle, label: "Quick Wash", colors: "from-red-600 to-pink-600", bg: "from-red-50 to-pink-50", border: "border-red-200" },
             ].map(({ to, icon: Icon, label, colors, bg, border }) => (
@@ -596,49 +679,91 @@ export default function CustomerDashboard() {
 
           {/* 💳 WALLET & MONTHLY PASS STATUS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-            {/* Wallet Balance */}
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-center text-2xl">
-                    <FiDollarSign />
+            {/* Promotional Carousel */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all overflow-hidden relative">
+              <style>{`
+                @keyframes scroll-right-to-left {
+                  0% {
+                    transform: translateX(100%);
+                  }
+                  100% {
+                    transform: translateX(-100%);
+                  }
+                }
+                .carousel-item {
+                  animation: scroll-right-to-left 12s linear infinite;
+                }
+                .carousel-item:nth-child(1) { animation-delay: 0s; }
+                .carousel-item:nth-child(2) { animation-delay: 2.4s; }
+                .carousel-item:nth-child(3) { animation-delay: 4.8s; }
+                .carousel-item:nth-child(4) { animation-delay: 7.2s; }
+                .carousel-item:nth-child(5) { animation-delay: 9.6s; }
+              `}</style>
+              
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">
+                    <FiTrendingUp />
                   </div>
-                  Wallet Balance
+                  Special Offers
                 </h3>
-                <span className="text-xs bg-emerald-600 text-white px-4 py-2 rounded-full font-bold tracking-wide">
-                  ACTIVE
-                </span>
               </div>
-              <p className="text-5xl font-black text-emerald-600 mb-2">
-                ₹{walletBalance.toLocaleString("en-IN", {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
-              <p className="text-slate-600 text-sm font-semibold mb-6">
-                Available for bookings
-              </p>
-              <Link
-                to="/transactions"
-                className="inline-block px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105"
-              >
-                + Add Money
-              </Link>
-              <div className="mt-6 pt-6 border-t border-emerald-200 space-y-3">
+
+              {/* Carousel Container */}
+              <div className="relative w-full h-48 overflow-hidden rounded-xl bg-gradient-to-r from-slate-800 to-slate-700">
+                <div className="absolute inset-0 flex">
+                  {[
+                    { title: "50% Off Premium Wash", color: "from-blue-500 to-cyan-500", icon: "🚗" },
+                    { title: "Free Interior Clean", color: "from-purple-500 to-pink-500", icon: "✨" },
+                    { title: "Loyalty Bonus +100 pts", color: "from-green-500 to-emerald-500", icon: "⭐" },
+                    { title: "Monthly Pass Discount", color: "from-orange-500 to-red-500", icon: "🎯" },
+                    { title: "Express Wash Service", color: "from-indigo-500 to-blue-500", icon: "⚡" },
+                  ].map((item, index) => (
+                    <div
+                      key={index}
+                      className="carousel-item flex-shrink-0 w-full h-48 bg-gradient-to-br px-8 py-6 flex flex-col items-center justify-center text-center"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, var(--color-1), var(--color-2))`,
+                        "--color-1": index === 0 ? "#0369a1" : index === 1 ? "#7c3aed" : index === 2 ? "#059669" : index === 3 ? "#ea580c" : "#4f46e5",
+                        "--color-2": index === 0 ? "#06b6d4" : index === 1 ? "#ec4899" : index === 2 ? "#10b981" : index === 3 ? "#dc2626" : "#3b82f6",
+                      }}
+                    >
+                      <div className="text-5xl mb-3">{item.icon}</div>
+                      <h4 className="text-white font-bold text-lg">{item.title}</h4>
+                      <p className="text-white/80 text-sm mt-2">Limited Time Offer</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Info Section */}
+              {/* <div className="mt-6 pt-6 border-t border-slate-700 space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-600">Total Spent:</span>
-                  <span className="font-bold text-emerald-700">
-                    ₹{totalSpent.toLocaleString("en-IN", {
+                  <span className="text-slate-300">Current Balance:</span>
+                  <span className="font-bold text-emerald-300">
+                    ₹{walletBalance.toLocaleString("en-IN", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
                     })}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-600">Completed Bookings:</span>
-                  <span className="font-bold text-emerald-700">{completedBookings}</span>
+                  <span className="text-slate-300">Total Spent:</span>
+                  <span className="font-bold text-blue-300">
+                    ₹{totalSpent.toLocaleString("en-IN", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
                 </div>
-              </div>
+              </div> */}
+
+              {/* <Link
+                to="/transactions"
+                className="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105 w-full text-center"
+              >
+                + Add Money
+              </Link> */}
             </div>
 
             {/* Monthly Pass Status */}
@@ -807,123 +932,127 @@ export default function CustomerDashboard() {
             </div>
           </div>
 
-          {/* 🚗 RECENT BOOKINGS */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-lg">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-bold text-slate-900">
-                {activeBookings.length > 0 ? "🚗 Active Bookings" : "Booking History"}
-              </h2>
-              <Link
-                to="/bookings"
-                className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1 transition"
-              >
-                View All <span>→</span>
-              </Link>
-            </div>
+          {/* 🚗 MY CARS */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-sm">
+                <FaCar />
+              </div>
+              My Cars
+            </h2>
 
-            {bookings.length === 0 ? (
-              <div className="py-8 text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <FaCar className="text-3xl text-slate-400" />
-                </div>
-                <p className="text-slate-600 text-base font-semibold mb-1">
-                  No bookings yet
-                </p>
-                <p className="text-slate-500 text-xs mb-4">
-                  Start your first car wash today!
-                </p>
+            {customerCars.length === 0 ? (
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-12 text-center shadow-lg">
+                <FaCar size={48} className="mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-600 text-lg font-semibold mb-4">No cars added yet</p>
                 <Link
-                  to="/bookings"
-                  className="inline-block px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg"
+                  to="/my-cars"
+                  className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg font-bold transition-all hover:shadow-lg"
                 >
-                  Book a Wash Now
+                  Add Your First Car
                 </Link>
               </div>
             ) : (
-              <div className="space-y-3">
-                {bookings.slice(0, 5).map((b, idx) => (
-                  <div
-                    key={b.id || idx}
-                    className="bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-lg p-3 hover:shadow-lg hover:border-blue-300 transition-all group"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      {/* Car & Plate */}
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 flex items-center justify-center text-base text-blue-600">
-                          <FaCar />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">{b.car_name || "Car"}</p>
-                          <p className="text-xs text-slate-500">
-                            {b.number_plate || "N/A"}
-                          </p>
-                        </div>
-                      </div>
+              <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                        <th className="px-6 py-4 text-left text-sm font-bold">Car Name</th>
+                        <th className="px-6 py-4 text-left text-sm font-bold">License Plate</th>
+                        <th className="px-6 py-4 text-left text-sm font-bold">Location</th>
+                        <th className="px-6 py-4 text-left text-sm font-bold">Pass Status</th>
+                        <th className="px-6 py-4 text-center text-sm font-bold">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customerCars.map((car, index) => {
+                        // Use individual car pass from carPasses object
+                        const carPass = carPasses[car.id];
+                        const passStatus = carPass
+                          ? {
+                              status: "ACTIVE",
+                              dueDate: new Date(carPass.valid_till).toLocaleDateString("en-IN"),
+                              color: "green",
+                              icon: "✓",
+                            }
+                          : {
+                              status: "NO PASS",
+                              dueDate: null,
+                              color: "red",
+                              icon: "✕",
+                            };
 
-                      {/* Date & Location */}
-                      <div className="flex gap-4 flex-1">
-                        <div>
-                          <p className="text-xs text-slate-500 font-semibold mb-0.5">Date & Time</p>
-                          <p className="font-semibold text-slate-900 flex items-center gap-1 text-sm">
-                            <FiCalendar className="text-slate-400" size={14} />
-                            {b.date || "N/A"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-semibold mb-0.5">Location</p>
-                          <p className="font-semibold text-slate-900 flex items-center gap-1 text-sm">
-                            <FiMapPin className="text-slate-400" size={14} />
-                            {b.location || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Amount */}
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-xs text-slate-500 font-semibold mb-0.5">Amount</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          {b.amount || "₹299"}
-                        </p>
-                      </div>
-
-                      {/* Status & Action */}
-                      <div className="flex flex-col gap-2 items-end">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                            b.status === "Completed"
-                              ? "bg-green-100 text-green-700"
-                              : b.status === "In Progress"
-                              ? "bg-amber-100 text-amber-700"
-                              : b.status === "Cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {b.status || "Pending"}
-                        </span>
-                        
-                        {b.status === "Completed" && !b.has_rated ? (
-                          <button
-                            onClick={() => openRatingModal(b)}
-                            className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white rounded-lg text-xs font-bold transition-all hover:scale-105 flex items-center gap-1 whitespace-nowrap"
+                        return (
+                          <tr
+                            key={car.id}
+                            className={`border-b border-slate-200 hover:bg-blue-50 transition-colors ${
+                              index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                            }`}
                           >
-                            ⭐ Rate
-                          </button>
-                        ) : b.status === "Completed" && b.has_rated ? (
-                          <span className="text-xs text-green-600 font-bold">✅ Rated</span>
-                        ) : (b.status === "In Progress" || b.status === "Confirmed" || b.status === "Pending") ? (
-                          <Link
-                            to={`/location`}
-                            state={{ bookingId: b.id }}
-                            className="px-3 py-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap"
-                          >
-                            📍 Track
-                          </Link>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                            {/* Car Name */}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                                  <FaCar size={18} />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-slate-900">{car.model || "Unknown"}</p>
+                                  <p className="text-xs text-slate-600">{car.brand || ""}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* License Plate */}
+                            <td className="px-6 py-4">
+                              <div className="bg-yellow-100 border border-yellow-300 rounded px-3 py-2 text-center">
+                                <p className="font-mono font-bold text-slate-900">{car.number_plate}</p>
+                              </div>
+                            </td>
+
+                            {/* Location */}
+                            <td className="px-6 py-4">
+                              <div className="flex items-start gap-2">
+                                <FiMapPin size={16} className="text-blue-600 mt-1 flex-shrink-0" />
+                                <div>
+                                  <p className="font-semibold text-slate-900">{customerAddress || "Not Specified"}</p>
+                                  <p className="text-xs text-slate-600">{car.location || "N/A"}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Pass Status */}
+                            <td className="px-6 py-4">
+                              <div
+                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm ${
+                                  passStatus.color === "green"
+                                    ? "bg-green-100 text-green-800 border border-green-300"
+                                    : "bg-red-100 text-red-800 border border-red-300"
+                                }`}
+                              >
+                                <span className="text-lg">{passStatus.icon}</span>
+                                {passStatus.status}
+                              </div>
+                              {passStatus.dueDate && (
+                                <p className="text-xs text-slate-600 mt-2">Expires: {passStatus.dueDate}</p>
+                              )}
+                            </td>
+
+                            {/* Action */}
+                            <td className="px-6 py-4 text-center">
+                              <Link
+                                to="/my-cars"
+                                className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg font-semibold text-xs transition-all hover:shadow-lg"
+                              >
+                                Manage
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

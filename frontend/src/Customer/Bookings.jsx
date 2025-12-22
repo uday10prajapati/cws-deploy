@@ -160,12 +160,10 @@ export default function BookingPage() {
       // Load existing bookings from backend API instead of direct Supabase query
       setLoadingBookings(true);
       try {
-        console.log(`📋 Fetching bookings for customer ${auth.user.id}...`);
         const response = await fetch(`http://localhost:5000/bookings/customer/${auth.user.id}`);
         const result = await response.json();
         
         if (result.success) {
-          console.log(`✅ Retrieved ${result.bookings?.length || 0} bookings`);
           setBookings(result.bookings || []);
         } else {
           console.error("❌ Error fetching bookings:", result.error);

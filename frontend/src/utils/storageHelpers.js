@@ -1,12 +1,34 @@
 import { supabase } from "../supabaseClient";
 
+// Cache to prevent duplicate initialization calls
+let initializationInProgress = false;
+let isInitialized = false;
+
 /**
  * Initializes the washer_documents storage bucket via backend endpoint
  * Backend uses service role key which has permission to create buckets
+ * Prevents duplicate calls with caching
  */
 export const initializeStorageBucket = async () => {
+  // If already initialized, skip
+  if (isInitialized) {
+    return true;
+  }
+
+  // If initialization is in progress, wait for it
+  if (initializationInProgress) {
+    return new Promise((resolve) => {
+      const checkInterval = setInterval(() => {
+        if (isInitialized) {
+          clearInterval(checkInterval);
+          resolve(true);
+        }
+      }, 100);
+    });
+  }
+
   try {
-    console.log("🔄 Initializing storage bucket via backend...");
+    initializationInProgress = true;
 
     const response = await fetch("http://localhost:5000/documents/initialize-storage", {
       method: "POST",
@@ -16,14 +38,14 @@ export const initializeStorageBucket = async () => {
     const result = await response.json();
 
     if (result.success) {
-      console.log("✅ Storage bucket initialized:", result.message);
+      isInitialized = true;
       return true;
     } else {
-      console.error("❌ Error initializing bucket:", result.error);
+      initializationInProgress = false;
       return false;
     }
   } catch (error) {
-    console.error("❌ Fatal error initializing bucket:", error);
+    initializationInProgress = false;
     return false;
   }
 };

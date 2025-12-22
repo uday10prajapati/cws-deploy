@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { supabase } from "../supabase.js";
+import { notifyAdminDocumentSubmission } from "../utils/notificationManager.js";
 
 const router = express.Router();
 
@@ -123,6 +124,13 @@ router.post("/documents/upload", async (req, res) => {
       });
     }
 
+    // Fetch washer name for notification
+    const { data: washerProfile } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", washer_id)
+      .single();
+
     // Insert or update document
     const { data, error } = await supabase
       .from("washer_documents")
@@ -143,23 +151,13 @@ router.post("/documents/upload", async (req, res) => {
     // Update profile code completion status
     await updateProfileCodeStatus(washer_id);
 
-    // Create notification for admin
-    const { data: adminUsers } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("role", "admin");
-
-    if (adminUsers) {
-      const notifications = adminUsers.map((admin) => ({
-        user_id: admin.id,
-        type: "document_uploaded",
-        title: "New Document Upload",
-        message: `Washer has uploaded ${document_type} document`,
-        reference_id: data.id,
-      }));
-
-      await supabase.from("notifications").insert(notifications);
-    }
+    // Notify admins about document submission
+    await notifyAdminDocumentSubmission(
+      washer_id,
+      washerProfile?.name || "Unknown Washer",
+      document_type,
+      document_url
+    );
 
     res.json({
       success: true,
@@ -440,7 +438,6 @@ router.post("/initialize-storage", async (req, res) => {
     const bucketExists = buckets?.some((b) => b.name === "washer_documents");
 
     if (bucketExists) {
-      console.log("✅ Storage bucket already exists");
       return res.json({ success: true, created: false, message: "Bucket already exists" });
     }
 

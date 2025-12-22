@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getUserRole } from "../utils/roleBasedRedirect";
-import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp, FiBell, FiPhone, FiMail, FiGift, FiAlertCircle, FiCreditCard, FiAward, FiTruck, FiWind, FiInfo } from "react-icons/fi";
+import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp, FiPhone, FiMail, FiGift, FiAlertCircle, FiCreditCard, FiAward, FiTruck, FiWind, FiInfo } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
+import NotificationBell from "./NotificationBell";
 
 export default function NavbarNew() {
   const location = useLocation();
@@ -15,33 +16,10 @@ export default function NavbarNew() {
   const [servicesDropdown, setServicesDropdown] = useState(false);
   const [paymentsDropdown, setPaymentsDropdown] = useState(false);
   const [accountDropdown, setAccountDropdown] = useState(false);
-  const [notificationDropdown, setNotificationDropdown] = useState(false);
   const [operationsDropdown, setOperationsDropdown] = useState(false);
   const [financeDropdown, setFinanceDropdown] = useState(false);
   const [reportsDropdown, setReportsDropdown] = useState(false);
   const [adminAccountDropdown, setAdminAccountDropdown] = useState(false);
-
-  // Mock notifications data
-  const [notifications] = useState([
-    {
-      id: 1,
-      message: "Your booking is confirmed for today at 2:00 PM",
-      type: "success",
-      time: "2 hours ago"
-    },
-    { 
-      id: 2, 
-      message: "New offer: 50% off on monthly pass", 
-      type: "offer",
-      time: "5 hours ago"
-    },
-    { 
-      id: 3, 
-      message: "Your vehicle is ready for pickup", 
-      type: "info",
-      time: "1 day ago"
-    },
-  ]);
 
   useEffect(() => {
     const userRole = getUserRole();
@@ -84,12 +62,12 @@ export default function NavbarNew() {
   /* CUSTOMER MENU */
   const customerMainMenu = [
     { label: "Dashboard", link: "/customer-dashboard", icon: <FiHome /> },
-    { label: "Book a Wash", link: "/bookings", icon: <FiAlertCircle /> },
+    // { label: "Book a Wash", link: "/bookings", icon: <FiAlertCircle /> },
     { label: "My Cars", link: "/my-cars", icon: <FaCar /> },
   ];
 
   const servicesMenu = [
-    { label: "My Bookings", link: "/bookings", icon: <FiClipboard /> },
+    // { label: "My Bookings", link: "/bookings", icon: <FiClipboard /> },
     { label: "Wash History", link: "/wash-history", icon: <FiTruck /> },
     { label: "Monthly Pass", link: "/monthly-pass", icon: <FiAward /> },
     { label: "Quick Wash", link: "/emergency-wash", icon: <FiWind /> },
@@ -144,8 +122,19 @@ export default function NavbarNew() {
     { label: "About Us", link: "/about-us", icon: <FiInfo /> },
   ];
 
+  /* WASHER MENU */
+  const washerMainMenu = [
+    { label: "Dashboard", link: "/carwash", icon: <FiHome /> },
+    { label: "WashHistory", link: "/washer/wash-history", icon: <FiClipboard /> },
+    { label: "My Work", link: "/washer/workflow", icon: <FiTruck /> },
+    { label: "Docs", link: "/washer/documents", icon: <FiAlertCircle /> },
+    { label: "Videos", link: "/washer/demo-videos", icon: <FiInfo /> },
+    { label: "Profile", link: "/profile", icon: <FiUser /> },
+  ];
+
   const isCustomer = role === "customer";
   const isAdmin = role === "admin";
+  const isWasher = role === "washer" || role === "employee";
 
   return (
     <>
@@ -429,87 +418,30 @@ export default function NavbarNew() {
             </div>
           )}
 
+          {/* DESKTOP MENU - WASHER */}
+          {isWasher && (
+            <div className="hidden lg:flex items-center gap-6">
+              {washerMainMenu.map((m) => (
+                <Link
+                  key={m.label}
+                  to={m.link}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${
+                    location.pathname === m.link
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-700 hover:text-blue-600"
+                  }`}
+                >
+                  <span className="text-base">{m.icon}</span>
+                  {m.label}
+                </Link>
+              ))}
+            </div>
+          )}
+
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-4">
             {/* NOTIFICATION ICON */}
-            {isCustomer && (
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationDropdown(!notificationDropdown)}
-                  className="relative text-slate-700 hover:text-blue-600 transition text-2xl hover:scale-110"
-                >
-                  <FiBell size={24} />
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                    {notifications.length}
-                  </span>
-                </button>
-
-                {/* NOTIFICATION DROPDOWN */}
-                {notificationDropdown && (
-                  <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-blue-200 rounded-lg shadow-xl z-50 overflow-hidden">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-4 flex items-center justify-between">
-                      <h3 className="font-bold text-lg">Notifications</h3>
-                      <button
-                        onClick={() => setNotificationDropdown(false)}
-                        className="hover:bg-white/20 p-1 rounded transition"
-                      >
-                        <FiX size={20} />
-                      </button>
-                    </div>
-
-                    {/* Notifications List */}
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="p-6 text-center text-slate-500">
-                          <p className="text-sm">No notifications yet</p>
-                        </div>
-                      ) : (
-                        notifications.map((notif) => (
-                          <div
-                            key={notif.id}
-                            className={`px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer ${
-                              notif.type === "success"
-                                ? "border-l-4 border-l-green-500 bg-green-50/30"
-                                : notif.type === "offer"
-                                ? "border-l-4 border-l-purple-500 bg-purple-50/30"
-                                : "border-l-4 border-l-blue-500 bg-blue-50/30"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5 ${
-                                notif.type === "success"
-                                  ? "bg-green-200 text-green-700"
-                                  : notif.type === "offer"
-                                  ? "bg-purple-200 text-purple-700"
-                                  : "bg-blue-200 text-blue-700"
-                              }`}>
-                                {notif.type === "success" ? "✓" : notif.type === "offer" ? "🎉" : "ℹ"}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-slate-900 break-words">{notif.message}</p>
-                                <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="p-3 bg-slate-50 border-t border-slate-100">
-                      <Link
-                        to="#"
-                        className="text-center block text-sm font-semibold text-blue-600 hover:text-blue-700 transition"
-                        onClick={() => setNotificationDropdown(false)}
-                      >
-                        View All Notifications →
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            {(isCustomer || isWasher) && <NotificationBell />}
 
             {/* USER PROFILE */}
             {user && (
@@ -699,6 +631,27 @@ export default function NavbarNew() {
                     </Link>
                   ))}
                 </div>
+              </>
+            )}
+
+            {isWasher && (
+              <>
+                {/* Washer Main Menu Items */}
+                {washerMainMenu.map((m) => (
+                  <Link
+                    key={m.label}
+                    to={m.link}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      location.pathname === m.link
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-600"
+                    }`}
+                  >
+                    <span className="text-base">{m.icon}</span>
+                    {m.label}
+                  </Link>
+                ))}
               </>
             )}
 

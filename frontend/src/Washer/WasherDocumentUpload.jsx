@@ -3,8 +3,7 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import { initializeStorageBucket } from "../utils/storageHelpers";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import NavbarNew from "../components/NavbarNew";
 import {
   FiUpload,
   FiCheck,
@@ -12,12 +11,8 @@ import {
   FiRefreshCw,
   FiCopy,
   FiAlertCircle,
-  FiMenu,
-  FiChevronLeft,
-  FiLogOut,
   FiHome,
-  FiClipboard,
-  FiUser,
+  FiUser 
 } from "react-icons/fi";
 
 const WasherDocumentUpload = () => {
@@ -32,8 +27,6 @@ const WasherDocumentUpload = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState({});
   const [copied, setCopied] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
 
   const documentTypes = [
     {
@@ -206,7 +199,7 @@ const WasherDocumentUpload = () => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin text-4xl mb-4">⏳</div>
-          <p className="text-slate-400">Loading documents...</p>
+          <p className="text-slate-600">Loading documents...</p>
         </div>
       </div>
     );
@@ -215,108 +208,30 @@ const WasherDocumentUpload = () => {
   const status = getCompletionStatus();
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+    <div className="min-h-screen bg-white">
+      {/* Navbar */}
+      <NavbarNew />
 
-      {/* ▓▓▓ SIDEBAR OVERLAY (MOBILE) ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <div
-        className={`fixed lg:relative w-64 bg-slate-900 border-r border-slate-800 h-screen transition-transform duration-300 z-40 flex flex-col ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
-        {/* LOGO */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-2xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
-            CarWash+
-          </h2>
-        </div>
-
-        {/* MENU */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {employeeMenu.map((item) => (
-            <button
-              key={item.name}
-              onClick={() => {
-                navigate(item.link);
-                setSidebarOpen(false);
-              }}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm font-medium ${
-                window.location.pathname === item.link
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div className="p-4 border-t border-slate-800">
-          <button
-            onClick={handleLogout}
-            className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition"
-          >
-            <FiLogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div className="flex-1 flex flex-col lg:mt-0 mt-16">
-        {/* TOP NAVBAR */}
-        <div className="hidden lg:block bg-slate-900 border-b border-slate-800 px-8 py-4 shadow-lg">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-white">📄 Document Verification</h1>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition"
-            >
-              <FiLogOut size={16} />
-              Logout
-            </button>
-          </div>
-        </div>
-
-        {/* CONTENT */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+      {/* Main Content */}
+      <div className="pt-20 pb-12">
+        <div className="max-w-6xl mx-auto px-4 md:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
             📄 Document Verification
           </h1>
-          <p className="text-slate-400">
+          <p className="text-slate-600">
             Complete your profile by uploading required documents
           </p>
         </div>
 
         {/* Profile Code Card */}
         {profileCode && (
-          <div className="bg-linear-to-r from-blue-600/20 to-blue-900/20 border border-blue-500/30 rounded-lg p-6 mb-8">
+          <div className="bg-linear-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-lg p-6 mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-sm mb-2">Your Profile Code</p>
-                <p className="text-3xl font-bold text-blue-400 font-mono">
+                <p className="text-slate-600 text-sm mb-2">Your Profile Code</p>
+                <p className="text-3xl font-bold text-blue-700 font-mono">
                   {profileCode.profile_code}
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
@@ -335,57 +250,57 @@ const WasherDocumentUpload = () => {
         )}
 
         {/* Completion Status */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <FiAlertCircle className="text-yellow-400" /> Verification Status
+        <div className="bg-slate-50 border border-slate-300 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <FiAlertCircle className="text-yellow-500" /> Verification Status
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
               <div
                 className={`text-4xl mb-2 ${
-                  status.aadhar ? "text-green-400" : "text-slate-400"
+                  status.aadhar ? "text-green-600" : "text-slate-400"
                 }`}
               >
                 {status.aadhar ? "✅" : "⏳"}
               </div>
-              <p className="text-sm text-slate-300">Aadhar</p>
+              <p className="text-sm text-slate-700">Aadhar</p>
             </div>
             <div className="text-center">
               <div
                 className={`text-4xl mb-2 ${
-                  status.identity ? "text-green-400" : "text-slate-400"
+                  status.identity ? "text-green-600" : "text-slate-400"
                 }`}
               >
                 {status.identity ? "✅" : "⏳"}
               </div>
-              <p className="text-sm text-slate-300">Identity</p>
+              <p className="text-sm text-slate-700">Identity</p>
             </div>
             <div className="text-center">
               <div
                 className={`text-4xl mb-2 ${
-                  status.bank ? "text-green-400" : "text-slate-400"
+                  status.bank ? "text-green-600" : "text-slate-400"
                 }`}
               >
                 {status.bank ? "✅" : "⏳"}
               </div>
-              <p className="text-sm text-slate-300">Bank</p>
+              <p className="text-sm text-slate-700">Bank</p>
             </div>
             <div className="text-center">
               <div
                 className={`text-4xl mb-2 ${
-                  status.profilePic ? "text-green-400" : "text-slate-400"
+                  status.profilePic ? "text-green-600" : "text-slate-400"
                 }`}
               >
                 {status.profilePic ? "✅" : "⏳"}
               </div>
-              <p className="text-sm text-slate-300">Photo</p>
+              <p className="text-sm text-slate-700">Photo</p>
             </div>
           </div>
 
           {status.allComplete && (
-            <div className="mt-6 p-4 bg-green-600/20 border border-green-500/30 rounded-lg">
-              <p className="text-green-400 font-semibold">
+            <div className="mt-6 p-4 bg-green-50 border border-green-300 rounded-lg">
+              <p className="text-green-700 font-semibold">
                 ✨ All documents verified! Your profile is complete.
               </p>
             </div>
@@ -403,29 +318,29 @@ const WasherDocumentUpload = () => {
                 key={docType.id}
                 className={`rounded-lg border p-6 transition ${
                   doc?.verified
-                    ? "bg-green-600/10 border-green-500/30"
+                    ? "bg-green-50 border-green-300"
                     : doc
-                    ? "bg-yellow-600/10 border-yellow-500/30"
-                    : "bg-slate-800/50 border-slate-700"
+                    ? "bg-yellow-50 border-yellow-300"
+                    : "bg-slate-50 border-slate-300"
                 }`}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-white">
+                    <h3 className="text-lg font-bold text-slate-900">
                       {docType.label}
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       {docType.description}
                     </p>
                   </div>
                   <div className="text-2xl">
                     {doc?.verified ? (
-                      <FiCheck className="text-green-400" />
+                      <FiCheck className="text-green-600" />
                     ) : doc ? (
-                      <div className="text-yellow-400">⏳</div>
+                      <div className="text-yellow-500">⏳</div>
                     ) : docType.required ? (
-                      <FiX className="text-red-400" />
+                      <FiX className="text-red-500" />
                     ) : (
                       <div className="text-slate-400">◯</div>
                     )}
@@ -435,17 +350,17 @@ const WasherDocumentUpload = () => {
                 {/* Status */}
                 <div className="mb-4">
                   {doc?.verified && (
-                    <div className="text-xs text-green-400 bg-green-600/20 px-3 py-1 rounded inline-block">
+                    <div className="text-xs text-green-700 bg-green-100 px-3 py-1 rounded inline-block">
                       ✓ Verified
                     </div>
                   )}
                   {doc && !doc.verified && (
-                    <div className="text-xs text-yellow-400 bg-yellow-600/20 px-3 py-1 rounded inline-block">
+                    <div className="text-xs text-yellow-700 bg-yellow-100 px-3 py-1 rounded inline-block">
                       ⏳ Pending Review
                     </div>
                   )}
                   {doc?.notes && (
-                    <p className="text-xs text-slate-400 mt-2">
+                    <p className="text-xs text-slate-600 mt-2">
                       Admin Notes: {doc.notes}
                     </p>
                   )}
@@ -467,17 +382,17 @@ const WasherDocumentUpload = () => {
                       <div
                         className={`border-2 border-dashed rounded-lg p-4 text-center transition ${
                           isUploading
-                            ? "border-slate-600 bg-slate-700/50"
-                            : "border-slate-600 hover:border-blue-500 hover:bg-blue-500/10"
+                            ? "border-slate-300 bg-slate-100"
+                            : "border-slate-400 hover:border-blue-500 hover:bg-blue-50"
                         }`}
                       >
                         {isUploading ? (
-                          <div className="text-slate-400">
+                          <div className="text-slate-600">
                             <div className="animate-spin text-2xl mb-2">⌛</div>
                             <p className="text-sm">Uploading...</p>
                           </div>
                         ) : (
-                          <div className="text-slate-400">
+                          <div className="text-slate-600">
                             <FiUpload size={24} className="mx-auto mb-2" />
                             <p className="text-sm">Click to upload</p>
                             <p className="text-xs text-slate-500 mt-1">
@@ -490,14 +405,14 @@ const WasherDocumentUpload = () => {
                   </div>
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-sm text-green-400 mb-3">
+                    <p className="text-sm text-green-700 mb-3">
                       ✓ Document uploaded
                     </p>
                     <a
                       href={doc.document_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-400 hover:underline"
+                      className="text-xs text-blue-600 hover:underline"
                     >
                       View Document
                     </a>
@@ -509,9 +424,9 @@ const WasherDocumentUpload = () => {
         </div>
 
         {/* Info Box */}
-        <div className="mt-8 bg-slate-800/30 border border-slate-700 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-white mb-3">📋 Requirements</h3>
-          <ul className="space-y-2 text-slate-400 text-sm">
+        <div className="mt-8 bg-slate-50 border border-slate-300 rounded-lg p-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-3">📋 Requirements</h3>
+          <ul className="space-y-2 text-slate-700 text-sm">
             <li>✓ Aadhar Card - Mandatory (must be verified)</li>
             <li>✓ PAN Card OR Voter Card - At least one required (must be verified)</li>
             <li>✓ Bank Passbook/Statement - Mandatory (must be verified)</li>
@@ -519,7 +434,6 @@ const WasherDocumentUpload = () => {
             <li>✓ Once all documents are verified, your profile will be activated</li>
           </ul>
         </div>
-          </div>
         </div>
       </div>
     </div>

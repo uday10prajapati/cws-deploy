@@ -18,7 +18,7 @@ export const NotificationProvider = ({ children }) => {
     getUser();
   }, []);
 
-  // Load notifications from database via API
+  // Load notifications from database
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -28,12 +28,20 @@ export const NotificationProvider = ({ children }) => {
     const loadNotifications = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/notifications/user/${user.id}`);
-        const result = await response.json();
+        // Fetch directly from Supabase
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        if (result.success) {
-          setNotifications(result.data || []);
-          const unread = (result.data || []).filter((n) => !n.read).length;
+        if (error) {
+          console.error("Error loading notifications:", error);
+          setNotifications([]);
+          setUnreadCount(0);
+        } else {
+          setNotifications(data || []);
+          const unread = (data || []).filter((n) => !n.read).length;
           setUnreadCount(unread);
         }
       } catch (err) {
@@ -86,31 +94,28 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [user]);
 
-  // Add notification via API
+  // Add notification directly to Supabase
   const addNotification = useCallback(
     async (type, title, message, data = {}) => {
       if (!user) return;
 
       try {
-        const response = await fetch("http://localhost:5000/notifications/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const { data: newNotif, error } = await supabase
+          .from("notifications")
+          .insert({
             user_id: user.id,
             type,
             title,
             message,
-            data,
-          }),
-        });
+            data: data || {},
+            read: false,
+          })
+          .select();
 
-        const result = await response.json();
-
-        if (result.success) {
-          // Notification will be added via real-time subscription
-          console.log("✅ Notification created:", title);
+        if (error) {
+          console.error("Failed to create notification:", error);
         } else {
-          console.error("Failed to create notification:", result.error);
+          console.log("✅ Notification created:", title);
         }
       } catch (err) {
         console.error("Error adding notification:", err);
@@ -119,17 +124,17 @@ export const NotificationProvider = ({ children }) => {
     [user]
   );
 
-  // Mark as read via API
+  // Mark as read directly in Supabase
   const markAsRead = useCallback(async (notificationId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/notifications/${notificationId}/read`,
-        { method: "PUT" }
-      );
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", notificationId);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (error) {
+        console.error("Error marking notification as read:", error);
+      } else {
         setNotifications((prev) =>
           prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
         );
@@ -140,19 +145,20 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
-  // Mark all as read via API
+  // Mark all as read directly in Supabase
   const markAllAsRead = useCallback(async () => {
     if (!user) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/notifications/user/${user.id}/read-all`,
-        { method: "PUT" }
-      );
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (error) {
+        console.error("Error marking all notifications as read:", error);
+      } else {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
       }
@@ -161,17 +167,17 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [user]);
 
-  // Delete notification via API
+  // Delete notification directly from Supabase
   const deleteNotification = useCallback(async (notificationId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/notifications/${notificationId}`,
-        { method: "DELETE" }
-      );
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (error) {
+        console.error("Error deleting notification:", error);
+      } else {
         const notification = notifications.find((n) => n.id === notificationId);
         setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
         if (notification && !notification.read) {

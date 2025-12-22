@@ -1,6 +1,7 @@
 import express from "express";
 import nodemailer from "nodemailer";
 import { supabase } from "../supabase.js";
+import { notifyAdminNewUser } from "../utils/notificationManager.js";
 
 const router = express.Router();
 
@@ -362,7 +363,17 @@ if (!password || password.trim().length < 6) {
     }
   }
 
-  // 5️⃣ Delete OTP
+  // 5️⃣ Notify admins about new user registration
+  await notifyAdminNewUser({
+    id: userId,
+    name,
+    email: authEmail,
+    phone: phone || null,
+    role: role === "employee" ? "employee" : "customer",
+    employee_type: role === "employee" ? employeeType : null,
+  });
+
+  // 6️⃣ Delete OTP
   if (email && phone) {
     await supabase.from("otp_verification").delete().or(`email.eq.${email},phone.eq.${phone}`);
   } else if (email) {

@@ -27,6 +27,7 @@ import loyaltyPointsRoutes from "./routes/loyaltyPointsRoutes.js";
 import customerLoyaltyRoutes from "./routes/customerLoyaltyRoutes.js";
 import washerDocumentsRoutes from "./routes/washerDocumentsRoutes.js";
 import salesDocumentsRoutes from "./routes/salesDocumentsRoutes.js";
+import washerLocationRoutes from "./routes/washerLocationRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -56,6 +57,7 @@ app.use("/loyalty", loyaltyPointsRoutes);
 app.use("/customer-loyalty", customerLoyaltyRoutes);
 app.use("/documents", washerDocumentsRoutes);
 app.use("/documents", salesDocumentsRoutes);
+app.use("/washers", washerLocationRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running...");

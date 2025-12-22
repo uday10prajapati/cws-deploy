@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
-import { FiCheckCircle, FiClock, FiUser, FiPhone, FiMapPin, FiCamera, FiEdit2, FiSearch } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiUser, FiPhone, FiMapPin, FiCamera, FiEdit2, FiSearch, FiX, FiCheck } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
 import NavbarNew from "../components/NavbarNew";
 
@@ -19,18 +19,24 @@ export default function AdminEmergencyWashManagement() {
     after_img_3: null,
     after_img_4: null,
   });
-  const [selectedVillage, setSelectedVillage] = useState("");
+  const [selectedTaluko, setSelectedTaluko] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedState, setSelectedState] = useState("");
-  const [villageInput, setVillageInput] = useState("");
+  const [talukoInput, setTalukoInput] = useState("");
   const [cityInput, setCityInput] = useState("");
   const [stateInput, setStateInput] = useState("");
-  const [villageOptions, setVillageOptions] = useState([]);
+  const [talukoOptions, setTalukoOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
   const [stateOptions, setStateOptions] = useState([]);
-  const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
+  const [showTalukoSuggestions, setShowTalukoSuggestions] = useState(false);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
+  
+  // Assignment state
+  const [selectedRequestForAssignment, setSelectedRequestForAssignment] = useState(null);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [availableWashers, setAvailableWashers] = useState([]);
+  const [assigningWasher, setAssigningWasher] = useState(false);
 
   // Fetch emergency wash requests and location options
   useEffect(() => {
@@ -42,14 +48,14 @@ export default function AdminEmergencyWashManagement() {
     try {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("village, city, state");
+        .select("taluko, city, state");
 
       if (profiles) {
-        const villages = [...new Set(profiles.map(p => p.village).filter(Boolean))];
+        const talukos = [...new Set(profiles.map(p => p.taluko).filter(Boolean))];
         const cities = [...new Set(profiles.map(p => p.city).filter(Boolean))];
         const states = [...new Set(profiles.map(p => p.state).filter(Boolean))];
         
-        setVillageOptions(villages.sort());
+        setTalukoOptions(talukos.sort());
         setCityOptions(cities.sort());
         setStateOptions(states.sort());
       }
@@ -67,7 +73,32 @@ export default function AdminEmergencyWashManagement() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+
+      // Fetch customer profile data for each request to get city info
+      const requestsWithUserData = await Promise.all(
+        (data || []).map(async (request) => {
+          try {
+            const { data: userProfile } = await supabase
+              .from("profiles")
+              .select("city, area, taluko, state")
+              .eq("id", request.user_id)
+              .single();
+            
+            return {
+              ...request,
+              customer_city: userProfile?.city || request.city,
+              customer_area: userProfile?.area,
+              customer_taluko: userProfile?.taluko,
+              customer_state: userProfile?.state,
+            };
+          } catch (err) {
+            console.warn("Error fetching user profile:", err);
+            return request;
+          }
+        })
+      );
+
+      setRequests(requestsWithUserData);
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
@@ -175,6 +206,108 @@ export default function AdminEmergencyWashManagement() {
     }
   };
 
+  // Fetch washers by matching customer city with washer area
+  const fetchWashersByCity = async (city) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/washers/match-customer-city/${encodeURIComponent(city)}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setAvailableWashers(data);
+      } else if (data && typeof data === 'object') {
+        // If it's an error object, log it
+        console.error("API returned error object:", data);
+        setAvailableWashers([]);
+        alert("Error fetching washers: " + (data.message || "Unknown error"));
+      } else {
+        setAvailableWashers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching washers:", error);
+      setAvailableWashers([]);
+      alert("Failed to fetch washers in this city: " + error.message);
+    }
+  };
+
+  // Handle request selection for assignment
+  const handleSelectRequest = async (request) => {
+    setSelectedRequestForAssignment(request);
+    // Use customer_city from user profile, fallback to request.city
+    const cityToSearch = request.customer_city || request.city;
+    
+    if (cityToSearch) {
+      await fetchWashersByCity(cityToSearch);
+    } else {
+      alert("Unable to find city information for this request");
+    }
+    setShowAssignmentModal(true);
+  };
+
+  // Assign wash to washer
+  const assignWashToWasher = async (washer) => {
+    if (!selectedRequestForAssignment) return;
+
+    try {
+      setAssigningWasher(true);
+
+      // Update request status
+      const { error: updateError } = await supabase
+        .from("emergency_wash_requests")
+        .update({
+          status: "Assigned",
+          assigned_to: washer.user_id,
+          updated_at: new Date(),
+        })
+        .eq("id", selectedRequestForAssignment.id);
+
+      if (updateError) throw updateError;
+
+      // Create notification for washer
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            user_id: washer.user_id,
+            title: "New Emergency Wash Assignment",
+            message: `You have been assigned a new emergency wash request at ${selectedRequestForAssignment.address}`,
+            type: "assignment",
+            reference_id: selectedRequestForAssignment.id,
+            is_read: false,
+            created_at: new Date(),
+          },
+        ]);
+
+      if (notificationError) console.warn("Notification error (non-critical):", notificationError);
+
+      // Update local state
+      setRequests(prev =>
+        prev.map(req =>
+          req.id === selectedRequestForAssignment.id
+            ? { ...req, status: "Assigned", assigned_to: washer.user_id }
+            : req
+        )
+      );
+
+      alert(`Wash assigned to ${washer.name} successfully!`);
+      setShowAssignmentModal(false);
+      setSelectedRequestForAssignment(null);
+      setAvailableWashers([]);
+    } catch (error) {
+      console.error("Error assigning wash:", error);
+      alert("Failed to assign wash");
+    } finally {
+      setAssigningWasher(false);
+    }
+  };
+
   const filteredRequests = requests.filter(req => {
     const matchesStatus = filterStatus === "all" || req.status === filterStatus;
     const matchesSearch = searchTerm === "" ||
@@ -182,11 +315,11 @@ export default function AdminEmergencyWashManagement() {
       req.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.car_model?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesVillage = selectedVillage === "" || req.village === selectedVillage;
+    const matchesTaluko = selectedTaluko === "" || req.taluko === selectedTaluko;
     const matchesCity = selectedCity === "" || req.city === selectedCity;
     const matchesState = selectedState === "" || req.state === selectedState;
 
-    return matchesStatus && matchesSearch && matchesVillage && matchesCity && matchesState;
+    return matchesStatus && matchesSearch && matchesTaluko && matchesCity && matchesState;
   });
 
   const getStatusColor = (status) => {
@@ -277,44 +410,44 @@ export default function AdminEmergencyWashManagement() {
 
               {/* Location Filters */}
               <div className="grid md:grid-cols-3 gap-4">
-                {/* Village Filter */}
+                {/* Taluko Filter */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Village</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Taluko</label>
                   <input
                     type="text"
-                    placeholder="Type village name..."
-                    value={villageInput}
+                    placeholder="Type taluko name..."
+                    value={talukoInput}
                     onChange={(e) => {
-                      setVillageInput(e.target.value);
-                      setShowVillageSuggestions(true);
+                      setTalukoInput(e.target.value);
+                      setShowTalukoSuggestions(true);
                     }}
-                    onFocus={() => setShowVillageSuggestions(true)}
+                    onFocus={() => setShowTalukoSuggestions(true)}
                     className="w-full px-3 py-2 bg-slate-50 border border-blue-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  {showVillageSuggestions && villageInput && (
+                  {showTalukoSuggestions && talukoInput && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-blue-200 rounded-lg shadow-lg z-20 max-h-40 overflow-y-auto">
-                      {villageOptions
-                        .filter(v => v.toLowerCase().startsWith(villageInput.toLowerCase()))
-                        .map((village) => (
+                      {talukoOptions
+                        .filter(t => t.toLowerCase().startsWith(talukoInput.toLowerCase()))
+                        .map((taluko) => (
                           <button
-                            key={village}
+                            key={taluko}
                             onClick={() => {
-                              setSelectedVillage(village);
-                              setVillageInput(village);
-                              setShowVillageSuggestions(false);
+                              setSelectedTaluko(taluko);
+                              setTalukoInput(taluko);
+                              setShowTalukoSuggestions(false);
                             }}
                             className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors"
                           >
-                            {village}
+                            {taluko}
                           </button>
                         ))}
                     </div>
                   )}
-                  {selectedVillage && (
+                  {selectedTaluko && (
                     <button
                       onClick={() => {
-                        setSelectedVillage("");
-                        setVillageInput("");
+                        setSelectedTaluko("");
+                        setTalukoInput("");
                       }}
                       className="absolute right-2 top-8 text-slate-400 hover:text-slate-600"
                     >
@@ -479,6 +612,35 @@ export default function AdminEmergencyWashManagement() {
                         </span>
                       )}
                     </div>
+
+                    {/* Assign Button */}
+                    {request.status === "Pending" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectRequest(request);
+                        }}
+                        className="mt-4 w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                      >
+                        <FiUser className="w-5 h-5" />
+                        Assign to Washer
+                      </button>
+                    )}
+                    {request.status === "Assigned" && (
+                      <button disabled className="mt-4 w-full px-4 py-3 bg-gray-400 text-white rounded-lg font-semibold text-center">
+                        Assigned
+                      </button>
+                    )}
+                    {request.status === "In Progress" && (
+                      <button disabled className="mt-4 w-full px-4 py-3 bg-purple-400 text-white rounded-lg font-semibold text-center">
+                        In Progress
+                      </button>
+                    )}
+                    {request.status === "Completed" && (
+                      <button disabled className="mt-4 w-full px-4 py-3 bg-green-400 text-white rounded-lg font-semibold text-center">
+                        Completed
+                      </button>
+                    )}
                   </div>
                 ))
               )}
@@ -486,6 +648,21 @@ export default function AdminEmergencyWashManagement() {
           </div>
         </div>
       </main>
+
+      {/* Assignment Modal */}
+      {showAssignmentModal && selectedRequestForAssignment && (
+        <AssignmentModal
+          request={selectedRequestForAssignment}
+          washers={availableWashers}
+          onClose={() => {
+            setShowAssignmentModal(false);
+            setSelectedRequestForAssignment(null);
+            setAvailableWashers([]);
+          }}
+          onAssign={assignWashToWasher}
+          assigning={assigningWasher}
+        />
+      )}
     </>
   );
 }
@@ -663,6 +840,112 @@ function ImageUploadModal({ request, onClose, onUpload, onSubmit, uploading, ima
               Cancel
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Assignment Modal Component
+function AssignmentModal({ request, washers, onClose, onAssign, assigning }) {
+  if (!washers || washers.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-2xl w-full border border-blue-200 shadow-xl">
+          <div className="p-6 border-b border-blue-200 flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-slate-900">Select Washer</h2>
+            <button onClick={onClose} className="text-slate-500 hover:text-slate-700 text-2xl">✕</button>
+          </div>
+          <div className="p-12 text-center">
+            <p className="text-slate-600 text-lg mb-4">No washers available in this area</p>
+            <p className="text-slate-500 text-sm mb-6">
+              Location: {request.address}
+            </p>
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto border border-blue-200 shadow-xl">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 p-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Select Washer</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              <span className="font-semibold">Request City:</span> {request.customer_city || request.city || "N/A"}
+            </p>
+            {request.customer_area && (
+              <p className="text-sm text-slate-600 mt-1">
+                <span className="font-semibold">Area:</span> {request.customer_area}
+              </p>
+            )}
+            {request.customer_taluko && (
+              <p className="text-sm text-slate-600 mt-1">
+                <span className="font-semibold">Taluko:</span> {request.customer_taluko}
+              </p>
+            )}
+            <p className="text-sm text-slate-600 mt-1">
+              <span className="font-semibold">Address:</span> {request.address}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-700 text-2xl">✕</button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {washers.map(washer => (
+            <div
+              key={washer.id}
+              className="border border-blue-200 rounded-lg p-4 hover:bg-blue-50 transition-colors cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-semibold text-slate-900 text-lg">{washer.name}</h3>
+                  <p className="text-slate-600 text-sm flex items-center gap-1 mt-1">
+                    <FiPhone size={14} /> {washer.phone}
+                  </p>
+                  <p className="text-slate-600 text-sm flex items-center gap-1 mt-1">
+                    <FiMapPin size={14} /> {washer.distance?.toFixed(2) || 0} km away
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-yellow-500 font-semibold text-lg">★ {washer.rating || "N/A"}</div>
+                  <p className="text-slate-600 text-xs">Rating</p>
+                </div>
+              </div>
+
+              {washer.service_area && (
+                <p className="text-slate-600 text-sm mb-3">
+                  Service Area: <span className="font-medium">{washer.service_area}</span>
+                </p>
+              )}
+
+              <button
+                onClick={() => onAssign(washer)}
+                disabled={assigning}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {assigning ? (
+                  <>
+                    <FaSpinner className="w-4 h-4 animate-spin" />
+                    Assigning...
+                  </>
+                ) : (
+                  <>
+                    <FiCheck size={18} />
+                    Assign This Washer
+                  </>
+                )}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -42,30 +42,30 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     {
       id: "basic",
       name: "Basic",
-      washes: 4,
-      price: 499,
-      perks: ["Exterior Wash", "Priority Slots", "4 washes / month"]
+      washes: "Daily wash",
+      price: 1199,
+      perks: ["Daily car Wash / month"]
     },
     {
       id: "standard",
       name: "Standard",
-      washes: 8,
-      price: 999,
-      perks: ["Exterior + Interior", "Pick-up optional", "8 washes / month"]
-    },
-    {
-      id: "daily",
-      name: "Daily Wash",
-      washes: 30,
-      price: 1499,
-      perks: ["Daily car wash", "Doorstep service", "External wash only", "30 days validity"]
+      washes: "Daily wash",
+      price: 3399,
+      perks: ["Daily car Wash / 3 months"]
     },
     {
       id: "premium",
       name: "Premium",
-      washes: 16,
-      price: 2499,
-      perks: ["Full Wash", "Free Add-ons", "16 washes / month"]
+      washes: "Daily wash",
+      price: 6499,
+      perks: ["Daily car wash / 6 months"]
+    },
+    {
+      id: "quick",
+      name: "Quick Wash",
+      washes: "Quick Wash",
+      price: 149,
+      perks: ["Quick Wash"]
     }
   ];
 

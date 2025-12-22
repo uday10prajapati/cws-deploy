@@ -67,7 +67,7 @@ router.get("/car/:car_id", async (req, res) => {
       customerEmail: authUser.data?.user?.email || "N/A",
       customerMobile: customer?.phone || authUser.data?.user?.user_metadata?.phone || "N/A",
       customerAddress: customer?.address || "N/A",
-      customerVillage: customer?.village || "N/A",
+      customerTaluko: customer?.taluko || "N/A",
       
       // Monthly Pass Details
       hasPass: !!pass,

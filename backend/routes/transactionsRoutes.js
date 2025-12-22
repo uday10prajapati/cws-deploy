@@ -46,17 +46,14 @@ const getUserFromRequest = async (req) => {
 
     // Priority 2: Get from request body
     if (req.body?.user_id) {
-      console.log("✅ User extracted from request body:", req.body.user_id);
       return req.body.user_id;
     }
 
     // Priority 3: Get from query parameters
     if (req.query?.user_id) {
-      console.log("✅ User extracted from query params:", req.query.user_id);
       return req.query.user_id;
     }
 
-    console.log("❌ No user authentication found in request");
     return null;
   } catch (err) {
     console.error("Error extracting user from request:", err);

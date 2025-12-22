@@ -23,16 +23,16 @@ const AdminDocumentVerification = () => {
   const [notes, setNotes] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedVillage, setSelectedVillage] = useState("");
+  const [selectedTaluko, setSelectedTaluko] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedState, setSelectedState] = useState("");
-  const [villageOptions, setVillageOptions] = useState([]);
+  const [talukoOptions, setTalukoOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
   const [stateOptions, setStateOptions] = useState([]);
-  const [villageInput, setVillageInput] = useState("");
+  const [talukoInput, setTalukoInput] = useState("");
   const [cityInput, setCityInput] = useState("");
   const [stateInput, setStateInput] = useState("");
-  const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
+  const [showTalukoSuggestions, setShowTalukoSuggestions] = useState(false);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
 
@@ -52,7 +52,7 @@ const AdminDocumentVerification = () => {
         if (washerIds.length > 0) {
           const { data: profilesData } = await supabase
             .from("profiles")
-            .select("id, village, city, state")
+            .select("id, taluko, city, state")
             .in("id", washerIds);
 
           const profileMap = {};
@@ -63,7 +63,7 @@ const AdminDocumentVerification = () => {
           // Enrich profile codes with location data
           const enrichedProfileCodes = profileCodesToEnrich.map(pc => ({
             ...pc,
-            washer_village: profileMap[pc.washer_id]?.village || "",
+            washer_taluko: profileMap[pc.washer_id]?.taluko || "",
             washer_city: profileMap[pc.washer_id]?.city || "",
             washer_state: profileMap[pc.washer_id]?.state || "",
           }));
@@ -71,17 +71,17 @@ const AdminDocumentVerification = () => {
           setProfileCodes(enrichedProfileCodes);
 
           // Extract unique locations
-          const villageSet = new Set();
+          const talukoSet = new Set();
           const citySet = new Set();
           const stateSet = new Set();
 
           enrichedProfileCodes.forEach(pc => {
-            if (pc.washer_village) villageSet.add(pc.washer_village);
+            if (pc.washer_taluko) talukoSet.add(pc.washer_taluko);
             if (pc.washer_city) citySet.add(pc.washer_city);
             if (pc.washer_state) stateSet.add(pc.washer_state);
           });
 
-          setVillageOptions(Array.from(villageSet).sort());
+          setTalukoOptions(Array.from(talukoSet).sort());
           setCityOptions(Array.from(citySet).sort());
           setStateOptions(Array.from(stateSet).sort());
         }
@@ -165,17 +165,17 @@ const AdminDocumentVerification = () => {
     if (filterStatus === "pending") statusMatch = !pc.documents_complete;
 
     let locationMatch = true;
-    if (selectedVillage || selectedCity || selectedState) {
-      const villageMatch = !selectedVillage || pc.washer_village?.toLowerCase() === selectedVillage.toLowerCase();
+    if (selectedTaluko || selectedCity || selectedState) {
+      const talukoMatch = !selectedTaluko || pc.washer_taluko?.toLowerCase() === selectedTaluko.toLowerCase();
       const cityMatch = !selectedCity || pc.washer_city?.toLowerCase() === selectedCity.toLowerCase();
       const stateMatch = !selectedState || pc.washer_state?.toLowerCase() === selectedState.toLowerCase();
-      locationMatch = villageMatch && cityMatch && stateMatch;
+      locationMatch = talukoMatch && cityMatch && stateMatch;
     }
 
     return matchesSearch && statusMatch && locationMatch;
   });
 
-  const filteredVillages = villageOptions.filter(v => v.toLowerCase().startsWith(villageInput.toLowerCase()));
+  const filteredTalukos = talukoOptions.filter(t => t.toLowerCase().startsWith(talukoInput.toLowerCase()));
   const filteredCities = cityOptions.filter(c => c.toLowerCase().startsWith(cityInput.toLowerCase()));
   const filteredStates = stateOptions.filter(s => s.toLowerCase().startsWith(stateInput.toLowerCase()));
 
@@ -244,44 +244,44 @@ const AdminDocumentVerification = () => {
 
             {/* Location Filters */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Village Filter */}
+              {/* Taluko Filter */}
               <div className="relative">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Village</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Taluko</label>
                 <input
                   type="text"
-                  placeholder="Select or type village..."
-                  value={villageInput}
+                  placeholder="Select or type taluko..."
+                  value={talukoInput}
                   onChange={(e) => {
-                    setVillageInput(e.target.value);
-                    setShowVillageSuggestions(true);
+                    setTalukoInput(e.target.value);
+                    setShowTalukoSuggestions(true);
                   }}
-                  onFocus={() => setShowVillageSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowVillageSuggestions(false), 150)}
+                  onFocus={() => setShowTalukoSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowTalukoSuggestions(false), 150)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
                 />
-                {showVillageSuggestions && filteredVillages.length > 0 && (
+                {showTalukoSuggestions && filteredTalukos.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                    {filteredVillages.map((village) => (
+                    {filteredTalukos.map((taluko) => (
                       <div
-                        key={village}
+                        key={taluko}
                         onMouseDown={(e) => {
                           e.preventDefault();
-                          setSelectedVillage(village);
-                          setVillageInput(village);
-                          setShowVillageSuggestions(false);
+                          setSelectedTaluko(taluko);
+                          setTalukoInput(taluko);
+                          setShowTalukoSuggestions(false);
                         }}
                         className="px-3 py-2 hover:bg-slate-100 cursor-pointer text-slate-900 text-sm"
                       >
-                        {village}
+                        {taluko}
                       </div>
                     ))}
                   </div>
                 )}
-                {selectedVillage && (
+                {selectedTaluko && (
                   <button
                     onClick={() => {
-                      setSelectedVillage("");
-                      setVillageInput("");
+                      setSelectedTaluko("");
+                      setTalukoInput("");
                     }}
                     className="absolute right-3 top-10 text-slate-500 hover:text-slate-700 text-sm font-semibold"
                   >
@@ -389,10 +389,10 @@ const AdminDocumentVerification = () => {
                 onClick={() => {
                   setFilterStatus("all");
                   setSearchTerm("");
-                  setSelectedVillage("");
+                  setSelectedTaluko("");
                   setSelectedCity("");
                   setSelectedState("");
-                  setVillageInput("");
+                  setTalukoInput("");
                   setCityInput("");
                   setStateInput("");
                 }}
@@ -439,11 +439,11 @@ const AdminDocumentVerification = () => {
                       </div>
 
                       {/* Location Info */}
-                      {(pc.washer_village || pc.washer_city || pc.washer_state) && (
+                      {(pc.washer_taluko || pc.washer_city || pc.washer_state) && (
                         <div className="flex items-center gap-2 text-xs text-slate-600 ml-15">
                           <FiMapPin size={14} className="text-blue-600" />
                           <span>
-                            {[pc.washer_village, pc.washer_city, pc.washer_state]
+                            {[pc.washer_taluko, pc.washer_city, pc.washer_state]
                               .filter(Boolean)
                               .join(", ")}
                           </span>

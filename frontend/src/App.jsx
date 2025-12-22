@@ -6,11 +6,10 @@ import Signup from "./page/SignUp.jsx";
 import Login from "./page/Login.jsx";
 import ResetPassword from "./page/ResetPassword.jsx";
 import CarWash from "./Washer/CarWash.jsx";
-import WMyjob from "./Washer/WMyjob.jsx";
-
+import WWashHistory from "./Washer/WashHistory.jsx";
+import WasherWorkflow from "./Washer/WasherWorkflow.jsx";
 import WasherDocumentUpload from "./Washer/WasherDocumentUpload.jsx";
 import DemoVideos from "./Washer/DemoVideos.jsx";
-import WasherProfile from "./Washer/WasherProfile.jsx";
 import SalesDocumentUpload from "./Sales/SalesDocumentUpload.jsx";
 import SalesProfile from "./Sales/SalesProfile.jsx";
 import SalesDashboard from "./Sales/SalesDashboard.jsx";
@@ -53,6 +52,7 @@ import ApprovalPanel from "./Admin/ApprovalPanel.jsx";
 import AdminLoyaltyDashboard from "./Admin/AdminLoyaltyDashboard.jsx";
 import BookingReports from "./Admin/BookingReports.jsx";
 import RevenueReports from "./Admin/RevenueReports.jsx";
+import Notifications from "./page/Notifications.jsx";
 
 export default function App() {
   // Initialize storage bucket on app load
@@ -68,10 +68,10 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carwash" element={<CarWash />} />
-        <Route path="/washer/jobs" element={<WMyjob />} />
+        <Route path="/washer/wash-history" element={<WWashHistory />} />
+        <Route path="/washer/workflow" element={<WasherWorkflow />} />
         <Route path="/washer/documents" element={<WasherDocumentUpload />} />
         <Route path="/washer/demo-videos" element={<DemoVideos />} />
-        <Route path="/washer/profile" element={<WasherProfile />} />
         <Route path="/sales/documents" element={<SalesDocumentUpload />} />
         <Route path="/sales/profile" element={<SalesProfile />} />
         <Route path="/sales-dashboard" element={<SalesDashboard />} />
@@ -116,6 +116,7 @@ export default function App() {
         <Route path="/admin/loyalty-dashboard" element={<AdminLoyaltyDashboard />} />
         <Route path="/admin/booking-reports" element={<BookingReports />} />
         <Route path="/admin/revenue-reports" element={<RevenueReports />} />
+        <Route path="/notifications" element={<Notifications />} />
       </Routes>
     </NotificationProvider>
   );

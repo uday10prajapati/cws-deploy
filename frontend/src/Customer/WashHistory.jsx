@@ -13,6 +13,8 @@ export default function WashHistory() {
   const [selectedCar, setSelectedCar] = useState(null);
   const [cars, setCars] = useState([]);
   const [imageErrors, setImageErrors] = useState({});
+  const [expandedWashId, setExpandedWashId] = useState(null);
+
 
   /* 🔥 USE ROLE-BASED REDIRECT HOOK */
   useRoleBasedRedirect("customer");
@@ -97,6 +99,11 @@ export default function WashHistory() {
     }));
     console.warn(`⚠️ Failed to load image: ${imageKey}`);
   };
+  
+  const toggleWash = (id) => {
+  setExpandedWashId(prev => (prev === id ? null : id));
+};
+
 
   /**
    * Convert Supabase URL to a working Cloudinary URL (if available)

@@ -122,8 +122,6 @@ router.get("/customer/:customer_id", async (req, res) => {
       });
     }
 
-    console.log(`📋 Fetching bookings for customer: ${customer_id}`);
-
     const { data, error } = await supabase
       .from("bookings")
       .select("*, cars(number_plate)")
@@ -144,7 +142,6 @@ router.get("/customer/:customer_id", async (req, res) => {
       number_plate: booking.cars?.number_plate || "N/A"
     }));
 
-    console.log(`✅ Retrieved ${bookingsWithNumberPlate?.length || 0} bookings for customer ${customer_id}`);
     return res.status(200).json({ 
       success: true, 
       bookings: bookingsWithNumberPlate || [] 
