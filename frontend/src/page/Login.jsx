@@ -141,7 +141,7 @@ export default function Login() {
   setTimeout(() => {
     console.log("🔀 Redirecting based on role:", profile.role, "employee_type:", profile.employee_type);
     
-    if (profile.role === "admin") {
+    if (profile.role === "admin" || profile.role === "sub-admin") {
       console.log("→ Navigating to admin-dashboard");
       navigate("/admin-dashboard");
     } else if (profile.role === "employee") {
@@ -159,6 +159,7 @@ export default function Login() {
         console.log("→ Navigating to employee-dashboard (default)");
         navigate("/employee-dashboard");
       }
+      
     } else {
       console.log("→ Navigating to customer-dashboard");
       navigate("/customer-dashboard");

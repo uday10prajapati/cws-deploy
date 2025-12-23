@@ -10,26 +10,46 @@ export default function AllCars() {
   const [cars, setCars] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCars, setFilteredCars] = useState([]);
-  const [selectedVillage, setSelectedVillage] = useState("");
+  const [selectedTaluko, setSelectedTaluko] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedState, setSelectedState] = useState("");
-  const [villageOptions, setVillageOptions] = useState([]);
+  const [talukoOptions, setTalukoOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
   const [stateOptions, setStateOptions] = useState([]);
-  const [villageInput, setVillageInput] = useState("");
+  const [talukoInput, setTalukoInput] = useState("");
   const [cityInput, setCityInput] = useState("");
   const [stateInput, setStateInput] = useState("");
-  const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
+  const [showTalukoSuggestions, setShowTalukoSuggestions] = useState(false);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
+  const [userTaluko, setUserTaluko] = useState(null);
+  const [isSubAdmin, setIsSubAdmin] = useState(false);
 
-  useRoleBasedRedirect("admin");
+  useRoleBasedRedirect(["admin", "sub-admin"]);
 
   useEffect(() => {
     const loadUser = async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (auth?.user) {
         setUser(auth.user);
+        
+        // Fetch user profile to get taluko and role
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("taluko, role")
+          .eq("id", auth.user.id)
+          .single();
+        
+        if (profile) {
+          setUserTaluko(profile.taluko);
+          setIsSubAdmin(profile.role === "sub-admin");
+          
+          // Auto-fill taluko filter for sub-admins
+          if (profile.role === "sub-admin" && profile.taluko) {
+            setSelectedTaluko(profile.taluko);
+            setTalukoInput(profile.taluko);
+          }
+        }
       }
     };
     loadUser();
@@ -68,7 +88,7 @@ export default function AllCars() {
         const customerIds = [...new Set(carsData.map(c => c.customer_id))];
         const { data: customersData } = await supabase
           .from("profiles")
-          .select("id, email, name, village, city, state")
+          .select("id, email, name, taluko, city, state")
           .in("id", customerIds);
 
         const customerMap = {};
@@ -99,7 +119,7 @@ export default function AllCars() {
             car_name: `${car.brand} ${car.model}`.trim() || "Unknown Car",
             owner_name: customer.name || customer.email || "Unknown",
             owner_email: customer.email || "N/A",
-            owner_village: customer.village || "",
+            owner_taluko: customer.taluko || "",
             owner_city: customer.city || "",
             owner_state: customer.state || "",
             total_bookings: carBookings.length,
@@ -121,17 +141,17 @@ export default function AllCars() {
         setFilteredCars(enrichedCars);
 
         // Extract unique villages, cities, states from customer profiles
-        const villageSet = new Set();
+        const talukoSet = new Set();
         const citySet = new Set();
         const stateSet = new Set();
 
         enrichedCars.forEach(car => {
-          if (car.owner_village) villageSet.add(car.owner_village);
+          if (car.owner_taluko) talukoSet.add(car.owner_taluko);
           if (car.owner_city) citySet.add(car.owner_city);
           if (car.owner_state) stateSet.add(car.owner_state);
         });
 
-        setVillageOptions(Array.from(villageSet).sort());
+        setTalukoOptions(Array.from(talukoSet).sort());
         setCityOptions(Array.from(citySet).sort());
         setStateOptions(Array.from(stateSet).sort());
       } catch (error) {
@@ -146,10 +166,10 @@ export default function AllCars() {
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    applyFilters(term, selectedVillage, selectedCity, selectedState);
+    applyFilters(term, selectedTaluko, selectedCity, selectedState);
   };
 
-  const applyFilters = (search, village, city, state) => {
+  const applyFilters = (search, taluko, city, state) => {
     const filtered = cars.filter((car) => {
       const matchSearch =
         car.car_name.toLowerCase().includes(search) ||
@@ -158,18 +178,20 @@ export default function AllCars() {
         car.number_plate?.toLowerCase().includes(search) ||
         car.owner_name?.toLowerCase().includes(search) ||
         car.owner_email?.toLowerCase().includes(search) ||
-        car.owner_village?.toLowerCase().includes(search) ||
+        car.owner_taluko?.toLowerCase().includes(search) ||
         car.owner_city?.toLowerCase().includes(search) ||
         car.owner_state?.toLowerCase().includes(search) ||
         car.locations?.some(loc => loc.toLowerCase().includes(search));
 
       // Check location filters using profile data
       let matchLocation = true;
-      if (village || city || state) {
-        const villageMatch = !village || car.owner_village?.toLowerCase() === village.toLowerCase();
+      if (taluko || city || state) {
+        const talukoMatch = isSubAdmin 
+          ? car.owner_taluko?.toLowerCase() === userTaluko?.toLowerCase()
+          : !taluko || car.owner_taluko?.toLowerCase().includes(taluko.toLowerCase());
         const cityMatch = !city || car.owner_city?.toLowerCase() === city.toLowerCase();
         const stateMatch = !state || car.owner_state?.toLowerCase() === state.toLowerCase();
-        matchLocation = villageMatch && cityMatch && stateMatch;
+        matchLocation = talukoMatch && cityMatch && stateMatch;
       }
 
       return matchSearch && matchLocation;
@@ -178,28 +200,28 @@ export default function AllCars() {
     setFilteredCars(filtered);
   };
 
-  const handleVillageSelect = (village) => {
-    setSelectedVillage(village);
-    setVillageInput(village);
-    setShowVillageSuggestions(false);
-    applyFilters(searchTerm, village, selectedCity, selectedState);
+  const handleTalukoSelect = (taluko) => {
+    setSelectedTaluko(taluko);
+    setTalukoInput(taluko);
+    setShowTalukoSuggestions(false);
+    applyFilters(searchTerm, taluko, selectedCity, selectedState);
   };
 
   const handleCitySelect = (city) => {
     setSelectedCity(city);
     setCityInput(city);
     setShowCitySuggestions(false);
-    applyFilters(searchTerm, selectedVillage, city, selectedState);
+    applyFilters(searchTerm, selectedTaluko, city, selectedState);
   };
 
   const handleStateSelect = (state) => {
     setSelectedState(state);
     setStateInput(state);
     setShowStateSuggestions(false);
-    applyFilters(searchTerm, selectedVillage, selectedCity, state);
+    applyFilters(searchTerm, selectedTaluko, selectedCity, state);
   };
 
-  const filteredVillages = villageOptions.filter(v => v.toLowerCase().startsWith(villageInput.toLowerCase()));
+  const filteredTalukas = talukoOptions.filter(t => t.toLowerCase().startsWith(talukoInput.toLowerCase()));
   const filteredCities = cityOptions.filter(c => c.toLowerCase().startsWith(cityInput.toLowerCase()));
   const filteredStates = stateOptions.filter(s => s.toLowerCase().startsWith(stateInput.toLowerCase()));
 
@@ -280,42 +302,46 @@ export default function AllCars() {
 
         {/* LOCATION FILTERS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Village Filter */}
+          {/* Taluko Filter */}
           <div className="relative">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Village</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Taluko {isSubAdmin && <span className="text-xs text-blue-600">(📍 Assigned)</span>}
+            </label>
             <input
               type="text"
-              placeholder="Select or type village..."
-              value={villageInput}
+              placeholder="Select or type taluko..."
+              value={talukoInput}
               onChange={(e) => {
-                setVillageInput(e.target.value);
-                setShowVillageSuggestions(true);
+                setTalukoInput(e.target.value);
+                setShowTalukoSuggestions(true);
               }}
-              onFocus={() => setShowVillageSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowVillageSuggestions(false), 150)}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm"
+              onFocus={() => setShowTalukoSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowTalukoSuggestions(false), 150)}
+              disabled={isSubAdmin}
+              className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm ${isSubAdmin ? "opacity-75 cursor-not-allowed bg-slate-50" : ""}`}
+              title={isSubAdmin ? `You can only view cars from ${userTaluko}` : ""}
             />
-            {showVillageSuggestions && filteredVillages.length > 0 && (
+            {showTalukoSuggestions && filteredTalukas.length > 0 && !isSubAdmin && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                {filteredVillages.map((village) => (
+                {filteredTalukas.map((taluko) => (
                   <div
-                    key={village}
+                    key={taluko}
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      handleVillageSelect(village);
+                      handleTalukoSelect(taluko);
                     }}
                     className="px-3 py-2 hover:bg-slate-100 cursor-pointer text-slate-900"
                   >
-                    {village}
+                    {taluko}
                   </div>
                 ))}
               </div>
             )}
-            {selectedVillage && (
+            {selectedTaluko && !isSubAdmin && (
               <button
                 onClick={() => {
-                  setSelectedVillage("");
-                  setVillageInput("");
+                  setSelectedTaluko("");
+                  setTalukoInput("");
                   applyFilters(searchTerm, "", selectedCity, selectedState);
                 }}
                 className="absolute right-3 top-10 text-slate-500 hover:text-slate-700 text-sm font-semibold"
@@ -361,7 +387,7 @@ export default function AllCars() {
                 onClick={() => {
                   setSelectedCity("");
                   setCityInput("");
-                  applyFilters(searchTerm, selectedVillage, "", selectedState);
+                  applyFilters(searchTerm, selectedTaluko, "", selectedState);
                 }}
                 className="absolute right-3 top-10 text-slate-500 hover:text-slate-700 text-sm font-semibold"
               >
@@ -406,7 +432,7 @@ export default function AllCars() {
                 onClick={() => {
                   setSelectedState("");
                   setStateInput("");
-                  applyFilters(searchTerm, selectedVillage, selectedCity, "");
+                  applyFilters(searchTerm, selectedTaluko, selectedCity, "");
                 }}
                 className="absolute right-3 top-10 text-slate-500 hover:text-slate-700 text-sm font-semibold"
               >

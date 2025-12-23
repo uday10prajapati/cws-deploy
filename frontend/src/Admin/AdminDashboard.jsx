@@ -28,9 +28,11 @@ import { FaCar } from "react-icons/fa";
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [userTaluko, setUserTaluko] = useState(null);
+  const [isSubAdmin, setIsSubAdmin] = useState(false);
 
   /* 🔥 USE ROLE-BASED REDIRECT HOOK */
-  useRoleBasedRedirect("admin");
+  useRoleBasedRedirect(["admin", "sub-admin"]);
   const [dashboardData, setDashboardData] = useState(null);
   const [recentBookingsData, setRecentBookingsData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,18 @@ export default function AdminDashboard() {
       const { data: auth } = await supabase.auth.getUser();
       if (auth?.user) {
         setUser(auth.user);
+        
+        // Fetch user profile to get taluko and role
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("taluko, role")
+          .eq("id", auth.user.id)
+          .single();
+        
+        if (profile) {
+          setUserTaluko(profile.taluko);
+          setIsSubAdmin(profile.role === "sub-admin");
+        }
       }
     };
     loadUser();
@@ -51,17 +65,20 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [userTaluko, isSubAdmin]);
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
+      // Build query string for taluko if sub-admin
+      const talukoQuery = isSubAdmin && userTaluko ? `?taluko=${encodeURIComponent(userTaluko)}` : "";
+      
       const [overviewRes, bookingsRes, trendRes, locRes, perfRes, satRes] = await Promise.all([
         fetch("http://localhost:5000/admin/analytics/overview").then((r) => r.json()),
         fetch("http://localhost:5000/admin/recent-bookings").then((r) => r.json()),
         fetch("http://localhost:5000/admin/booking-trend").then((r) => r.json()).catch(() => ({ success: false })),
         fetch("http://localhost:5000/admin/location-stats").then((r) => r.json()).catch(() => ({ success: false })),
-        fetch("http://localhost:5000/admin/washer-performance").then((r) => r.json()).catch(() => ({ success: false })),
+        fetch(`http://localhost:5000/admin/washer-performance${talukoQuery}`).then((r) => r.json()).catch(() => ({ success: false })),
         fetch("http://localhost:5000/admin/satisfaction-metrics").then((r) => r.json()).catch(() => ({ success: false })),
       ]);
 

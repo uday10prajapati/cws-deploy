@@ -133,7 +133,7 @@ export default function NavbarNew() {
   ];
 
   const isCustomer = role === "customer";
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "sub-admin";
   const isWasher = role === "washer" || role === "employee";
 
   return (

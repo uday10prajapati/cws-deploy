@@ -86,7 +86,7 @@ const WasherWorkflow = () => {
 
       // Check loyalty points
       const { data: loyaltyData } = await supabase
-        .from("customer_loyalty_points")
+        .from("loyalty_points")
         .select("*")
         .eq("customer_id", customerId)
         .single();
@@ -180,14 +180,14 @@ const WasherWorkflow = () => {
 
       // Update loyalty points
       const { data: loyaltyData } = await supabase
-        .from("customer_loyalty_points")
+        .from("loyalty_points")
         .select("*")
         .eq("customer_id", customerData.id)
         .single();
 
       if (loyaltyData) {
         await supabase
-          .from("customer_loyalty_points")
+          .from("loyalty_points")
           .update({
             total_points: (loyaltyData.total_points || 0) + 10,
             cars_washed: (loyaltyData.cars_washed || 0) + 1,

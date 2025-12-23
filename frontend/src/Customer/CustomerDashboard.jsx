@@ -339,9 +339,9 @@ export default function CustomerDashboard() {
   // Fetch loyalty data from customer_loyalty_points table
   const fetchLoyaltyData = async (customerId) => {
     try {
-      // First try to fetch from customer_loyalty_points table
+      // First try to fetch from loyalty_points table
       const { data: loyaltyRecord, error: loyaltyError } = await supabase
-        .from("customer_loyalty_points")
+        .from("loyalty_points")
         .select("total_points, cars_washed, last_wash_date")
         .eq("customer_id", customerId)
         .single();

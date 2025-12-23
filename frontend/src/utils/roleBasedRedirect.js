@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 /**
  * Custom hook for role-based redirect
- * @param {string} requiredRole - The role required to access this page (admin, employee, or customer)
+ * @param {string|array} requiredRole - The role(s) required to access this page (admin, employee, or customer)
  * @returns {void}
  */
 export const useRoleBasedRedirect = (requiredRole) => {
@@ -18,13 +18,18 @@ export const useRoleBasedRedirect = (requiredRole) => {
       return;
     }
 
-    // If user has the required role, allow access
-    if (userRole === requiredRole) {
+    // Convert requiredRole to array if it's a string
+    const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+
+    // If user has one of the required roles, allow access
+    if (requiredRoles.includes(userRole)) {
       return;
     }
 
     // If user has different role, redirect to their dashboard
     if (userRole === "admin") {
+      navigate("/admin-dashboard");
+    } else if (userRole === "sub-admin") {
       navigate("/admin-dashboard");
     } else if (userRole === "employee") {
       navigate("/employee-dashboard");

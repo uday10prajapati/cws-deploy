@@ -10,17 +10,34 @@ export default function AllUser() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
-  const [villageFilter, setVillageFilter] = useState("");
+  const [talukoFilter, setTalukoFilter] = useState("");
   const [cityFilter, setCityFilter] = useState("");
   const [stateFilter, setStateFilter] = useState("");
+  const [userTaluko, setUserTaluko] = useState(null);
+  const [isSubAdmin, setIsSubAdmin] = useState(false);
 
-  useRoleBasedRedirect("admin");
+  useRoleBasedRedirect(["admin", "sub-admin"]);
 
   useEffect(() => {
     const loadUser = async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (auth?.user) {
         setUser(auth.user);
+        
+        // Fetch user profile to get taluko and role
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role, taluko")
+          .eq("id", auth.user.id)
+          .single();
+        
+        if (profile) {
+          setIsSubAdmin(profile.role === "sub-admin");
+          if (profile.role === "sub-admin" && profile.taluko) {
+            setUserTaluko(profile.taluko);
+            setTalukoFilter(profile.taluko); // Auto-filter for sub-admin's taluko
+          }
+        }
       }
     };
     loadUser();
@@ -53,11 +70,15 @@ export default function AllUser() {
 
     const matchesRole = roleFilter === "All" || user.role === roleFilter;
     
-    const matchesVillage = villageFilter === "" || user.village?.toLowerCase().includes(villageFilter.toLowerCase());
+    // For sub-admin, always filter by their taluko
+    const matchesTaluko = isSubAdmin 
+      ? user.taluko?.toLowerCase() === userTaluko?.toLowerCase()
+      : talukoFilter === "" || user.taluko?.toLowerCase().includes(talukoFilter.toLowerCase());
+    
     const matchesCity = cityFilter === "" || user.city?.toLowerCase().includes(cityFilter.toLowerCase());
     const matchesState = stateFilter === "" || user.state?.toLowerCase().includes(stateFilter.toLowerCase());
 
-    return matchesSearch && matchesRole && matchesVillage && matchesCity && matchesState;
+    return matchesSearch && matchesRole && matchesTaluko && matchesCity && matchesState;
   });
 
   const getRoleBadgeColor = (role) => {
@@ -146,11 +167,20 @@ export default function AllUser() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search village..."
-              value={villageFilter}
-              onChange={(e) => setVillageFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm"
+              placeholder="Search taluko..."
+              value={talukoFilter}
+              onChange={(e) => setTalukoFilter(e.target.value)}
+              disabled={isSubAdmin}
+              className={`w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm ${
+                isSubAdmin ? "bg-slate-100 cursor-not-allowed" : ""
+              }`}
+              title={isSubAdmin ? `Filtered to your taluko: ${userTaluko}` : ""}
             />
+            {isSubAdmin && (
+              <span className="text-xs text-slate-500 mt-1 block">
+                📍 Showing only {userTaluko} users
+              </span>
+            )}
           </div>
 
           <div className="relative">
@@ -195,6 +225,7 @@ export default function AllUser() {
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Name</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Email</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Phone</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Taluko</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">City</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Role</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Joined</th>
@@ -225,6 +256,7 @@ export default function AllUser() {
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
                         <td className="px-6 py-4 text-sm text-slate-700">{user.phone || "N/A"}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{user.taluko || "N/A"}</td>
                         <td className="px-6 py-4 text-sm text-slate-700">{user.city || "N/A"}</td>
                         <td className="px-6 py-4 text-sm">
                           <span
