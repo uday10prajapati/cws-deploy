@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import NavbarNew from "../components/NavbarNew";
+import { GUJARAT_CITIES } from "../constants/gujaratConstants";
 import {
   FiMapPin,
   FiUsers,
@@ -50,6 +51,8 @@ const SalesWork = () => {
     model: "",
     numberPlate: "",
     color: "",
+    customerCity: "",
+    customerTaluko: "",
     carPhoto: null,
     addressProof: null,
     lightBill: null,
@@ -58,6 +61,23 @@ const SalesWork = () => {
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // When assigned area changes, find the city and populate car form
+  useEffect(() => {
+    if (assignedArea) {
+      // Find which city this taluko belongs to
+      for (const [city, talukas] of Object.entries(GUJARAT_CITIES)) {
+        if (talukas.includes(assignedArea)) {
+          setCarForm(prev => ({
+            ...prev,
+            customerTaluko: assignedArea,
+            customerCity: city
+          }));
+          break;
+        }
+      }
+    }
+  }, [assignedArea]);
 
   const loadUserData = async () => {
     try {
@@ -366,6 +386,8 @@ const SalesWork = () => {
           model: carForm.model,
           number_plate: carForm.numberPlate,
           color: carForm.color,
+          customer_city: carForm.customerCity,
+          customer_taluko: carForm.customerTaluko,
           car_photo_url: carPhotoUrl,
           image_url_1: addressProofUrl,
           image_url_2: lightBillUrl,
@@ -379,7 +401,18 @@ const SalesWork = () => {
       }
 
       alert("✅ Car and documents added successfully!");
-      setCarForm({ customerName: "", customerPhone: "", model: "", numberPlate: "", color: "", carPhoto: null, addressProof: null, lightBill: null });
+      setCarForm({ 
+        customerName: "", 
+        customerPhone: "", 
+        model: "", 
+        numberPlate: "", 
+        color: "",
+        customerCity: carForm.customerCity,  // Keep the city/taluko populated
+        customerTaluko: carForm.customerTaluko,
+        carPhoto: null, 
+        addressProof: null, 
+        lightBill: null 
+      });
       setShowCarModal(false);
       await loadCars(user.id);
     } catch (error) {
@@ -813,7 +846,18 @@ const SalesWork = () => {
               <button
                 onClick={() => {
                   setShowCarModal(false);
-                  setCarForm({ customerName: "", customerPhone: "", model: "", numberPlate: "", color: "", carPhoto: null, addressProof: null, lightBill: null });
+                  setCarForm({ 
+                    customerName: "", 
+                    customerPhone: "", 
+                    model: "", 
+                    numberPlate: "", 
+                    color: "",
+                    customerCity: carForm.customerCity,  // Keep city/taluko populated
+                    customerTaluko: carForm.customerTaluko,
+                    carPhoto: null, 
+                    addressProof: null, 
+                    lightBill: null 
+                  });
                 }}
                 className="text-slate-500 hover:text-slate-700"
               >
@@ -849,6 +893,31 @@ const SalesWork = () => {
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+            </div>
+
+            {/* Location Details Section */}
+            <div className="mb-6 pb-6 border-b-2 border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <FiMapPin className="text-blue-600" />
+                Location Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={carForm.customerCity}
+                  disabled={true}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
+                />
+                <input
+                  type="text"
+                  placeholder="Taluko"
+                  value={carForm.customerTaluko}
+                  disabled={true}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Location is auto-filled based on your assigned area</p>
             </div>
 
             {/* Car Details Section */}
@@ -1030,7 +1099,18 @@ const SalesWork = () => {
               <button
                 onClick={() => {
                   setShowCarModal(false);
-                  setCarForm({ customerName: "", customerPhone: "", model: "", numberPlate: "", color: "", carPhoto: null, addressProof: null, lightBill: null });
+                  setCarForm({ 
+                    customerName: "", 
+                    customerPhone: "", 
+                    model: "", 
+                    numberPlate: "", 
+                    color: "",
+                    customerCity: carForm.customerCity,  // Keep city/taluko populated
+                    customerTaluko: carForm.customerTaluko,
+                    carPhoto: null, 
+                    addressProof: null, 
+                    lightBill: null 
+                  });
                 }}
                 disabled={uploading}
                 className="flex-1 px-4 py-2 border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-semibold disabled:opacity-50"

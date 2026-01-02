@@ -79,14 +79,18 @@ export const hasAccessToTaluka = (userRole, assignedTalukas, talukaToCheck) => {
  */
 export const assignCitiesToSubGeneral = async (subGeneralId, cities) => {
   try {
-    const { error } = await supabase
+    // Use upsert with ON CONFLICT to handle existing records
+    const { data, error } = await supabase
       .from("user_role_assignments")
-      .upsert({
-        user_id: subGeneralId,
-        role: ROLES.SUB_GENERAL,
-        assigned_cities: cities,
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(
+        {
+          user_id: subGeneralId,
+          role: ROLES.SUB_GENERAL,
+          assigned_cities: cities,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
 
     if (error) throw error;
     return { success: true };
@@ -101,15 +105,19 @@ export const assignCitiesToSubGeneral = async (subGeneralId, cities) => {
  */
 export const assignTalukasToHRGeneral = async (hrGeneralId, talukas, cityContext) => {
   try {
-    const { error } = await supabase
+    // Use upsert with ON CONFLICT to handle existing records
+    const { data, error } = await supabase
       .from("user_role_assignments")
-      .upsert({
-        user_id: hrGeneralId,
-        role: ROLES.HR_GENERAL,
-        assigned_talukas: talukas,
-        assigned_cities: [cityContext],
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(
+        {
+          user_id: hrGeneralId,
+          role: ROLES.HR_GENERAL,
+          assigned_talukas: talukas,
+          assigned_cities: [cityContext],
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
 
     if (error) throw error;
     return { success: true };

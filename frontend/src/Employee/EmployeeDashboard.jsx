@@ -3,7 +3,7 @@ import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import NavbarNew from "../components/NavbarNew";
-import { FiBell, FiCalendar, FiGift, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiAward, FiCreditCard, FiTruck, FiWind, FiPhone, FiX } from "react-icons/fi";
+import { FiBell, FiCalendar, FiGift, FiMapPin, FiTrendingUp,  FiDollarSign, FiLogOut, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiAward, FiCreditCard, FiTruck, FiWind, FiPhone, FiX } from "react-icons/fi";
 import { FaCar, FaStar } from "react-icons/fa";
 
 
@@ -311,7 +311,7 @@ export default function EmployeeDashboard() {
             { to: "/employee/assign-areas", icon: FiMapPin, label: "Areas", colors: "from-rose-600 to-red-600", bg: "from-rose-50 to-red-50", border: "border-rose-200" },
             // { to: "/employee/allcars", icon: FiTruck, label: "All Cars", colors: "from-cyan-600 to-blue-600", bg: "from-cyan-50 to-blue-50", border: "border-cyan-200" },
             { to: "/employee/salespeople", icon: FiAward, label: "All Salesman", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
-            { to: "/login", onClick: handleLogout, icon: FiLogOut, label: "Logout", colors: "from-red-600 to-red-700", bg: "from-red-50 to-red-50", border: "border-red-200" },
+            { to: "/employee/documents", icon: FiCalendar, label: "All Documents", colors: "from-red-600 to-red-700", bg: "from-red-50 to-red-50", border: "border-red-200" },
           ].map(({ to, onClick, icon: Icon, label, colors, bg, border }) => (
             <Link
               key={label}

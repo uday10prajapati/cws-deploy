@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS user_role_assignments (
   
   -- Foreign key constraint
   CONSTRAINT fk_user_role_assignments_user_id 
-    FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  
+  -- Explicit unique constraint for upsert operations
+  UNIQUE(user_id)
 );
 
 -- Create index for efficient queries

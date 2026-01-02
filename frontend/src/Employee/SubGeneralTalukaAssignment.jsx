@@ -264,7 +264,7 @@ export default function SubGeneralTalukaAssignment() {
 
         {/* HR-GENERAL MANAGEMENT */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
-          <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-yellow-200">
+          <div className="bg-linear-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-yellow-200">
             <h2 className="text-2xl font-bold text-yellow-900">🟡 HR-General Management</h2>
             <p className="text-yellow-700 text-sm mt-1">Assign talukas from your cities</p>
           </div>

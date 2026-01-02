@@ -35,7 +35,7 @@ const GUJARAT_CITIES = {
 export default function AllSalesCustomers() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
-  const [userCity, setUserCity] = useState(null);
+  const [userCities, setUserCities] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,10 +63,32 @@ export default function AllSalesCustomers() {
           .eq("id", auth.user.id)
           .single();
         
+        console.log("👤 User Profile:", profile);
+        
         if (profile) {
           setUserRole(profile.employee_type);
-          if (profile.city) {
-            setUserCity(profile.city);
+          
+          // If sub-general, fetch assigned cities from user_role_assignments
+          if (profile.employee_type === "sub-general") {
+            const { data: assignments, error: assignmentError } = await supabase
+              .from("user_role_assignments")
+              .select("assigned_cities")
+              .eq("user_id", auth.user.id)
+              .eq("role", "sub-general")
+              .single();
+            
+            console.log("🏙️ Assignments Fetched:", { assignments, error: assignmentError });
+            
+            if (assignments?.assigned_cities) {
+              console.log("✓ Setting userCities to:", assignments.assigned_cities);
+              setUserCities(assignments.assigned_cities);
+            } else {
+              console.log("⚠️ No assigned cities found for sub-general");
+            }
+          } else if (profile.city) {
+            // For other roles, use city from profiles
+            console.log("✓ Setting userCities from profile.city:", [profile.city]);
+            setUserCities([profile.city]);
           }
         }
       }
@@ -76,25 +98,59 @@ export default function AllSalesCustomers() {
 
   useEffect(() => {
     if (userRole) {
+      console.log("📌 useEffect triggered: userRole=", userRole, "userCities=", userCities);
       loadCustomers();
     }
-  }, [userRole, userCity]);
+  }, [userRole, userCities]);
 
   const loadCustomers = async () => {
     setLoading(true);
     try {
-      let query = supabase.from("sales_cars").select("*");
-      
-      // If sub-general employee, only show customers from their city
-      if (userRole === "sub-general" && userCity) {
-        query = query.eq("customer_city", userCity);
-      }
-      
-      const { data, error } = await query;
+      // Fetch all sales_cars
+      const { data: allData, error } = await supabase.from("sales_cars").select("*");
       
       if (error) throw error;
       
-      setCustomers(data || []);
+      console.log("📦 Fetched all sales_cars:", allData?.length || 0, "records");
+      console.log("👤 Current userRole:", userRole);
+      console.log("🏙️ Current userCities array:", userCities);
+      console.log("🏙️ Current userCities length:", userCities?.length);
+      
+      let filteredData = allData || [];
+      
+      // Normalize city names for comparison (remove "(City)" suffix)
+      const normalizeCityName = (city) => {
+        return city?.toLowerCase().replace(/\s*\(city\)\s*/gi, '').trim() || '';
+      };
+      
+      // If sub-general employee, filter customers from their assigned cities
+      if (userRole === "sub-general") {
+        console.log("🔐 Sub-General role detected");
+        
+        if (!userCities || userCities.length === 0) {
+          console.log("⚠️ No assigned cities found for sub-general, showing no customers");
+          setCustomers([]);
+          setLoading(false);
+          return;
+        }
+        
+        const normalizedAssignedCities = userCities.map(c => normalizeCityName(c));
+        console.log("🔍 Normalized assigned cities:", normalizedAssignedCities);
+        
+        filteredData = allData.filter(customer => {
+          const normalizedCustomerCity = normalizeCityName(customer.customer_city);
+          const matches = normalizedAssignedCities.includes(normalizedCustomerCity);
+          
+          console.log(`  Customer: "${customer.customer_name}" | city="${customer.customer_city}" (normalized: "${normalizedCustomerCity}") | matches=${matches}`);
+          
+          return matches;
+        });
+        console.log("✓ After filtering:", filteredData.length, "records");
+      } else {
+        console.log("ℹ️ Non sub-general role (", userRole, "), showing all customers");
+      }
+      
+      setCustomers(filteredData);
     } catch (error) {
       console.error("Error loading customers:", error);
       alert("Error loading customers: " + error.message);

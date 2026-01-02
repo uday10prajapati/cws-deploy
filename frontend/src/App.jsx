@@ -65,6 +65,7 @@ import RevenueReports from "./Admin/RevenueReports.jsx";
 import TalukaDetails from "./Admin/TalukaDetails.jsx";
 import CityDetails from "./Admin/CityDetails.jsx";
 import Notifications from "./page/Notifications.jsx";
+import AllDocuments from "./Employee/AllDocuments.jsx";
 
 export default function App() {
   // Initialize storage bucket on app load
@@ -141,6 +142,7 @@ export default function App() {
         <Route path="/admin/taluka-details" element={<TalukaDetails />} />
         <Route path="/admin/city-details" element={<CityDetails />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/employee/documents" element={<AllDocuments />} />
       </Routes>
     </NotificationProvider>
   );

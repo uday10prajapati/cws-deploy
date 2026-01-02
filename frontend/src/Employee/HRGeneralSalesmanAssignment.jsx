@@ -212,7 +212,7 @@ export default function HRGeneralSalesmanAssignment() {
 
         {/* SALESMAN MANAGEMENT */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
-          <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-green-200">
+          <div className="bg-linear-to-r from-green-50 to-green-100 px-6 py-4 border-b border-green-200">
             <h2 className="text-2xl font-bold text-green-900">🟢 Salesman Management</h2>
             <p className="text-green-700 text-sm mt-1">Assign talukas from your jurisdiction</p>
           </div>

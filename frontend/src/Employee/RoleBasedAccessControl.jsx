@@ -260,7 +260,7 @@ export default function RoleBasedAccessControl() {
 
         {/* SUB-GENERAL MANAGEMENT */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-slate-200">
-          <div className="bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-orange-200">
+          <div className="bg-linear-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-orange-200">
             <h2 className="text-2xl font-bold text-orange-900">🟠 Sub-General Management</h2>
             <p className="text-orange-700 text-sm mt-1">Assign cities to Sub-Generals</p>
           </div>

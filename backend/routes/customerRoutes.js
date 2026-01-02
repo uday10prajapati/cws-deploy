@@ -142,12 +142,20 @@ router.get("/all-customers", async (req, res) => {
         return true; // Show all
       }
       else if (userRole === "sub-general") {
-        // Show only customers from assigned cities (case-insensitive)
-        const customerCity = car.customer_city?.toLowerCase();
-        const citiesLower = userCities.map(c => c.toLowerCase());
-        const matches = citiesLower.includes(customerCity);
+        // Show only customers from assigned cities (case-insensitive, normalized)
+        // Normalize city names by removing "(City)" suffix for comparison
+        const normalizeCityName = (city) => {
+          return city?.toLowerCase().replace(/\s*\(city\)\s*/gi, '').trim() || '';
+        };
+        
+        const normalizedCustomerCity = normalizeCityName(car.customer_city);
+        const normalizedAssignedCities = userCities.map(c => normalizeCityName(c));
+        const matches = normalizedAssignedCities.includes(normalizedCustomerCity);
+        
         if (!matches) {
-          console.log(`⛔ Customer ${car.customer_name} in city "${car.customer_city}" not in assigned cities [${userCities.join(", ")}]`);
+          console.log(`⛔ Customer ${car.customer_name} in city "${car.customer_city}" (normalized: "${normalizedCustomerCity}") not in assigned cities [${userCities.join(", ")}] (normalized: [${normalizedAssignedCities.join(", ")}])`);
+        } else {
+          console.log(`✓ Customer ${car.customer_name} in city "${car.customer_city}" matches assigned cities [${userCities.join(", ")}]`);
         }
         return matches;
       }

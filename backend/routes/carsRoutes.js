@@ -484,12 +484,20 @@ router.get("/all-cars/secure", async (req, res) => {
         return true; // Show all
       }
       else if (userRole === "sub-general") {
-        // Show only cars from assigned cities (case-insensitive)
-        const customerCity = car.customer_city?.toLowerCase();
-        const citiesLower = userCities.map(c => c.toLowerCase());
-        const matches = citiesLower.includes(customerCity);
+        // Show only cars from assigned cities (case-insensitive, normalized)
+        // Normalize city names by removing "(City)" suffix for comparison
+        const normalizeCityName = (city) => {
+          return city?.toLowerCase().replace(/\s*\(city\)\s*/gi, '').trim() || '';
+        };
+        
+        const normalizedCustomerCity = normalizeCityName(car.customer_city);
+        const normalizedAssignedCities = userCities.map(c => normalizeCityName(c));
+        const matches = normalizedAssignedCities.includes(normalizedCustomerCity);
+        
         if (!matches) {
-          console.log(`⛔ Car (${car.customer_name}) in city "${car.customer_city}" not in assigned cities [${userCities.join(", ")}]`);
+          console.log(`⛔ Car (${car.customer_name}) in city "${car.customer_city}" (normalized: "${normalizedCustomerCity}") not in assigned cities [${userCities.join(", ")}] (normalized: [${normalizedAssignedCities.join(", ")}])`);
+        } else {
+          console.log(`✓ Car (${car.customer_name}) in city "${car.customer_city}" matches assigned cities [${userCities.join(", ")}]`);
         }
         return matches;
       }
@@ -536,6 +544,122 @@ router.get("/all-cars/secure", async (req, res) => {
 
   } catch (error) {
     console.error("❌ Error in /all-cars/secure:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * MIGRATION: Backfill missing customer_city and customer_taluko
+ * This endpoint populates NULL customer_city/taluko by using sales person's city/taluko
+ */
+router.post("/migrate/backfill-locations", async (req, res) => {
+  try {
+    // Fetch all cars with NULL customer_city or customer_taluko
+    const { data: carsWithMissingLocation, error: fetchError } = await supabase
+      .from("sales_cars")
+      .select("id, sales_person_id")
+      .or("customer_city.is.null,customer_taluko.is.null");
+
+    if (fetchError) {
+      return res.status(400).json({ success: false, error: fetchError.message });
+    }
+
+    console.log(`📊 Found ${carsWithMissingLocation?.length || 0} cars with missing location data`);
+
+    if (!carsWithMissingLocation || carsWithMissingLocation.length === 0) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "No cars with missing location data",
+        updated: 0 
+      });
+    }
+
+    let updated = 0;
+    const errors = [];
+
+    // For each car, fetch the sales person and populate location
+    for (const car of carsWithMissingLocation) {
+      try {
+        // Get sales person's city and taluko
+        const { data: salesPerson, error: spError } = await supabase
+          .from("profiles")
+          .select("city, taluko")
+          .eq("id", car.sales_person_id)
+          .single();
+
+        if (spError) {
+          errors.push(`Car ${car.id}: Could not find sales person ${car.sales_person_id}`);
+          continue;
+        }
+
+        if (!salesPerson?.city || !salesPerson?.taluko) {
+          errors.push(`Car ${car.id}: Sales person has missing city or taluko`);
+          continue;
+        }
+
+        // Update the car with sales person's city and taluko
+        const { error: updateError } = await supabase
+          .from("sales_cars")
+          .update({
+            customer_city: salesPerson.city,
+            customer_taluko: salesPerson.taluko
+          })
+          .eq("id", car.id);
+
+        if (updateError) {
+          errors.push(`Car ${car.id}: ${updateError.message}`);
+        } else {
+          updated++;
+          console.log(`✓ Updated car ${car.id}: city=${salesPerson.city}, taluko=${salesPerson.taluko}`);
+        }
+      } catch (err) {
+        errors.push(`Car ${car.id}: ${err.message}`);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Backfill completed: ${updated} cars updated`,
+      updated,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error) {
+    console.error("❌ Error in migration:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * DEBUG: Check all sales_cars and their city values
+ */
+router.get("/debug/check-cities", async (req, res) => {
+  try {
+    // Get all sales_cars with their city/taluko
+    const { data: allCars } = await supabase
+      .from("sales_cars")
+      .select("id, customer_name, customer_city, customer_taluko, sales_person_id")
+      .order("created_at", { ascending: false });
+
+    console.log("\n📊 ALL CARS IN DATABASE:");
+    console.log(allCars);
+
+    // Get all user_role_assignments for sub-general
+    const { data: subGeneralAssignments } = await supabase
+      .from("user_role_assignments")
+      .select("user_id, assigned_cities, assigned_talukas")
+      .eq("role", "sub-general");
+
+    console.log("\n🔐 SUB-GENERAL ASSIGNMENTS:");
+    console.log(subGeneralAssignments);
+
+    return res.status(200).json({
+      success: true,
+      allCars: allCars || [],
+      subGeneralAssignments: subGeneralAssignments || []
+    });
+  } catch (error) {
+    console.error("❌ Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
