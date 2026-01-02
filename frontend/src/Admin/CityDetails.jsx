@@ -18,8 +18,9 @@ import { FaCar } from "react-icons/fa";
 
 export default function CityDetails() {
   const [user, setUser] = useState(null);
-  const [userCity, setUserCity] = useState(null);
-  const [isHR, setIsHR] = useState(false);
+  const [userCities, setUserCities] = useState([]);
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [isSubAdmin, setIsSubAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -42,33 +43,42 @@ export default function CityDetails() {
 
   useRoleBasedRedirect(["sub-admin"]);
 
+  // 🔐 ROLE-BASED ACCESS: Sub-Admin has assigned cities (City → Taluka → Wash Area hierarchy)
   useEffect(() => {
     const loadUser = async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (auth?.user) {
         setUser(auth.user);
         
-        // Fetch user profile to get city and role
+        // Fetch user profile to get assigned cities and role
         const { data: profile } = await supabase
           .from("profiles")
-          .select("assigned_city, role")
+          .select("assigned_cities, role")
           .eq("id", auth.user.id)
           .single();
         
-        if (profile && profile.role === "hr" && profile.assigned_city) {
-          setUserCity(profile.assigned_city);
-          setIsHR(true);
+        if (profile && profile.role === "sub-admin") {
+          // Sub-Admin has one or more assigned cities
+          const cities = profile.assigned_cities || [];
+          setUserCities(cities);
+          setIsSubAdmin(true);
+          
+          // Auto-select first city if available
+          if (cities.length > 0) {
+            setSelectedCity(cities[0]);
+          }
         }
       }
     };
     loadUser();
   }, []);
 
+  // Load city data when selected city changes
   useEffect(() => {
-    if (userCity) {
+    if (selectedCity) {
       loadCityData();
     }
-  }, [userCity]);
+  }, [selectedCity]);
 
   // Apply taluko filter
   useEffect(() => {
@@ -111,11 +121,12 @@ export default function CityDetails() {
   const loadCityData = async () => {
     setLoading(true);
     try {
-      // Fetch all users in this city
+      // 🔐 GEOGRAPHIC HIERARCHY: City → Taluka → Wash Area
+      // Sub-Admin can see ALL talukas under assigned city
       const { data: usersData } = await supabase
         .from("profiles")
         .select("id, name, email, phone, role, city, taluko, state")
-        .eq("city", userCity);
+        .eq("city", selectedCity);
 
       setCityUsers(usersData || []);
 
@@ -259,12 +270,19 @@ export default function CityDetails() {
                 🏙️ City Details
               </h1>
               <p className="text-slate-600 text-base">
-                View all details for {userCity} city
+                View all details for {selectedCity} city
               </p>
             </div>
-            <div className="bg-purple-50 border border-purple-300 rounded-lg px-4 py-3 text-right">
-              <p className="text-sm font-semibold text-purple-900">Your City</p>
-              <p className="text-2xl font-bold text-purple-600">{userCity}</p>
+            <div className="bg-blue-50 border border-blue-300 rounded-lg px-4 py-3 text-right">
+              <p className="text-sm font-semibold text-blue-900">📋 Your Role: Sub-Admin</p>
+              {userCities.length > 1 ? (
+                <div>
+                  <p className="text-xs text-blue-700 mt-1">Assigned Cities: {userCities.length}</p>
+                  <p className="text-lg font-bold text-blue-600 mt-1">{selectedCity}</p>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-blue-600">{selectedCity}</p>
+              )}
             </div>
           </div>
         </div>
@@ -290,6 +308,31 @@ export default function CityDetails() {
             </div>
           ))}
         </div>
+
+        {/* CITY SELECTOR - For Sub-Admin with multiple cities */}
+        {userCities.length > 1 && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg mb-10">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-3">
+              <FiMapPin className="text-blue-600" />
+              Select City
+            </h3>
+            <div className="flex gap-3 flex-wrap">
+              {userCities.map((city) => (
+                <button
+                  key={city}
+                  onClick={() => setSelectedCity(city)}
+                  className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                    selectedCity === city
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* TALUKO BREAKDOWN */}
         {availableTalukas.length > 1 && (

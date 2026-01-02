@@ -17,8 +17,13 @@ import { FaCar } from "react-icons/fa";
 
 export default function TalukaDetails() {
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [userCity, setUserCity] = useState(null);
   const [userTaluko, setUserTaluko] = useState(null);
+  const [userTalukas, setUserTalukas] = useState([]);
+  const [selectedTaluko, setSelectedTaluko] = useState(null);
   const [isSubAdmin, setIsSubAdmin] = useState(false);
+  const [isHR, setIsHR] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -35,42 +40,72 @@ export default function TalukaDetails() {
 
   useRoleBasedRedirect(["sub-admin", "hr"]);
 
+  // 🔐 ROLE-BASED ACCESS:
+  // Sub-Admin: Assigned cities → all talukas under those cities → all data
+  // HR: Assigned talukas → data only for those talukas
   useEffect(() => {
     const loadUser = async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (auth?.user) {
         setUser(auth.user);
         
-        // Fetch user profile to get taluko and role
+        // Fetch user profile to get role and geographic assignments
         const { data: profile } = await supabase
           .from("profiles")
-          .select("taluko, role")
+          .select("taluko, assigned_talukas, assigned_cities, city, role")
           .eq("id", auth.user.id)
           .single();
         
-        if (profile && profile.role === "sub-admin" && profile.taluko) {
-          setUserTaluko(profile.taluko);
-          setIsSubAdmin(true);
+        if (profile) {
+          setUserRole(profile.role);
+          
+          if (profile.role === "sub-admin" && profile.assigned_cities) {
+            // Sub-Admin: Can see ALL talukas under assigned cities
+            setIsSubAdmin(true);
+            setUserCity(profile.city);
+            const talukas = profile.assigned_talukas || [profile.taluko];
+            setUserTalukas(talukas);
+            
+            // Auto-select first taluko
+            if (talukas.length > 0) {
+              setSelectedTaluko(talukas[0]);
+            }
+          } else if (profile.role === "hr" && profile.assigned_talukas) {
+            // HR: Can ONLY see assigned talukas
+            setIsHR(true);
+            setUserCity(profile.city);
+            setUserTalukas(profile.assigned_talukas);
+            
+            // Auto-select first taluko
+            if (profile.assigned_talukas.length > 0) {
+              setSelectedTaluko(profile.assigned_talukas[0]);
+            }
+          }
         }
       }
     };
     loadUser();
   }, []);
 
+  // Load taluka data when selected taluko changes
   useEffect(() => {
-    if (userTaluko) {
+    if (selectedTaluko) {
       loadTalukaData();
     }
-  }, [userTaluko]);
+  }, [selectedTaluko]);
 
   const loadTalukaData = async () => {
     setLoading(true);
     try {
-      // Fetch all users in this taluko
+      // 🔐 GEOGRAPHIC HIERARCHY ENFORCEMENT:
+      // Fetch only data for the selected taluko
+      // Sub-Admin can see all talukas in assigned cities
+      // HR can see only assigned talukas
+      
       const { data: usersData } = await supabase
         .from("profiles")
         .select("id, name, email, phone, role, city, state, taluko")
-        .eq("taluko", userTaluko);
+        .eq("taluko", selectedTaluko);
 
       setTalukaUsers(usersData || []);
 
@@ -203,13 +238,35 @@ export default function TalukaDetails() {
                 📍 Taluko Details
               </h1>
               <p className="text-slate-600 text-base">
-                View all details for {userTaluko} taluko
+                View all details for {selectedTaluko} taluko
               </p>
             </div>
-            <div className="bg-blue-50 border border-blue-300 rounded-lg px-4 py-3 text-right">
-              <p className="text-sm font-semibold text-blue-900">Your Taluko</p>
-              <p className="text-2xl font-bold text-blue-600">{userTaluko}</p>
-            </div>
+            {/* Show different badges for Sub-Admin vs HR */}
+            {isSubAdmin ? (
+              <div className="bg-blue-50 border border-blue-300 rounded-lg px-4 py-3 text-right">
+                <p className="text-sm font-semibold text-blue-900">📋 Your Role: Sub-Admin</p>
+                {userTalukas.length > 1 ? (
+                  <div>
+                    <p className="text-xs text-blue-700 mt-1">Assigned Talukas: {userTalukas.length}</p>
+                    <p className="text-lg font-bold text-blue-600 mt-1">{selectedTaluko}</p>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-blue-600">{selectedTaluko}</p>
+                )}
+              </div>
+            ) : (
+              <div className="bg-green-50 border border-green-300 rounded-lg px-4 py-3 text-right">
+                <p className="text-sm font-semibold text-green-900">👤 Your Role: HR</p>
+                {userTalukas.length > 1 ? (
+                  <div>
+                    <p className="text-xs text-green-700 mt-1">Assigned Talukas: {userTalukas.length}</p>
+                    <p className="text-lg font-bold text-green-600 mt-1">{selectedTaluko}</p>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-green-600">{selectedTaluko}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -234,6 +291,33 @@ export default function TalukaDetails() {
             </div>
           ))}
         </div>
+
+        {/* TALUKO SELECTOR - For users with multiple assigned talukas */}
+        {userTalukas.length > 1 && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg mb-10">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-3">
+              <FiMapPin className="text-blue-600" />
+              Select Taluko
+            </h3>
+            <div className="flex gap-3 flex-wrap">
+              {userTalukas.map((taluko) => (
+                <button
+                  key={taluko}
+                  onClick={() => setSelectedTaluko(taluko)}
+                  className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                    selectedTaluko === taluko
+                      ? isSubAdmin
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "bg-green-600 text-white shadow-lg"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {taluko}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* CITY AND TALUKO BREAKDOWN FOR SUB-ADMIN */}
         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
