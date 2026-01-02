@@ -32,10 +32,10 @@ router.post("/send-otp", async (req, res) => {
     return res.status(400).json({ error: "Name & Password required" });
   }
 
-  // Employee type is optional - can be empty for general employee
-  // if (role === "employee" && !employeeType) {
-  //   return res.status(400).json({ error: "Employee type required" });
-  // }
+  // Validate that role selection is required if neither empty
+  if (!role || (role !== "customer" && role !== "employee" && role !== "admin")) {
+    return res.status(400).json({ error: "Invalid role selected" });
+  }
 
   // Validate email format if provided
   if (email && !email.includes("@")) {
@@ -45,16 +45,19 @@ router.post("/send-otp", async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   // Store OTP in DB with role information
+  // For admin signups, store the admin type as employee_type for consistency
+  const empType = (role === "admin" || role === "employee") ? (employeeType || "general") : null;
+  
   const { error: dbError } = await supabase
     .from("otp_verification")
-    .insert([{ email, phone, otp, role, employee_type: role === "employee" ? (employeeType || "general") : null }]);
+    .insert([{ email, phone, otp, role, employee_type: empType }]);
 
   if (dbError) {
     console.log("Supabase Insert Error:", dbError);
     return res.status(500).json({ error: "DB Insert Error" });
   }
 
-  console.log("✅ OTP stored in DB for email:", email, "phone:", phone);
+  console.log("✅ OTP stored in DB for email:", email, "phone:", phone, "role:", role);
 
   let emailStatus = "not_sent";
   let whatsappStatus = "not_sent";
@@ -64,6 +67,10 @@ router.post("/send-otp", async (req, res) => {
   ----------------------------------------- */
   if (email) {
     try {
+      const approvalNote = (role === "employee" || role === "admin") 
+        ? `<p><strong>Note:</strong> Your account will require admin approval before you can login.</p>` 
+        : "";
+      
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
@@ -71,7 +78,7 @@ router.post("/send-otp", async (req, res) => {
         html: `<h2>Hello ${name}</h2>
                <p>Your OTP is:</p>
                <h1>${otp}</h1>
-               ${role === "employee" ? `<p><strong>Note:</strong> Your account will require admin approval before you can login.</p>` : ""}`,
+               ${approvalNote}`,
       });
 
       emailStatus = "sent";
@@ -316,8 +323,8 @@ if (!password || password.trim().length < 6) {
     name,
     email: authEmail,
     phone: phone || null,
-    role: role === "employee" ? "employee" : "customer",
-    employee_type: role === "employee" ? (employeeType || "general") : null,
+    role: role === "admin" ? "admin" : (role === "employee" ? "employee" : "customer"),
+    employee_type: (role === "employee" || role === "admin") ? (employeeType || "general") : null,
     approval_status: role === "customer" ? "approved" : "pending",
   };
 
@@ -343,23 +350,20 @@ if (!password || password.trim().length < 6) {
     });
   }
 
-  // 4️⃣ Create approval request for all employees (specific types + general)
-  if (role === "employee") {
+  // 4️⃣ Create approval request for all employees and admins
+  if (role === "employee" || role === "admin") {
     try {
-      // Map employee types to valid database role values
+      // Map employee/admin types to valid database role values
+      // These match the roles defined in the get-roles endpoint
       let requestedRole;
-      if (employeeType === "washer") {
-        requestedRole = "employee_washer";
-      } else if (employeeType === "sales") {
-        requestedRole = "employee_sales";
-      } else if (employeeType === "rider") {
-        requestedRole = "employee_rider";
-      } else if (employeeType === "delivery") {
-        requestedRole = "employee_delivery";
+      const typeValue = employeeType || "general";
+      
+      if (role === "admin") {
+        // Admin types: admin, sub-admin, hr, washer
+        requestedRole = `admin_${typeValue}`;
       } else {
-        // For general employees, use "employee_washer" as a placeholder
-        // The actual employee_type in profiles table will be "general"
-        requestedRole = "employee_washer";
+        // Employee types: general, sub-general, hr-general, sales
+        requestedRole = `employee_${typeValue}`;
       }
 
       const { error: approvalError } = await supabase
@@ -377,8 +381,7 @@ if (!password || password.trim().length < 6) {
         console.error("❌ Failed to create approval request:", approvalError);
         // Don't fail the signup, just log it
       } else {
-        const empTypeDisplay = employeeType || "general";
-        console.log("✅ Approval request created for employee:", name, "Type:", empTypeDisplay, "Role:", requestedRole);
+        console.log(`✅ Approval request created for ${role}:`, name, "Type:", typeValue, "Role:", requestedRole);
       }
     } catch (error) {
       console.error("❌ Error in approval request:", error);
@@ -391,8 +394,8 @@ if (!password || password.trim().length < 6) {
     name,
     email: authEmail,
     phone: phone || null,
-    role: role === "employee" ? "employee" : "customer",
-    employee_type: role === "employee" ? (employeeType || "general") : null,
+    role: role === "admin" ? "admin" : (role === "employee" ? "employee" : "customer"),
+    employee_type: (role === "employee" || role === "admin") ? (employeeType || "general") : null,
   });
 
   // 6️⃣ Delete OTP
@@ -404,12 +407,17 @@ if (!password || password.trim().length < 6) {
     await supabase.from("otp_verification").delete().eq("phone", phone);
   }
 
+  // Determine response message based on role
+  let responseMessage = "Account created! You can now log in.";
+  if (role === "employee") {
+    responseMessage = "Account created! Awaiting admin approval.";
+  } else if (role === "admin") {
+    responseMessage = "Admin account created! Awaiting approval.";
+  }
+
   return res.json({
     success: true,
-    message:
-      role === "employee"
-        ? "Account created! Awaiting admin approval."
-        : "Account created! You can now log in.",
+    message: responseMessage,
     userId: userId,
   });
 });
@@ -936,6 +944,49 @@ router.post("/reset-password", async (req, res) => {
   } catch (err) {
     console.error("❌ Error resetting password:", err);
     return res.status(500).json({ message: "Password reset failed: " + err.message });
+  }
+});
+
+/* -----------------------------------------
+   GET AVAILABLE ROLES - For Dynamic Dropdown
+   Fetches employee_type and admin roles from database
+----------------------------------------- */
+router.get("/get-roles", async (req, res) => {
+  try {
+    console.log("📋 Fetching available roles for signup dropdown");
+
+    // Hardcoded roles based on database schema
+    // These match the existing role names in the system
+    const roles = {
+      employee_types: [
+        { id: "general", label: "👤 General Employee", value: "general" },
+        { id: "sub-general", label: "📍 Sub-General (Regional)", value: "sub-general" },
+        { id: "hr-general", label: "👔 HR-General", value: "hr-general" },
+        { id: "sales", label: "💰 Sales Executive", value: "sales" }
+      ],
+      admin_types: [
+        { id: "admin", label: "🔑 Admin", value: "admin" },
+        { id: "sub-admin", label: "⚙️ Sub-Admin", value: "sub-admin" },
+        { id: "hr", label: "👔 HR", value: "hr" },
+        { id: "washer", label: "🧹 Washer", value: "washer" }
+      ]
+    };
+
+    console.log("✅ Available roles fetched:", {
+      employee_types: roles.employee_types.length,
+      admin_types: roles.admin_types.length
+    });
+
+    return res.json({
+      success: true,
+      roles: roles
+    });
+  } catch (error) {
+    console.error("❌ Error fetching roles:", error);
+    return res.status(500).json({
+      error: "Failed to fetch available roles",
+      details: error.message
+    });
   }
 });
 

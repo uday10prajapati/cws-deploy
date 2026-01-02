@@ -109,13 +109,13 @@ export default function Login() {
     return;
   }
 
-  // 🔥 CHECK IF EMPLOYEE IS APPROVED
-  if (profile.role === "employee" && profile.approval_status === "pending") {
+  // 🔥 CHECK IF EMPLOYEE OR ADMIN IS APPROVED
+  if ((profile.role === "employee" || profile.role === "admin") && profile.approval_status === "pending") {
     setMessage("Your account is pending admin approval. You will be notified once approved.");
     return;
   }
 
-  if (profile.role === "employee" && profile.approval_status === "rejected") {
+  if ((profile.role === "employee" || profile.role === "admin") && profile.approval_status === "rejected") {
     setMessage("Your account request was rejected. Please contact admin for more details.");
     return;
   }
