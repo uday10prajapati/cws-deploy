@@ -286,8 +286,10 @@ export const notifyAdminNewUser = async (userData) => {
   const { id, name, email, phone, role, employee_type } = userData;
   const roleText = role === "employee" ? `Employee (${employee_type})` : "Customer";
   
+  // Use "booking" type as a workaround since "user_registered" may not be allowed
+  // This is a general notification type that most systems support
   return notifyAdmins(
-    "user_registered",
+    "booking",
     "New User Registration",
     `New ${roleText} registered: ${name} (${email})`,
     {

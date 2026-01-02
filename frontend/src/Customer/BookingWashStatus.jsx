@@ -113,7 +113,7 @@ const BookingWashStatus = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
 
       {/* Main Content */}
@@ -121,7 +121,7 @@ const BookingWashStatus = () => {
         <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-2">
             Your Bookings & Wash Status
           </h1>
           <p className="text-slate-600">

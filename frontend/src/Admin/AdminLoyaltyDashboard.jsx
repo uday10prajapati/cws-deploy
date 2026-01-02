@@ -47,7 +47,7 @@ const AdminLoyaltyDashboard = () => {
   }
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+  <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
     {/* Navbar (same as Riders page) */}
     <NavbarNew />
 
@@ -55,7 +55,7 @@ const AdminLoyaltyDashboard = () => {
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-6 text-white">
+        <div className="bg-linear-to-r from-yellow-500 to-orange-500 rounded-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FiAward size={32} />
@@ -179,7 +179,7 @@ const AdminLoyaltyDashboard = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-slate-900">
-                          {washer.profiles?.full_name || "Unknown Washer"}
+                          {washer.profiles?.name || "Unknown Washer"}
                         </p>
                         <p className="text-sm text-slate-500">
                           {washer.profiles?.email}
@@ -250,7 +250,7 @@ const AdminLoyaltyDashboard = () => {
                         </td>
                         <td className="px-4 py-3">
                           <p className="font-semibold text-slate-900">
-                            {washer.profiles?.full_name}
+                            {washer.profiles?.name}
                           </p>
                           <p className="text-xs text-slate-500">
                             {washer.profiles?.email}

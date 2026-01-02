@@ -149,7 +149,7 @@ export default function CustomerAccountSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin mb-3">
             <FiLogOut className="w-8 h-8 text-blue-600" />
@@ -161,7 +161,7 @@ export default function CustomerAccountSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
 
       {/* Main Content */}
@@ -350,7 +350,7 @@ export default function CustomerAccountSettings() {
 
             <Link
               to="/profile"
-              className="w-full px-4 py-3 bg-gradient-to-r from-blue-100 to-purple-100 hover:from-blue-200 hover:to-purple-200 border border-blue-200 rounded-lg transition font-medium text-center text-slate-800 hover:text-slate-900"
+              className="w-full px-4 py-3 bg-linear-to-r from-blue-100 to-purple-100 hover:from-blue-200 hover:to-purple-200 border border-blue-200 rounded-lg transition font-medium text-center text-slate-800 hover:text-slate-900"
             >
               View Full Profile
             </Link>

@@ -43,7 +43,7 @@ export default function AllRevenue() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <FiRefreshCw className="text-4xl animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-slate-600">Loading revenue data...</p>
@@ -53,7 +53,7 @@ export default function AllRevenue() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -63,7 +63,7 @@ export default function AllRevenue() {
         {/* STATS CARDS */}
         {revenueData && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Total Revenue</p>
                 <FiDollarSign className="text-blue-600 text-2xl" />
@@ -74,7 +74,7 @@ export default function AllRevenue() {
               <p className="text-xs text-slate-500 mt-2">From {revenueData.totalTransactions} transactions</p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Avg Per Transaction</p>
                 <FiTrendingUp className="text-green-600 text-2xl" />
@@ -85,7 +85,7 @@ export default function AllRevenue() {
               <p className="text-xs text-slate-500 mt-2">Average transaction value</p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Total Transactions</p>
                 <FiDollarSign className="text-amber-600 text-2xl" />
@@ -169,7 +169,7 @@ export default function AllRevenue() {
                             className="flex flex-col items-center gap-2 flex-1 min-w-max"
                           >
                             <div
-                              className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              className="w-full bg-linear-to-t from-blue-500 to-blue-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                               style={{
                                 height: `${(amount / maxAmount) * 120}px`,
                                 minHeight: "4px",
@@ -222,7 +222,7 @@ export default function AllRevenue() {
                             className="flex flex-col items-center gap-2 flex-1"
                           >
                             <div
-                              className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              className="w-full bg-linear-to-t from-green-500 to-green-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                               style={{
                                 height: `${(amount / maxAmount) * 120}px`,
                                 minHeight: "8px",
@@ -275,7 +275,7 @@ export default function AllRevenue() {
                             className="flex flex-col items-center gap-2 flex-1"
                           >
                             <div
-                              className="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                              className="w-full bg-linear-to-t from-purple-500 to-purple-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                               style={{
                                 height: `${(amount / maxAmount) * 120}px`,
                                 minHeight: "8px",

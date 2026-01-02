@@ -232,7 +232,7 @@ const AdminWashDashboard = () => {
   }
 
  return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+  <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
     {/* Navbar */}
     <NavbarNew />
 
@@ -250,22 +250,22 @@ const AdminWashDashboard = () => {
 
         {/* Stats Cards - Enhanced Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
             <p className="text-slate-600 text-sm font-semibold mb-2">Total Washes</p>
             <p className="text-3xl font-bold text-blue-600">{stats.total_washes}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
             <p className="text-slate-600 text-sm font-semibold mb-2">Completed</p>
             <p className="text-3xl font-bold text-green-600">{stats.washed}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
             <p className="text-slate-600 text-sm font-semibold mb-2">Pending</p>
             <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
             <p className="text-slate-600 text-sm font-semibold mb-2">Completion Rate</p>
             <p className="text-3xl font-bold text-purple-600">{stats.wash_completion_rate}%</p>
           </div>

@@ -43,7 +43,7 @@ router.post("/buy", async (req, res) => {
       // Fetch car with customer details
       const { data: car } = await supabase
         .from("cars")
-        .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
+        .select("*, profiles!cars_customer_id_fkey(id, email, phone, name, address, taluko)")
         .eq("id", car_id)
         .single();
 
@@ -54,7 +54,7 @@ router.post("/buy", async (req, res) => {
         const qrData = {
           carId: car.id,
           customerId: customer.id,
-          customerName: customer.full_name,
+          customerName: customer.name,
           customerEmail: customer.email,
           customerMobile: customer.phone,
           customerAddress: customer.address || car.number_plate,
@@ -102,7 +102,7 @@ router.post("/buy", async (req, res) => {
               monthly_pass_id: data.id,
               qr_code_data: JSON.stringify(qrData),
               qr_code_image: qrCodeDataUrl,
-              customer_name: customer.full_name,
+              customer_name: customer.name,
               customer_email: customer.email,
               customer_mobile: customer.phone,
               customer_address: customer.address || car.number_plate,

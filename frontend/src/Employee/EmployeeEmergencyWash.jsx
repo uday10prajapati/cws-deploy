@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { FiCamera, FiX, FiCheck, FiClock, FiSearch, FiMapPin } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
-import Sidebar from "../components/Sidebar";
+
 
 export default function EmployeeEmergencyWash() {
   const [requests, setRequests] = useState([]);
@@ -166,7 +166,7 @@ export default function EmployeeEmergencyWash() {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-900">
-        <Sidebar />
+      
         <div className="flex-1 flex justify-center items-center">
           <FaSpinner className="w-8 h-8 animate-spin text-blue-500" />
         </div>
@@ -176,8 +176,8 @@ export default function EmployeeEmergencyWash() {
 
   return (
     <div className="flex min-h-screen bg-gray-900">
-      {/* Sidebar */}
-      <Sidebar />
+    
+    
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-72 pt-20 lg:pt-0">

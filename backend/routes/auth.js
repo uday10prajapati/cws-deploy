@@ -32,9 +32,10 @@ router.post("/send-otp", async (req, res) => {
     return res.status(400).json({ error: "Name & Password required" });
   }
 
-  if (role === "employee" && !employeeType) {
-    return res.status(400).json({ error: "Employee type required" });
-  }
+  // Employee type is optional - can be empty for general employee
+  // if (role === "employee" && !employeeType) {
+  //   return res.status(400).json({ error: "Employee type required" });
+  // }
 
   // Validate email format if provided
   if (email && !email.includes("@")) {
@@ -46,7 +47,7 @@ router.post("/send-otp", async (req, res) => {
   // Store OTP in DB with role information
   const { error: dbError } = await supabase
     .from("otp_verification")
-    .insert([{ email, phone, otp, role, employee_type: employeeType }]);
+    .insert([{ email, phone, otp, role, employee_type: role === "employee" ? (employeeType || "general") : null }]);
 
   if (dbError) {
     console.log("Supabase Insert Error:", dbError);
@@ -316,7 +317,7 @@ if (!password || password.trim().length < 6) {
     email: authEmail,
     phone: phone || null,
     role: role === "employee" ? "employee" : "customer",
-    employee_type: role === "employee" ? employeeType : null,
+    employee_type: role === "employee" ? (employeeType || "general") : null,
     approval_status: role === "customer" ? "approved" : "pending",
   };
 
@@ -342,24 +343,45 @@ if (!password || password.trim().length < 6) {
     });
   }
 
-  // 4️⃣ Create approval request if employee
+  // 4️⃣ Create approval request for all employees (specific types + general)
   if (role === "employee") {
-    const { error: approvalError } = await supabase
-      .from("user_approvals")
-      .insert([{
-        user_id: userId,
-        email: authEmail,
-        name: name,
-        phone: phone || null,
-        requested_role: `employee_${employeeType}`,
-        status: "pending",
-      }]);
+    try {
+      // Map employee types to valid database role values
+      let requestedRole;
+      if (employeeType === "washer") {
+        requestedRole = "employee_washer";
+      } else if (employeeType === "sales") {
+        requestedRole = "employee_sales";
+      } else if (employeeType === "rider") {
+        requestedRole = "employee_rider";
+      } else if (employeeType === "delivery") {
+        requestedRole = "employee_delivery";
+      } else {
+        // For general employees, use "employee_washer" as a placeholder
+        // The actual employee_type in profiles table will be "general"
+        requestedRole = "employee_washer";
+      }
 
-    if (approvalError) {
-      console.error("❌ Failed to create approval request:", approvalError);
-      // Don't fail the signup, just log it
-    } else {
-      console.log("✅ Approval request created for employee:", name);
+      const { error: approvalError } = await supabase
+        .from("user_approvals")
+        .insert([{
+          user_id: userId,
+          email: authEmail,
+          name: name,
+          phone: phone || null,
+          requested_role: requestedRole,
+          status: "pending",  // Always pending - admin must approve
+        }]);
+
+      if (approvalError) {
+        console.error("❌ Failed to create approval request:", approvalError);
+        // Don't fail the signup, just log it
+      } else {
+        const empTypeDisplay = employeeType || "general";
+        console.log("✅ Approval request created for employee:", name, "Type:", empTypeDisplay, "Role:", requestedRole);
+      }
+    } catch (error) {
+      console.error("❌ Error in approval request:", error);
     }
   }
 
@@ -370,7 +392,7 @@ if (!password || password.trim().length < 6) {
     email: authEmail,
     phone: phone || null,
     role: role === "employee" ? "employee" : "customer",
-    employee_type: role === "employee" ? employeeType : null,
+    employee_type: role === "employee" ? (employeeType || "general") : null,
   });
 
   // 6️⃣ Delete OTP

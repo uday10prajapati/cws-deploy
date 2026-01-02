@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getUserRole } from "../utils/roleBasedRedirect";
-import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp, FiPhone, FiMail, FiGift, FiAlertCircle, FiCreditCard, FiAward, FiTruck, FiWind, FiInfo } from "react-icons/fi";
+import { FiUser, FiMenu, FiX, FiLogOut, FiChevronDown, FiHome, FiClipboard, FiSettings, FiUsers, FiDollarSign, FiTrendingUp, FiPhone, FiMail, FiGift, FiAlertCircle, FiCreditCard, FiAward, FiTruck, FiWind, FiInfo, FiMapPin } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import NotificationBell from "./NotificationBell";
 
@@ -41,6 +41,10 @@ export default function NavbarNew() {
           
           if (profile) {
             setUserDetails(profile);
+            // Update role based on employee_type for employees
+            if (profile.role === "employee" && profile.employee_type === "sales") {
+              setRole("sales");
+            }
           }
         } catch (err) {
           console.error("Error fetching user details:", err);
@@ -55,6 +59,7 @@ export default function NavbarNew() {
     localStorage.removeItem("userDetails");
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userEmployeeType");
     supabase.auth.signOut().catch(err => console.error("Supabase signout error:", err));
     navigate("/login");
   };
@@ -88,13 +93,13 @@ export default function NavbarNew() {
   /* ADMIN MENU */
   const adminMainMenu = [
     { label: "Dashboard", link: "/admin-dashboard", icon: <FiHome /> },
-    { label: "Bookings", link: "/admin/bookings", icon: <FiClipboard /> },
+    // { label: "Bookings", link: "/admin/bookings", icon: <FiClipboard /> },
   ];
 
   const operationsMenu = [
     { label: "Approvals", link: "/admin/approvals", icon: <FiAlertCircle /> },
     { label: "Users", link: "/admin/users", icon: <FiUsers /> },
-    { label: "Riders", link: "/admin/riders", icon: <FiTruck /> },
+    { label: "Washers", link: "/admin/washers", icon: <FiTruck /> },
     { label: "Customer Accounts", link: "/admin/customer-accounts", icon: <FiUsers /> },
     { label: "Cars", link: "/admin/cars", icon: <FaCar /> },
     { label: "WasherDocuments", link: "/admin/washer-documents", icon: <FiAlertCircle /> },
@@ -131,10 +136,40 @@ export default function NavbarNew() {
     { label: "Videos", link: "/washer/demo-videos", icon: <FiInfo /> },
     { label: "Profile", link: "/profile", icon: <FiUser /> },
   ];
+  /* SALES MENU */
+  const salesMainMenu = [
+    { label: "Dashboard", link: "/sales-dashboard", icon: <FiHome /> },
+    { label: "My Work", link: "/sales-work", icon: <FiTruck /> },
+    { label: "History", link: "/sales-history", icon: <FiClipboard /> },
+    { label: "Profile", link: "/profile", icon: <FiUser /> },
+  ];
+
+  /* EMPLOYEE MENU */
+  const employeeMainMenu = [
+    { label: "Dashboard", link: "/employee-dashboard", icon: <FiHome /> },
+    { label: "Cars", link: "/employee/cars", icon: <FaCar /> },
+    { label: "Salespeople", link: "/employee/salespeople", icon: <FiUsers /> },
+  ];
+
+  const employeeResourcesMenu = [
+    { label: "Cars", link: "/employee/cars", icon: <FaCar /> },
+    { label: "Salespeople", link: "/employee/salespeople", icon: <FiUsers /> },
+    { label: "Areas", link: "/employee/assign-areas", icon: <FiMapPin /> },
+  ];
+
+  const employeeAccountMenu = [
+    { label: "Profile", link: "/profile", icon: <FiUser /> },
+    { label: "Account Settings", link: "/account-settings", icon: <FiSettings /> },
+    { label: "About Us", link: "/about-us", icon: <FiInfo /> },
+  ];
+
+  const [employeeResourcesDropdown, setEmployeeResourcesDropdown] = useState(false);
 
   const isCustomer = role === "customer";
-  const isAdmin = role === "admin" || role === "sub-admin";
-  const isWasher = role === "washer" || role === "employee";
+  const isAdmin = role === "admin" || role === "sub-admin" || role === "hr";
+  const isSales = role === "sales" || (userDetails?.role === "employee" && userDetails?.employee_type === "sales");
+  const isWasher = role === "washer" || (userDetails?.role === "employee" && userDetails?.employee_type === "washer") || (role === "employee" && !userDetails?.employee_type);
+  const isEmployee = role === "employee" && userDetails?.employee_type !== "washer" && userDetails?.employee_type !== "sales";
 
   return (
     <>
@@ -418,6 +453,148 @@ export default function NavbarNew() {
             </div>
           )}
 
+          {/* DESKTOP MENU - SALES */}
+          {isSales && (
+            <div className="hidden lg:flex items-center gap-6">
+              {salesMainMenu.map((m) => (
+                <Link
+                  key={m.label}
+                  to={m.link}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${
+                    location.pathname === m.link
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-700 hover:text-blue-600"
+                  }`}
+                >
+                  <span className="text-base">{m.icon}</span>
+                  {m.label}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* DESKTOP MENU - EMPLOYEE */}
+          {isEmployee && (
+            <div className="hidden lg:flex items-center gap-6">
+              {/* Main Menu Items */}
+              {employeeMainMenu.map((m) => (
+                <Link
+                  key={m.label}
+                  to={m.link}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${
+                    location.pathname === m.link
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-700 hover:text-blue-600"
+                  }`}
+                >
+                  <span className="text-base">{m.icon}</span>
+                  {m.label}
+                </Link>
+              ))}
+
+              {/* Jobs Dropdown */}
+              {/* <div className="relative group">
+                <button
+                  className="px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 group-hover:bg-slate-50"
+                  onMouseEnter={() => setEmployeeJobsDropdown(true)}
+                  onMouseLeave={() => setEmployeeJobsDropdown(false)}
+                >
+                  My Work
+                  <FiChevronDown className={`transition-transform ${employeeJobsDropdown ? "rotate-180" : ""}`} size={16} />
+                </button> */}
+
+                {/* Jobs Dropdown Menu
+                <div className={`absolute top-full left-0 mt-0 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 transition-all duration-200 ${employeeJobsDropdown ? "opacity-100 visible" : "opacity-0 invisible"}`}
+                  onMouseEnter={() => setEmployeeJobsDropdown(true)}
+                  onMouseLeave={() => setEmployeeJobsDropdown(false)}
+                >
+                  <div className="py-2">
+                    {employeeJobsMenu.map((item) => (
+                      <Link
+                        key={item.label}
+                        to={item.link}
+                        className="px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <span className="text-base text-blue-600">{item.icon}</span>
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div> */}
+
+              {/* Resources Dropdown */}
+              <div className="relative group">
+                <button
+                  className="px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 group-hover:bg-slate-50"
+                  onMouseEnter={() => setEmployeeResourcesDropdown(true)}
+                  onMouseLeave={() => setEmployeeResourcesDropdown(false)}
+                >
+                  Resources
+                  <FiChevronDown className={`transition-transform ${employeeResourcesDropdown ? "rotate-180" : ""}`} size={16} />
+                </button>
+
+                {/* Resources Dropdown Menu */}
+                <div className={`absolute top-full left-0 mt-0 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 transition-all duration-200 ${employeeResourcesDropdown ? "opacity-100 visible" : "opacity-0 invisible"}`}
+                  onMouseEnter={() => setEmployeeResourcesDropdown(true)}
+                  onMouseLeave={() => setEmployeeResourcesDropdown(false)}
+                >
+                  <div className="py-2">
+                    {employeeResourcesMenu.map((item) => (
+                      <Link
+                        key={item.label}
+                        to={item.link}
+                        className="px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <span className="text-base text-blue-600">{item.icon}</span>
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* My Account Dropdown */}
+              <div className="relative group">
+                <button
+                  className="px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 group-hover:bg-slate-50"
+                  onMouseEnter={() => setAccountDropdown(true)}
+                  onMouseLeave={() => setAccountDropdown(false)}
+                >
+                  My Account
+                  <FiChevronDown className={`transition-transform ${accountDropdown ? "rotate-180" : ""}`} size={16} />
+                </button>
+
+                {/* Account Dropdown Menu */}
+                <div className={`absolute top-full left-0 mt-0 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 transition-all duration-200 ${accountDropdown ? "opacity-100 visible" : "opacity-0 invisible"}`}
+                  onMouseEnter={() => setAccountDropdown(true)}
+                  onMouseLeave={() => setAccountDropdown(false)}
+                >
+                  <div className="py-2">
+                    {employeeAccountMenu.map((item) => (
+                      <Link
+                        key={item.label}
+                        to={item.link}
+                        className="px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <span className="text-base text-blue-600">{item.icon}</span>
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </Link>
+                    ))}
+                    <div className="border-t border-blue-100 my-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2.5 flex items-center gap-3 text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <FiLogOut size={18} />
+                      <span className="text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* DESKTOP MENU - WASHER */}
           {isWasher && (
             <div className="hidden lg:flex items-center gap-6">
@@ -630,6 +807,118 @@ export default function NavbarNew() {
                       <span className="text-sm font-medium">{item.label}</span>
                     </Link>
                   ))}
+                </div>
+              </>
+            )}
+
+            {isSales && (
+              <>
+                {/* Sales Main Menu Items */}
+                {salesMainMenu.map((m) => (
+                  <Link
+                    key={m.label}
+                    to={m.link}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      location.pathname === m.link
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-600"
+                    }`}
+                  >
+                    <span className="text-base">{m.icon}</span>
+                    {m.label}
+                  </Link>
+                ))}
+                <div className="border-t border-blue-200 my-2 pt-2">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 text-red-600 hover:bg-red-50 transition-colors rounded-lg font-medium"
+                  >
+                    <FiLogOut size={18} />
+                    <span className="text-sm font-medium">Logout</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {isEmployee && (
+              <>
+                {/* Employee Main Menu Items */}
+                {employeeMainMenu.map((m) => (
+                  <Link
+                    key={m.label}
+                    to={m.link}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      location.pathname === m.link
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-600"
+                    }`}
+                  >
+                    <span className="text-base">{m.icon}</span>
+                    {m.label}
+                  </Link>
+                ))}
+
+                {/* My Work Section
+                <div className="border-t border-blue-200 pt-2 mt-2">
+                  <p className="px-4 py-2 font-semibold text-slate-700 text-sm">My Work</p>
+                  {employeeJobsMenu.map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.link}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 ml-4"
+                    >
+                      <span className="text-base text-blue-600">{item.icon}</span>
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </Link>
+                  ))}
+                </div> */}
+
+                {/* Resources Section */}
+                <div className="border-t border-blue-200 pt-2 mt-2">
+                  <p className="px-4 py-2 font-semibold text-slate-700 text-sm">Resources</p>
+                  {employeeResourcesMenu.map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.link}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 ml-4"
+                    >
+                      <span className="text-base text-blue-600">{item.icon}</span>
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* My Account Section */}
+                <div className="border-t border-blue-200 pt-2 mt-2">
+                  <p className="px-4 py-2 font-semibold text-slate-700 text-sm">My Account</p>
+                  {employeeAccountMenu.map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.link}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-4 py-2.5 flex items-center gap-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 ml-4"
+                    >
+                      <span className="text-base text-blue-600">{item.icon}</span>
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="border-t border-blue-200 my-2 pt-2">
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 text-red-600 hover:bg-red-50 transition-colors rounded-lg font-medium"
+                  >
+                    <FiLogOut size={18} />
+                    <span className="text-sm font-medium">Logout</span>
+                  </button>
                 </div>
               </>
             )}

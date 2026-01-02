@@ -190,7 +190,7 @@ const WashHistory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
@@ -205,7 +205,7 @@ const WashHistory = () => {
           </div>
           <button
             onClick={downloadCSV}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg font-semibold shadow-lg transition-all hover:shadow-xl"
+            className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg font-semibold shadow-lg transition-all hover:shadow-xl"
           >
             <Download size={20} />
             Export CSV
@@ -215,7 +215,7 @@ const WashHistory = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Total Washes */}
-          <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-slate-600 text-sm font-medium mb-2">Total Washes</p>
@@ -231,7 +231,7 @@ const WashHistory = () => {
           </div>
 
           {/* Total Earned */}
-          <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-green-50 to-white border-2 border-green-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-slate-600 text-sm font-medium mb-2">Total Earned</p>
@@ -249,7 +249,7 @@ const WashHistory = () => {
           </div>
 
           {/* Average Per Day */}
-          <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <div className="bg-linear-to-br from-purple-50 to-white border-2 border-purple-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-slate-600 text-sm font-medium mb-2">Average Per Day</p>
@@ -437,7 +437,7 @@ const WashHistory = () => {
 
         {/* Summary Footer */}
         {filteredWashes.length > 0 && (
-          <div className="mt-8 bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white shadow-lg">
+          <div className="mt-8 bg-linear-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <p className="text-blue-100 text-sm font-medium mb-2">Total Washes</p>

@@ -8,6 +8,7 @@ import {
   Image,
   Upload,
   Plus,
+  Car,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
@@ -17,7 +18,7 @@ const WasherWorkflow = () => {
   const navigate = useNavigate();
   useRoleBasedRedirect("employee");
 
-  const [currentStep, setCurrentStep] = useState("scan"); // scan, details, washing, complete
+  const [currentStep, setCurrentStep] = useState("carSelect"); // carSelect, scan, details, washing, complete
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [videoStream, setVideoStream] = useState(null);
   const [customerData, setCustomerData] = useState(null);
@@ -30,9 +31,71 @@ const WasherWorkflow = () => {
   const [carDetails, setCarDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [assignedCars, setAssignedCars] = useState([]);
+  const [selectedCar, setSelectedCar] = useState(null);
 
   const videoRef = useRef(null);
   const employeeId = localStorage.getItem("userId");
+
+  // Fetch assigned cars on component mount
+  useEffect(() => {
+    const fetchAssignedCars = async () => {
+      try {
+        setLoading(true);
+        // Fetch car assignments for this washer
+        const { data: assignments, error } = await supabase
+          .from("car_assignments")
+          .select("id, car_id, status, assigned_at")
+          .eq("assigned_to", employeeId)
+          .eq("status", "active")
+          .order("assigned_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching assignments:", error);
+          setAssignedCars([]);
+          return;
+        }
+
+        // Fetch car details for each assignment
+        if (assignments && assignments.length > 0) {
+          const carIds = assignments.map(a => a.car_id);
+          const { data: carsData } = await supabase
+            .from("cars")
+            .select("id, brand, model, number_plate, image_url, customer_id")
+            .in("id", carIds);
+
+          // Fetch customer details
+          if (carsData && carsData.length > 0) {
+            const customerIds = [...new Set(carsData.map(c => c.customer_id))];
+            const { data: customersData } = await supabase
+              .from("profiles")
+              .select("id, name, phone, email")
+              .in("id", customerIds);
+
+            const customerMap = {};
+            (customersData || []).forEach(cust => {
+              customerMap[cust.id] = cust;
+            });
+
+            const enrichedCars = carsData.map(car => ({
+              ...car,
+              customer: customerMap[car.customer_id] || {}
+            }));
+
+            setAssignedCars(enrichedCars);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching assigned cars:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (employeeId) {
+      fetchAssignedCars();
+    }
+  }, [employeeId]);
 
   // Open Camera
   const openCamera = async () => {
@@ -86,7 +149,7 @@ const WasherWorkflow = () => {
 
       // Check loyalty points
       const { data: loyaltyData } = await supabase
-        .from("loyalty_points")
+        .from("customer_loyalty_points")
         .select("*")
         .eq("customer_id", customerId)
         .single();
@@ -180,14 +243,14 @@ const WasherWorkflow = () => {
 
       // Update loyalty points
       const { data: loyaltyData } = await supabase
-        .from("loyalty_points")
+        .from("customer_loyalty_points")
         .select("*")
         .eq("customer_id", customerData.id)
         .single();
 
       if (loyaltyData) {
         await supabase
-          .from("loyalty_points")
+          .from("customer_loyalty_points")
           .update({
             total_points: (loyaltyData.total_points || 0) + 10,
             cars_washed: (loyaltyData.cars_washed || 0) + 1,
@@ -236,24 +299,24 @@ const WasherWorkflow = () => {
 
         {/* Steps Indicator */}
         <div className="flex justify-between mb-8">
-          {["scan", "details", "washing", "complete"].map((step, idx) => (
+          {["carSelect", "scan", "details", "washing", "complete"].map((step, idx) => (
             <div key={step} className="flex items-center">
               <div
                 className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${
                   currentStep === step
-                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-110"
-                    : ["scan", "details", "washing"].includes(currentStep) &&
-                      ["scan", "details", "washing"].indexOf(step) <= ["scan", "details", "washing"].indexOf(currentStep)
+                    ? "bg-linear-to-r from-blue-600 to-blue-500 text-white scale-110"
+                    : ["carSelect", "scan", "details", "washing"].includes(currentStep) &&
+                      ["carSelect", "scan", "details", "washing"].indexOf(step) <= ["carSelect", "scan", "details", "washing"].indexOf(currentStep)
                     ? "bg-green-500 text-white"
                     : "bg-slate-200 text-slate-600"
                 }`}
               >
                 {idx + 1}
               </div>
-              {idx < 3 && (
+              {idx < 4 && (
                 <div
                   className={`h-1 flex-1 mx-2 rounded transition-all ${
-                    ["scan", "details", "washing"].indexOf(step) < ["scan", "details", "washing"].indexOf(currentStep)
+                    ["carSelect", "scan", "details", "washing"].indexOf(step) < ["carSelect", "scan", "details", "washing"].indexOf(currentStep)
                       ? "bg-green-500"
                       : "bg-slate-200"
                   }`}
@@ -265,17 +328,87 @@ const WasherWorkflow = () => {
 
         {/* Step Labels */}
         <div className="flex justify-between mb-8 text-sm font-medium">
+          <span className="text-slate-600">Select Car</span>
           <span className="text-slate-600">Scan QR</span>
           <span className="text-slate-600">Customer Details</span>
           <span className="text-slate-600">Add Images</span>
           <span className="text-slate-600">Complete</span>
         </div>
 
+        {/* STEP 0: SELECT CAR */}
+        {currentStep === "carSelect" && (
+          <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-8 shadow-sm mb-8">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Select Your Assigned Car</h2>
+            
+            {assignedCars.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle size={64} className="mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-600 text-lg">No cars assigned to you yet</p>
+                <p className="text-slate-500 text-sm mt-2">Please contact admin to assign cars to you</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {assignedCars.map((car) => (
+                  <div
+                    key={car.id}
+                    onClick={() => {
+                      setSelectedCar(car);
+                      setCurrentStep("scan");
+                    }}
+                    className="bg-white border-2 border-slate-200 hover:border-blue-500 rounded-lg p-6 cursor-pointer transition-all hover:shadow-lg transform hover:scale-105"
+                  >
+                    {/* Car Image */}
+                    {car.image_url ? (
+                      <img
+                        src={car.image_url}
+                        alt={`${car.brand} ${car.model}`}
+                        className="w-full h-40 object-cover rounded-lg mb-4"
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-slate-100 rounded-lg mb-4 flex items-center justify-center">
+                        <Car size={48} className="text-slate-400" />
+                      </div>
+                    )}
+
+                    {/* Car Details */}
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-lg text-slate-900">
+                        {car.brand} {car.model}
+                      </h3>
+                      <p className="text-sm text-slate-600">
+                        <span className="font-semibold">Plate:</span> {car.number_plate}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        <span className="font-semibold">Owner:</span> {car.customer?.name || "N/A"}
+                      </p>
+                      {car.customer?.phone && (
+                        <p className="text-sm text-slate-600">
+                          <span className="font-semibold">Phone:</span> {car.customer.phone}
+                        </p>
+                      )}
+                      {car.customer?.email && (
+                        <p className="text-xs text-slate-500 line-clamp-2">
+                          <span className="font-semibold">Email:</span> {car.customer.email}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Select Button */}
+                    <button className="w-full mt-4 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-2 rounded-lg transition-all">
+                      Select Car
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* STEP 1: SCAN QR */}
         {currentStep === "scan" && (
           <div className="grid md:grid-cols-2 gap-8 mb-8">
             {/* Scan Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-8 shadow-sm">
+            <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-8 shadow-sm">
               <div className="text-center">
                 <Camera size={64} className="mx-auto text-blue-600 mb-4" />
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Scan Customer QR</h2>
@@ -285,7 +418,7 @@ const WasherWorkflow = () => {
                     setShowQRScanner(true);
                     setTimeout(openCamera, 100);
                   }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-3 rounded-lg transition-all shadow-md"
+                  className="w-full bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-3 rounded-lg transition-all shadow-md"
                 >
                   <Camera size={20} className="inline mr-2" />
                   Open Camera
@@ -294,11 +427,11 @@ const WasherWorkflow = () => {
             </div>
 
             {/* Instructions */}
-            <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-8 shadow-sm">
+            <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-8 shadow-sm">
               <h3 className="text-xl font-bold text-slate-900 mb-4">How to Scan</h3>
               <div className="space-y-4">
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                     1
                   </div>
                   <div>
@@ -307,7 +440,7 @@ const WasherWorkflow = () => {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                     2
                   </div>
                   <div>
@@ -316,7 +449,7 @@ const WasherWorkflow = () => {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
                     3
                   </div>
                   <div>
@@ -333,7 +466,7 @@ const WasherWorkflow = () => {
         {currentStep === "details" && customerData && (
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             {/* Customer Info */}
-            <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Customer Details</h3>
               <div className="space-y-3">
                 <div>
@@ -356,7 +489,7 @@ const WasherWorkflow = () => {
             </div>
 
             {/* Pass Status */}
-            <div className={`bg-gradient-to-br ${passStatus?.isActive ? "from-green-50 to-white border-2 border-green-200" : "from-red-50 to-white border-2 border-red-200"} rounded-lg p-6 shadow-sm`}>
+            <div className={`bg-linear-to-br ${passStatus?.isActive ? "from-green-50 to-white border-2 border-green-200" : "from-red-50 to-white border-2 border-red-200"} rounded-lg p-6 shadow-sm`}>
               <h3 className="text-lg font-bold text-slate-900 mb-4">Pass Status</h3>
               <div className="flex items-center gap-3 mb-4">
                 {passStatus?.isActive ? (
@@ -386,7 +519,7 @@ const WasherWorkflow = () => {
             </div>
 
             {/* Loyalty Info */}
-            <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-linear-to-br from-purple-50 to-white border-2 border-purple-200 rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Loyalty Points</h3>
               <div className="space-y-3">
                 <div>
@@ -405,7 +538,7 @@ const WasherWorkflow = () => {
         {passStatus?.isActive && currentStep === "details" && (
           <button
             onClick={() => setCurrentStep("washing")}
-            className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 rounded-lg transition-all shadow-md mb-8"
+            className="w-full bg-linear-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 rounded-lg transition-all shadow-md mb-8"
           >
             Proceed to Upload Images
           </button>
@@ -433,7 +566,7 @@ const WasherWorkflow = () => {
         {currentStep === "washing" && customerData && (
           <div className="space-y-8 mb-8">
             {/* Before Images */}
-            <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
               <h3 className="text-2xl font-bold text-slate-900 mb-6">Before Wash Images (4 Photos)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[0, 1, 2, 3].map((idx) => (
@@ -471,7 +604,7 @@ const WasherWorkflow = () => {
             </div>
 
             {/* After Images */}
-            <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-linear-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-6 shadow-sm">
               <h3 className="text-2xl font-bold text-slate-900 mb-6">After Wash Images (4 Photos)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[0, 1, 2, 3].map((idx) => (
@@ -509,7 +642,7 @@ const WasherWorkflow = () => {
             </div>
 
             {/* Notes */}
-            <div className="bg-gradient-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-linear-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Additional Notes</h3>
               <textarea
                 value={washingNotes}
@@ -523,15 +656,20 @@ const WasherWorkflow = () => {
             {/* Submit Button */}
             <div className="flex gap-4">
               <button
-                onClick={() => setCurrentStep("details")}
+                onClick={() => {
+                  setCurrentStep("carSelect");
+                  setCustomerData(null);
+                  setSelectedCar(null);
+                  setCarDetails(null);
+                }}
                 className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-3 rounded-lg transition-all"
               >
-                Back
+                Back to Car Selection
               </button>
               <button
                 onClick={submitWashCompletion}
                 disabled={loading}
-                className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all shadow-md"
+                className="flex-1 bg-linear-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all shadow-md"
               >
                 {loading ? "Saving..." : "Complete Wash"}
               </button>
@@ -541,7 +679,7 @@ const WasherWorkflow = () => {
 
         {/* STEP 4: COMPLETE */}
         {currentStep === "complete" && (
-          <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-12 shadow-sm text-center">
+          <div className="bg-linear-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-12 shadow-sm text-center">
             <CheckCircle size={80} className="mx-auto text-green-600 mb-6" />
             <h2 className="text-4xl font-bold text-slate-900 mb-4">Wash Completed!</h2>
             <p className="text-xl text-slate-600 mb-2">{successMessage}</p>
@@ -549,7 +687,7 @@ const WasherWorkflow = () => {
             <p className="text-2xl font-bold text-purple-600 mb-8">+10 Loyalty Points Awarded</p>
             <button
               onClick={resetWorkflow}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition-all shadow-md inline-block"
+              className="bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition-all shadow-md inline-block"
             >
               Scan Next Car
             </button>
@@ -587,7 +725,7 @@ const WasherWorkflow = () => {
                   <button
                     onClick={handleScanQR}
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition-all"
+                    className="w-full bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition-all"
                   >
                     {loading ? "Processing..." : "Scan Now"}
                   </button>

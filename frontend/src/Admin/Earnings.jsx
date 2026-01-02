@@ -170,7 +170,7 @@ export default function Earnings() {
         if (result.success && result.user) {
           console.log("Fetching from backend:", result.user);
           return {
-            name: result.user.full_name || result.user.email || 'Customer',
+            name: result.user.name || result.user.email || 'Customer',
             email: result.user.email || 'N/A',
             phone: result.user.phone || 'N/A',
             village: result.user.village || '',
@@ -205,7 +205,7 @@ export default function Earnings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <FiRefreshCw className="text-4xl animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-slate-600">Loading earnings data...</p>
@@ -215,7 +215,7 @@ export default function Earnings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -238,7 +238,7 @@ export default function Earnings() {
         {/* STATS CARDS */}
         {earnings && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-slate-600 text-sm font-semibold">Total Earnings</p>
                 <FiDollarSign className="text-blue-600 text-2xl" />
@@ -249,7 +249,7 @@ export default function Earnings() {
               <p className="text-xs text-slate-500 mt-2">All time earnings</p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-slate-600 text-sm font-semibold">{new Date().toLocaleString('en-US', { month: 'long' })} Earnings</p>
                 <FiCalendar className="text-green-600 text-2xl" />
@@ -260,7 +260,7 @@ export default function Earnings() {
               <p className="text-xs text-slate-500 mt-2">{earnings.thisMonthTransactions} transactions this month</p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-slate-600 text-sm font-semibold">Total Transactions</p>
                 <FiTrendingUp className="text-amber-600 text-2xl" />
@@ -269,7 +269,7 @@ export default function Earnings() {
               <p className="text-xs text-slate-500 mt-2">Completed bookings</p>
             </div>
 
-            <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-red-50 to-pink-50 border border-red-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-slate-600 text-sm font-semibold">Avg Per Transaction</p>
                 <span className="text-red-600 text-2xl">📊</span>

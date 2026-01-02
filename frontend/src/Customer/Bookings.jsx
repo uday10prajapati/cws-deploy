@@ -504,7 +504,7 @@ export default function BookingPage() {
         amount: bookingAmount,
         customer_id: user.id,
         customer_email: user.email,
-        customer_name: user.user_metadata?.full_name || "Customer",
+        customer_name: user.user_metadata?.name || "Customer",
         customer_phone: user.user_metadata?.phone || "9999999999",
         type: "booking_payment",
         payment_method: paymentMethod,
@@ -604,7 +604,7 @@ export default function BookingPage() {
   // Show payment page if showPayment is true
   if (showPayment && pendingBookingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center p-4">
         {/* PAYMENT PAGE */}
         <div className="w-full max-w-2xl">
           {/* Header */}
@@ -752,7 +752,7 @@ export default function BookingPage() {
                     <button
                       onClick={() => handlePaymentComplete(selectedPaymentMethod)}
                       disabled={loading}
-                      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
+                      className="flex-1 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                     >
                       {loading ? (
                         <>
@@ -1106,7 +1106,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -1116,7 +1116,7 @@ export default function BookingPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl font-bold flex items-center gap-2 tracking-tight text-slate-900">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
                 <FaCar />
               </span>
               <span>Book a Car Wash</span>
@@ -1152,7 +1152,7 @@ export default function BookingPage() {
           <div className="bg-white/80 border border-slate-200 rounded-2xl p-6 shadow-md backdrop-blur">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-sm">
                   <FiClipboard />
                 </div>
                 <div>
@@ -1262,7 +1262,7 @@ export default function BookingPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* LEFT: FORM CARD */}
-          <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-blue-500/60 via-cyan-400/40 to-transparent shadow-xl shadow-blue-200 sticky top-24">
+          <div className="relative rounded-2xl p-[1px] bg-linear-to-br from-blue-500/60 via-cyan-400/40 to-transparent shadow-xl shadow-blue-200 sticky top-24">
             <form
               onSubmit={handleSubmit}
               className="bg-white rounded-2xl p-6 md:p-7 space-y-6 border border-slate-200 backdrop-blur-sm shadow-sm"
@@ -1270,7 +1270,7 @@ export default function BookingPage() {
               {/* Car Selection */}
               <div>
                 <label className="font-bold flex items-center gap-2 mb-3 text-sm text-slate-900">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
                     <FaCar />
                   </div>
                   Your Car
@@ -1594,7 +1594,7 @@ export default function BookingPage() {
                     !selectedDate ||
                     !timeSlot
                       ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                      : "bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                   }`}
               >
                 {loading ? (
@@ -1621,7 +1621,7 @@ export default function BookingPage() {
           <div className="space-y-6">
             {/* MONTHLY PASS CARD - Only show if selected car has active pass */}
             {selectedCarPass && (
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-md backdrop-blur-sm">
+              <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-md backdrop-blur-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
                       <FiAward className="text-amber-400" />

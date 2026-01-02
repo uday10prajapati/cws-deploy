@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
-import { FiMenu, FiBell, FiCalendar, FiGift, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiChevronLeft, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiX } from "react-icons/fi";
-import { FaCar, FaStar, FaPhone } from "react-icons/fa";
+import NavbarNew from "../components/NavbarNew";
+import { FiBell, FiCalendar, FiGift, FiMapPin, FiTrendingUp, FiDollarSign, FiLogOut, FiUser, FiHome, FiClock, FiCheckCircle, FiAlertCircle, FiClipboard, FiAward, FiCreditCard, FiTruck, FiWind, FiPhone, FiX } from "react-icons/fi";
+import { FaCar, FaStar } from "react-icons/fa";
 
 
 export default function EmployeeDashboard() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
 
   /* 🔥 USE ROLE-BASED REDIRECT HOOK */
@@ -21,6 +20,11 @@ export default function EmployeeDashboard() {
   const [ratingCount, setRatingCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [assignedTaluka, setAssignedTaluka] = useState(null);
+  const [assignedCity, setAssignedCity] = useState(null);
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [newCustomersToday, setNewCustomersToday] = useState(0);
+  const [completedThisWeek, setCompletedThisWeek] = useState(0);
 
   /* LOAD LOGGED-IN EMPLOYEE + ASSIGNMENTS */
   useEffect(() => {
@@ -31,6 +35,14 @@ export default function EmployeeDashboard() {
       setUser(auth.user);
 
       try {
+        // Fetch employee's assigned taluka and city
+        const empResponse = await fetch(`http://localhost:5000/employee/profile/${auth.user.id}`);
+        if (empResponse.ok) {
+          const empData = await empResponse.json();
+          setAssignedTaluka(empData.taluka || null);
+          setAssignedCity(empData.city || null);
+        }
+
         // Fetch bookings from backend API
         const response = await fetch(`http://localhost:5000/employee/bookings/${auth.user.id}`);
         if (response.ok) {
@@ -41,8 +53,75 @@ export default function EmployeeDashboard() {
           console.error("Backend error fetching bookings");
           setAssignments([]);
         }
+
+        // Fetch new customers added today from sales_cars table
+        // Get today's date in ISO format (YYYY-MM-DD)
+        const todayISO = new Date().toISOString().split('T')[0]; // e.g., "2026-01-01"
+        const tomorrowDate = new Date();
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+        const tomorrowISO = tomorrowDate.toISOString().split('T')[0]; // e.g., "2026-01-02"
+
+        const todayStart = `${todayISO}T00:00:00Z`;
+        const todayEnd = `${tomorrowISO}T00:00:00Z`;
+
+        console.log("Fetching sales_cars between:", todayStart, "and", todayEnd);
+        console.log("Today's date:", todayISO);
+
+        // First, try to fetch ALL sales_cars to see if RLS is blocking
+        const { data: allCars, error: allCarsError } = await supabase
+          .from("sales_cars")
+          .select("customer_name, created_at");
+
+        if (allCarsError) {
+          console.error("Error fetching all sales_cars:", allCarsError);
+        } else {
+          console.log("All sales_cars data:", allCars);
+        }
+
+        // Now filter by date on the client side
+        const newCarsToday = allCars?.filter(car => {
+          const carDate = new Date(car.created_at).toISOString().split('T')[0];
+          return carDate === todayISO;
+        }) || [];
+
+        console.log("Filtered sales_cars for today:", newCarsToday);
+        const uniqueCustomers = new Set(newCarsToday.map(car => car.customer_name).filter(Boolean));
+        console.log("New customers today from sales_cars:", uniqueCustomers.size, Array.from(uniqueCustomers));
+        setNewCustomersToday(uniqueCustomers.size);
+
+        // Fetch completed bookings this week
+        const weekAgoDate = new Date();
+        weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+        const weekAgoISO = weekAgoDate.toISOString().split('T')[0];
+        const weekAgoStart = `${weekAgoISO}T00:00:00Z`;
+
+        console.log("Fetching bookings between:", weekAgoStart, "and", todayEnd);
+        console.log("Week ago date:", weekAgoISO);
+
+        // First, try to fetch ALL completed bookings
+        const { data: allCompleted, error: allCompletedError } = await supabase
+          .from("bookings")
+          .select("id, status, created_at")
+          .eq("status", "Completed");
+
+        if (allCompletedError) {
+          console.error("Error fetching all completed bookings:", allCompletedError);
+        } else {
+          console.log("All completed bookings data:", allCompleted);
+        }
+
+        // Filter by date range on the client side
+        const completedThisWeekData = allCompleted?.filter(booking => {
+          const bookingDate = new Date(booking.created_at).toISOString().split('T')[0];
+          return bookingDate >= weekAgoISO && bookingDate <= todayISO;
+        }) || [];
+
+        console.log("Filtered completed bookings for this week:", completedThisWeekData);
+        console.log("Completed bookings this week:", completedThisWeekData.length);
+        setCompletedThisWeek(completedThisWeekData.length);
+
       } catch (err) {
-        console.error("Error fetching bookings:", err);
+        console.error("Error fetching data:", err);
         setAssignments([]);
       }
 
@@ -182,351 +261,188 @@ export default function EmployeeDashboard() {
     window.location.href = "/login";
   };
 
-  const employeeMenu = [
-    { name: "Dashboard", icon: <FiHome />, link: "/employee-dashboard" },
-    { name: "My Jobs", icon: <FiClipboard />, link: "/employee/jobs" },
-    { name: "Transaction Status", icon: <FiDollarSign />, link: "/employee/earnings" },
-    { name: "Ratings", icon: <FaStar />, link: "/employee/ratings" },
-    { name: "Cars", icon: <FaCar />, link: "/employee/cars" },
-    { name: "Locations", icon: <FiMapPin />, link: "/employee/location" },
-    { name: "Scan QR", icon: <FiClipboard />, link: "/scan-customer-qr" },
-    { name: "Emergency Wash", icon: <FiAlertCircle />, link: "/employee/emergency-wash" },
-        { name: "About Us", icon: <FiGift />, link: "/about-us" },
-  ];
-
   // Filter pending and completed bookings
-  const pendingBookings = assignments.filter(a => a.status !== "Completed");
-  const completedBookings = assignments.filter(a => a.status === "Completed");
+  const filterBookingsByLocation = (bookings) => {
+    if (selectedFilter === "all") return bookings;
+    if (selectedFilter === "taluka" && assignedTaluka) {
+      return bookings.filter(b => b.taluka === assignedTaluka);
+    }
+    if (selectedFilter === "city" && assignedCity) {
+      return bookings.filter(b => b.city === assignedCity);
+    }
+    return bookings;
+  };
+
+  const filteredAssignments = filterBookingsByLocation(assignments);
+  const pendingBookings = filteredAssignments.filter(a => a.status !== "Completed");
+  const completedBookings = filteredAssignments.filter(a => a.status === "Completed");
 
   const stats = [
-    { title: "Today's Pending Jobs", value: pendingBookings.length, icon: <FiClock />, change: "Awaiting action" },
-    { title: "Completed", value: completedBookings.length, icon: <FiCheckCircle />, change: "Total completed" },
-    { title: "Average Rating", value: averageRating > 0 ? averageRating.toFixed(1) : "N/A", icon: <FaStar />, change: ratingCount > 0 ? `${ratingCount} ratings` : "No ratings yet" },
+    { title: "New Customers Today", value: newCustomersToday, icon: <FiUser />, change: "Added today", gradient: "from-blue-600 to-cyan-600" },
+    { title: "Completed This Week", value: completedThisWeek, icon: <FiCheckCircle />, change: "Last 7 days", gradient: "from-purple-600 to-pink-600" },
+    { title: "Customer Locations", value: new Set(assignments.map(a => a.city)).size, icon: <FiMapPin />, change: "Unique cities", gradient: "from-orange-600 to-red-600" },
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* ▓▓▓ MOBILE TOP BAR ▓▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">CarWash+</h1>
-        <FiMenu className="text-2xl text-white cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setSidebarOpen(true)} />
-      </div>
-
-      {/* ▓▓▓ BACKDROP FOR MOBILE ▓▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ▓▓▓ SIDEBAR ▓▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        {/* Logo Row */}
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className="font-extrabold text-lg">
-            {collapsed ? "CW" : "CarWash+"}
-          </span>
-
-          {!collapsed && (
-            <FiChevronLeft className="text-slate-400" />
-          )}
+      {/* MAIN CONTENT */}
+      <main className="pt-20 px-4 md:px-6 py-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Welcome Section */}
+          <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight">
+              Welcome back 👋
+            </h1>
+            <p className="text-slate-600 text-base">
+              Track your jobs, manage your ratings & earn money
+            </p>
+          </div>
         </div>
 
-        {/* MENU */}
-        <nav className="mt-4 px-3 pb-24">
-          {employeeMenu.map((item) => (
+        {/* 🎯 QUICK ACTIONS */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+          {[
+            { to: "/employee/cars", icon: FaCar, label: "Cars", colors: "from-purple-600 to-pink-600", bg: "from-purple-50 to-pink-50", border: "border-purple-200" },
+            { to: "/employee/customers", icon: FiUser, label: "Customers", colors: "from-indigo-600 to-blue-600", bg: "from-indigo-50 to-blue-50", border: "border-indigo-200" },
+            { to: "/employee/assign-areas", icon: FiMapPin, label: "Areas", colors: "from-rose-600 to-red-600", bg: "from-rose-50 to-red-50", border: "border-rose-200" },
+            // { to: "/employee/allcars", icon: FiTruck, label: "All Cars", colors: "from-cyan-600 to-blue-600", bg: "from-cyan-50 to-blue-50", border: "border-cyan-200" },
+            { to: "/employee/salespeople", icon: FiAward, label: "All Salesman", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
+            { to: "/login", onClick: handleLogout, icon: FiLogOut, label: "Logout", colors: "from-red-600 to-red-700", bg: "from-red-50 to-red-50", border: "border-red-200" },
+          ].map(({ to, onClick, icon: Icon, label, colors, bg, border }) => (
             <Link
-              key={item.name}
-              to={item.link}
-              onClick={() => setSidebarOpen(false)}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg 
-                mb-2 font-medium transition-all
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              title={collapsed ? item.name : ""}
+              key={label}
+              to={to}
+              onClick={onClick}
+              className={`group rounded-xl p-5 border ${border} bg-linear-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
             >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
+              <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-linear-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
+                <Icon />
+              </div>
+              <p className="text-sm font-bold text-slate-900">{label}</p>
             </Link>
           ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            text-white px-4 py-2 font-semibold rounded-lg cursor-pointer 
-            flex items-center gap-3 shadow-lg transition-all
-            ${collapsed ? "justify-center" : ""}
-          `}
-          title={collapsed ? "Logout" : ""}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
         </div>
-      </aside>
 
-      {/* ▓▓▓ MAIN CONTENT ▓▓▓ */}
-      <div className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
-
-        {/* ▓▓▓ NAVBAR ▓▓▓ */}
-        <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 
-        items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
-
-          <h1 className="text-2xl font-bold">My Dashboard</h1>
-
-          <div className="flex items-center gap-8 relative">
-            {/* NOTIFICATIONS BELL */}
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="text-xl text-slate-300 hover:text-blue-400 transition relative group"
-            >
-              <FiBell />
-              {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-              )}
-              <span className="absolute -bottom-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                Notifications ({notifications.length})
-              </span>
-            </button>
-
-            {/* NOTIFICATIONS DROPDOWN */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-96 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto top-12">
-                {/* Header */}
-                <div className="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
-                  <h3 className="font-semibold text-white text-sm">Notifications</h3>
-                  <button 
-                    onClick={() => setShowNotifications(false)}
-                    className="text-slate-400 hover:text-white transition"
-                  >
-                    <FiX />
-                  </button>
-                </div>
-
-                {/* Notifications List */}
-                {notifications.length > 0 ? (
-                  notifications.map((notif, idx) => (
-                    <div 
-                      key={idx} 
-                      className="p-4 border-b border-slate-800 hover:bg-slate-800/50 transition cursor-pointer last:border-b-0"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="text-xl">{notif.icon}</span>
-                        <div className="flex-1">
-                          <p className="font-medium text-white text-sm">{notif.title}</p>
-                          <p className="text-xs text-slate-400 mt-1">{notif.message}</p>
-                          <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center">
-                    <p className="text-slate-400 text-sm">No notifications yet</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <img
-              src={`https://ui-avatars.com/api/?name=${user?.email}&background=3b82f6&color=fff`}
-              className="w-10 h-10 rounded-full border-2 border-blue-500 cursor-pointer hover:border-blue-400 transition"
-              alt="Profile"
-            />
-          </div>
-        </header>
-
-        {/* ▓▓▓ PAGE CONTENT ▓▓▓ */}
-        <main className="p-4 md:p-8 space-y-8">
-
-          {/* Welcome Section */}
-          <div>
-            <h1 className="text-3xl font-bold">Welcome back 👋</h1>
-            <p className="text-slate-400 text-sm mt-1">Manage your jobs and track your earnings</p>
-          </div>
-
-          {/* 🌈 STAT CARDS — DARK THEME */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {stats.map((item, index) => (
+        {/* 📊 STAT CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+          {stats.map((item, index) => {
+            const colors = [
+              { icon: "text-blue-600", bg: "from-blue-600 to-cyan-600", bgGradient: "from-blue-50 to-cyan-50" },
+              { icon: "text-emerald-600", bg: "from-emerald-600 to-green-600", bgGradient: "from-emerald-50 to-green-50" },
+              { icon: "text-purple-600", bg: "from-purple-600 to-pink-600", bgGradient: "from-purple-50 to-pink-50" },
+              { icon: "text-orange-600", bg: "from-orange-600 to-red-600", bgGradient: "from-orange-50 to-red-50" },
+            ][index % 4];
+            
+            return (
               <div
                 key={item.title}
-                className={`rounded-xl p-6 shadow-lg border border-slate-800 
-                bg-linear-to-br
-                ${index % 2 === 0 ? "from-blue-600/20 to-blue-900/20" : "from-purple-600/20 to-pink-900/20"}
-                hover:scale-105 transition-transform duration-300 cursor-pointer`}
+                className={`bg-linear-to-br ${colors.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-slate-400 text-sm font-medium">{item.title}</p>
-                  <span className="text-2xl text-blue-400 opacity-60">{item.icon}</span>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-slate-700 text-sm font-semibold tracking-wide">
+                    {item.title}
+                  </p>
+                  <div className={`w-12 h-12 rounded-lg bg-linear-to-r ${colors.bg} text-white flex items-center justify-center text-xl opacity-90`}>
+                    {item.icon}
+                  </div>
                 </div>
-                <p className="text-4xl font-bold text-white">{item.value}</p>
-                <p className="text-blue-400 text-xs mt-2 font-medium">{item.change}</p>
+                <p className={`text-4xl font-black bg-linear-to-r ${colors.bg} bg-clip-text text-transparent`}>
+                  {item.value}
+                </p>
+                <p className="text-slate-600 text-xs font-medium mt-3 leading-relaxed">
+                  {item.change}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 📊 WEEKLY RATINGS CHART */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+          <h2 className="text-slate-900 text-xl font-bold mb-6 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-linear-to-r from-yellow-600 to-orange-600 text-white flex items-center justify-center">
+              <FaStar />
+            </div>
+            Weekly Ratings Performance
+          </h2>
+          <div className="h-56 bg-linear-to-br from-slate-50 to-slate-100 rounded-xl p-6 flex items-end justify-around gap-2">
+            {getWeeklyRatingsData().map((data, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-2 flex-1">
+                <div className="relative group w-full flex flex-col items-center">
+                  <div
+                    className="w-full max-w-8 bg-linear-to-t from-yellow-500 to-yellow-400 rounded-t-lg transition-all hover:from-yellow-600 hover:to-yellow-500 shadow-md"
+                    style={{ height: `${data.rating > 0 ? (data.rating / 5) * 150 : 15}px` }}
+                  />
+                  {data.count > 0 && (
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                      {data.rating}/5 • {data.count} jobs
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs font-semibold text-slate-600 mt-1">{data.day}</p>
+                {data.count > 0 && <p className="text-xs text-slate-500">{data.rating}</p>}
               </div>
             ))}
           </div>
-
-          {/* 📊 WEEKLY RATINGS CHART */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaStar className="text-yellow-400" />
-              Weekly Ratings
-            </h2>
-            <div className="h-56 bg-slate-800/30 rounded-lg p-4 flex items-end justify-around">
-              {getWeeklyRatingsData().map((data, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-2">
-                  <div className="relative group">
-                    <div
-                      className="w-8 bg-linear-to-t from-yellow-500 to-yellow-400 rounded-t transition-all hover:from-yellow-600 hover:to-yellow-500"
-                      style={{ height: `${data.rating > 0 ? (data.rating / 5) * 150 : 10}px` }}
-                    />
-                    {data.count > 0 && (
-                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition">
-                        {data.rating}/5 ({data.count})
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 font-medium">{data.day}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 text-xs text-slate-400 flex justify-between">
-              <span>This week's performance</span>
-              <span>Hover for details</span>
-            </div>
+          <div className="mt-4 text-xs text-slate-500 flex justify-between items-center">
+            <span>💡 Your performance this week</span>
+            <span>Hover over bars for details</span>
           </div>
+        </div>
 
-          {/* 🚗 TODAY'S ASSIGNMENTS */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-semibold text-white">Today's Jobs</h2>
-              <Link to="/employee/jobs" className="text-blue-400 text-sm hover:text-blue-300 transition font-medium">
-                View All →
-              </Link>
-            </div>
-
-            {pendingBookings.length === 0 ? (
-              <div className="py-12 text-center">
-                <FaCar className="text-4xl text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400">All jobs completed! Great work! 🎉</p>
+        {/*  TIPS & SUPPORT */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* Quick Tips Card */}
+          <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all text-white border border-blue-500/30">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center text-2xl">
+                💡
               </div>
-            ) : (
-              <div className="overflow-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700 text-slate-400">
-                      <th className="py-3 text-left font-medium">Customer</th>
-                      <th className="py-3 text-left font-medium">Car & Plate</th>
-                      <th className="py-3 text-left font-medium">Time</th>
-                      <th className="py-3 text-left font-medium">Location</th>
-                      <th className="py-3 text-left font-medium">Status</th>
-                    </tr>
-                  </thead>
+              <h3 className="text-2xl font-bold">Quick Tips</h3>
+            </div>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="text-lg">✓</span>
+                <span className="text-sm text-blue-100">Accept jobs within 30 seconds for better ratings</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-lg">✓</span>
+                <span className="text-sm text-blue-100">Arrive 5 minutes early for a 10% bonus</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-lg">✓</span>
+                <span className="text-sm text-blue-100">Complete jobs on time to maintain 5-star rating</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-lg">✓</span>
+                <span className="text-sm text-blue-100">Take photos before and after each wash</span>
+              </li>
+            </ul>
+          </div>
 
-                  <tbody>
-                    {pendingBookings.slice(0, 5).map((job, idx) => (
-                      <tr key={job.id || idx} className="border-b border-slate-800 text-slate-300 hover:bg-slate-800/50 transition">
-                        <td className="py-3 flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold">
-                            {job.customer_name?.charAt(0) || "C"}
-                          </div>
-                          {job.customer_name || "Customer"}
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <FaCar className="text-blue-400" />
-                            <span>
-                              {job.car_name || "Car"} ({job.cars?.number_plate || job.number_plate || "N/A"})
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <FiClock className="text-slate-500" />
-                            {job.slot_time || "10:00 AM"}
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <FiMapPin className="text-slate-500" />
-                            {job.location || "N/A"}
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              job.status === "Completed"
-                                ? "bg-green-600/25 text-green-300"
-                                : job.status === "In Progress"
-                                ? "bg-yellow-600/25 text-yellow-300"
-                                : job.status === "Cancelled"
-                                ? "bg-red-600/25 text-red-300"
-                                : "bg-blue-600/25 text-blue-300"
-                            }`}
-                          >
-                            {job.status || "Pending"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Support Card */}
+          <div className="bg-linear-to-br from-purple-600 to-pink-600 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all text-white border border-purple-500/30">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center text-2xl">
+                🤝
               </div>
-            )}
-          </div>
-
-          {/* 📞 SUPPORT & TIPS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Quick Tips */}
-            <div className="bg-linear-to-br from-blue-600/20 to-blue-900/20 border border-slate-800 rounded-xl p-6 shadow-xl">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <FiAlertCircle className="text-blue-400" />
-                Quick Tips
-              </h3>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li>✓ Accept jobs within 30 seconds for better ratings</li>
-                <li>✓ Arrive 5 minutes early for a 10% bonus</li>
-                <li>✓ Complete jobs on time to maintain 5-star rating</li>
-                <li>✓ Take photos before and after each wash</li>
-              </ul>
+              <h3 className="text-2xl font-bold">Need Help?</h3>
             </div>
-
-            {/* Support Card */}
-            <div className="bg-linear-to-br from-purple-600/20 to-pink-900/20 border border-slate-800 rounded-xl p-6 shadow-xl">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <FaPhone className="text-purple-400" />
-                Need Help?
-              </h3>
-              <p className="text-sm text-slate-300 mb-4">
-                Contact our support team for any issues or questions.
-              </p>
-              <button className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition">
-                Contact Support
-              </button>
-            </div>
+            <p className="text-purple-100 text-sm mb-6 leading-relaxed">
+              Our support team is here to help you with any questions or issues.
+            </p>
+            <button className="w-full px-6 py-3 bg-white text-purple-600 hover:bg-purple-50 font-bold rounded-lg transition-all hover:shadow-lg active:scale-95">
+              Contact Support
+            </button>
           </div>
+        </div>
+        </div>
 
-        </main>
-      </div>
+      </main>
     </div>
   );
 }

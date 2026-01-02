@@ -445,7 +445,7 @@ export default function BookingReports() {
                     </td>
                     <td className="text-center py-3 px-4">
                       <span className={`inline-block w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm ${
-                        index < 3 ? "bg-gradient-to-r from-yellow-400 to-yellow-600" : "bg-slate-400"
+                        index < 3 ? "bg-linear-to-r from-yellow-400 to-yellow-600" : "bg-slate-400"
                       }`}>
                         {index + 1}
                       </span>

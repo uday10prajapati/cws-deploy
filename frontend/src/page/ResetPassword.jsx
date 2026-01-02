@@ -257,7 +257,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-blue-900 to-purple-900 px-4 py-8 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
       <div className="absolute -bottom-8 right-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -277,7 +277,7 @@ const ResetPassword = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 bg-linear-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <FiLock className="text-white text-2xl" />
               </div>
             </div>
@@ -299,7 +299,7 @@ const ResetPassword = () => {
                       step > stepNum
                         ? "bg-green-500 text-white shadow-lg shadow-green-500/50"
                         : step === stepNum
-                        ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
+                        ? "bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
                         : "bg-white/10 text-white/50 border border-white/20"
                     }`}
                   >
@@ -371,7 +371,7 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
+              className="w-full bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -425,7 +425,7 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading || otpTimer === 0}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
+              className="w-full bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -507,7 +507,7 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
+              className="w-full bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

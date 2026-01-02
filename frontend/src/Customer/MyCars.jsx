@@ -200,7 +200,7 @@ export default function MyCars() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR (same as dashboard) */}
       <NavbarNew />
 
@@ -210,7 +210,7 @@ export default function MyCars() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
                 <FaCar />
               </span>
               <span>My Cars</span>
@@ -223,7 +223,7 @@ export default function MyCars() {
           <div className="flex gap-3">
             <button
               onClick={() => setModalOpen(true)}
-              className="px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2 text-sm"
+              className="px-5 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2 text-sm"
             >
               <FiPlus /> Add Car
             </button>
@@ -248,7 +248,7 @@ export default function MyCars() {
             </p>
             <button
               onClick={() => setModalOpen(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg hover:shadow-md hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
+              className="px-5 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg hover:shadow-md hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
             >
               <FiPlus /> Add Car
             </button>
@@ -273,7 +273,7 @@ export default function MyCars() {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-44 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                    <div className="w-full h-44 flex items-center justify-center bg-linear-to-br from-slate-100 to-slate-200">
                       <FaCar className="text-5xl text-slate-400 opacity-70" />
                     </div>
                   )}
@@ -330,7 +330,7 @@ export default function MyCars() {
                   </div>
 
                   {/* Active Pass Section */}
-                  <div className="mt-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                  <div className="mt-2 p-3 rounded-lg bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-100">
                     <p className="text-[10px] text-slate-600 uppercase tracking-wide">
                       Active Pass
                     </p>
@@ -437,7 +437,7 @@ export default function MyCars() {
               <button
                 onClick={handleAddCar}
                 disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg font-semibold flex items-center justify-center gap-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg font-semibold flex items-center justify-center gap-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Saving…" : "Add Car"}
               </button>

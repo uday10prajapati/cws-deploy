@@ -11,11 +11,12 @@ import WasherWorkflow from "./Washer/WasherWorkflow.jsx";
 import WasherDocumentUpload from "./Washer/WasherDocumentUpload.jsx";
 import DemoVideos from "./Washer/DemoVideos.jsx";
 import SalesDocumentUpload from "./Sales/SalesDocumentUpload.jsx";
-import SalesProfile from "./Sales/SalesProfile.jsx";
 import SalesDashboard from "./Sales/SalesDashboard.jsx";
+import SalesWork from "./Sales/SalesWork.jsx";
+import SalesHistory from "./Sales/SalesHistory.jsx";
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
 import AdminEmployeeTracking from "./Admin/AdminEmployeeTracking.jsx";
-import AdminRiders from "./Admin/AdminRiders.jsx";
+import AdminWashers from "./Admin/AdminWashers.jsx";
 import CustomerAccountManagement from "./Admin/CustomerAccountManagement.jsx";
 import BankAccountSettings from "./Admin/BankAccountSettings.jsx";
 import CustomerDashboard from "./Customer/CustomerDashboard.jsx";
@@ -33,7 +34,7 @@ import MyJobs from "./Employee/MyJobs.jsx";
 import Visit from "./Visit.jsx";
 import Earnings from "./Employee/Earnings.jsx";
 import Ratings from "./Employee/Ratings.jsx";
-import Cars from "./Employee/Cars.jsx";
+import AllECars from "./Employee/AllCars.jsx";
 import CarLocation from "./Employee/CarLocation.jsx";
 import AllBookings from "./Admin/AllBookings.jsx";
 import AllRevenue from "./Admin/AllRevenue.jsx";
@@ -44,6 +45,15 @@ import AllCars from "./Admin/AllCars.jsx";
 import AdminEarnings from "./Admin/Earnings.jsx";
 import AdminDocumentVerification from "./Admin/AdminDocumentVerification.jsx";
 import ScanCustomerQR from "./Employee/ScanCustomerQR.jsx";
+import AllCustomers from "./Employee/AllCustomers.jsx";
+import AllSalesCustomers from "./Employee/AllSalesCustomers.jsx";
+import CustomerDetails from "./Employee/CustomerDetails.jsx";
+import AssignArea from "./Employee/AssignArea.jsx";
+import AllSalespeople from "./Employee/AllSalespeople.jsx";
+import SalespersonDetails from "./Employee/SalespersonDetails.jsx";
+import RoleBasedAccessControl from "./Employee/RoleBasedAccessControl.jsx";
+import SubGeneralTalukaAssignment from "./Employee/SubGeneralTalukaAssignment.jsx";
+import HRGeneralSalesmanAssignment from "./Employee/HRGeneralSalesmanAssignment.jsx";
 import AboutUs from "./AboutUs.jsx";
 import EmergencyWashRequest from "./Customer/EmergencyWashRequest.jsx";
 import AdminEmergencyWashManagement from "./Admin/AdminEmergencyWashManagement.jsx";
@@ -52,6 +62,8 @@ import ApprovalPanel from "./Admin/ApprovalPanel.jsx";
 import AdminLoyaltyDashboard from "./Admin/AdminLoyaltyDashboard.jsx";
 import BookingReports from "./Admin/BookingReports.jsx";
 import RevenueReports from "./Admin/RevenueReports.jsx";
+import TalukaDetails from "./Admin/TalukaDetails.jsx";
+import CityDetails from "./Admin/CityDetails.jsx";
 import Notifications from "./page/Notifications.jsx";
 
 export default function App() {
@@ -73,11 +85,12 @@ export default function App() {
         <Route path="/washer/documents" element={<WasherDocumentUpload />} />
         <Route path="/washer/demo-videos" element={<DemoVideos />} />
         <Route path="/sales/documents" element={<SalesDocumentUpload />} />
-        <Route path="/sales/profile" element={<SalesProfile />} />
         <Route path="/sales-dashboard" element={<SalesDashboard />} />
+        <Route path="/sales-work" element={<SalesWork />} />
+        <Route path="/sales-history" element={<SalesHistory />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/employee-tracking" element={<AdminEmployeeTracking />} />
-        <Route path="/admin/riders" element={<AdminRiders />} />
+        <Route path="/admin/washers" element={<AdminWashers />} />
         <Route path="/admin/customer-accounts" element={<CustomerAccountManagement />} />
         <Route path="/admin/bank-account" element={<BankAccountSettings />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
@@ -96,8 +109,17 @@ export default function App() {
         <Route path="/employee/earnings" element={<Earnings />} />
         <Route path="/employee/ratings" element={<Ratings />} />
         <Route path="/employee/location" element={<CarLocation />} />
-        <Route path="/my-cars" element={<Cars />} />
-        <Route path="/employee/cars" element={<Cars />} />
+        <Route path="/my-cars" element={<MyCars />} />
+        <Route path="/employee/cars" element={<AllECars />} />
+        <Route path="/employee/customers" element={<AllCustomers />} />
+        <Route path="/employee/sales-customers" element={<AllSalesCustomers />} />
+        <Route path="/employee/customer/:id" element={<CustomerDetails />} />
+        <Route path="/employee/assign-areas" element={<AssignArea />} />
+        <Route path="/employee/salespeople" element={<AllSalespeople />} />
+        <Route path="/employee/salesperson/:id" element={<SalespersonDetails />} />
+        <Route path="/employee/rbac" element={<RoleBasedAccessControl />} />
+        <Route path="/employee/sub-general-talukas" element={<SubGeneralTalukaAssignment />} />
+        <Route path="/employee/hr-general-salesmen" element={<HRGeneralSalesmanAssignment />} />
         <Route path="/admin/bookings" element={<AllBookings />} />
         <Route path="/admin/AllRevenue" element={<AllRevenue />} />
         <Route path="/admin/earnings" element={<AdminEarnings />} />
@@ -116,6 +138,8 @@ export default function App() {
         <Route path="/admin/loyalty-dashboard" element={<AdminLoyaltyDashboard />} />
         <Route path="/admin/booking-reports" element={<BookingReports />} />
         <Route path="/admin/revenue-reports" element={<RevenueReports />} />
+        <Route path="/admin/taluka-details" element={<TalukaDetails />} />
+        <Route path="/admin/city-details" element={<CityDetails />} />
         <Route path="/notifications" element={<Notifications />} />
       </Routes>
     </NotificationProvider>

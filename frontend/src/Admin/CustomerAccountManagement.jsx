@@ -396,7 +396,7 @@ export default function CustomerAccountManagement() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
       
       {/* Main Content */}
@@ -405,13 +405,13 @@ export default function CustomerAccountManagement() {
             {/* Summary Cards */}
             {summary && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-slate-600 text-sm mb-1 font-semibold">Total Customers</p>
                   <p className="text-3xl font-bold text-blue-600">
                     {summary.total_customers}
                   </p>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
                   <p className="text-slate-600 text-sm mb-1 font-semibold">Active</p>
                   <p className="text-3xl font-bold text-green-600">
                     {summary.active}
@@ -420,13 +420,13 @@ export default function CustomerAccountManagement() {
                     {summary.active_percentage}
                   </p>
                 </div>
-                <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
+                <div className="bg-linear-to-br from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
                   <p className="text-slate-600 text-sm mb-1 font-semibold">Inactive</p>
                   <p className="text-3xl font-bold text-red-600">
                     {summary.inactive}
                   </p>
                 </div>
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
+                <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-slate-600 text-sm mb-1 font-semibold">
                     Pending Deactivation
                   </p>

@@ -73,44 +73,44 @@ export default function Notifications() {
   const getNotificationColor = (type) => {
     switch (type) {
       case "payment":
-        return "bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-50 border-l-4 border-blue-500 hover:shadow-lg hover:shadow-blue-200";
+        return "bg-linear-to-br from-blue-50 via-blue-100 to-cyan-50 border-l-4 border-blue-500 hover:shadow-lg hover:shadow-blue-200";
       case "booking":
-        return "bg-gradient-to-br from-emerald-50 via-green-100 to-teal-50 border-l-4 border-emerald-500 hover:shadow-lg hover:shadow-emerald-200";
+        return "bg-linear-to-br from-emerald-50 via-green-100 to-teal-50 border-l-4 border-emerald-500 hover:shadow-lg hover:shadow-emerald-200";
       case "pass":
-        return "bg-gradient-to-br from-purple-50 via-purple-100 to-pink-50 border-l-4 border-purple-500 hover:shadow-lg hover:shadow-purple-200";
+        return "bg-linear-to-br from-purple-50 via-purple-100 to-pink-50 border-l-4 border-purple-500 hover:shadow-lg hover:shadow-purple-200";
       case "wallet":
-        return "bg-gradient-to-br from-amber-50 via-yellow-100 to-orange-50 border-l-4 border-amber-500 hover:shadow-lg hover:shadow-amber-200";
+        return "bg-linear-to-br from-amber-50 via-yellow-100 to-orange-50 border-l-4 border-amber-500 hover:shadow-lg hover:shadow-amber-200";
       case "pickup":
       case "delivery":
-        return "bg-gradient-to-br from-orange-50 via-red-100 to-rose-50 border-l-4 border-orange-500 hover:shadow-lg hover:shadow-orange-200";
+        return "bg-linear-to-br from-orange-50 via-red-100 to-rose-50 border-l-4 border-orange-500 hover:shadow-lg hover:shadow-orange-200";
       case "user_registered":
-        return "bg-gradient-to-br from-indigo-50 via-indigo-100 to-blue-50 border-l-4 border-indigo-500 hover:shadow-lg hover:shadow-indigo-200";
+        return "bg-linear-to-br from-indigo-50 via-indigo-100 to-blue-50 border-l-4 border-indigo-500 hover:shadow-lg hover:shadow-indigo-200";
       case "document_verification":
-        return "bg-gradient-to-br from-rose-50 via-pink-100 to-red-50 border-l-4 border-rose-500 hover:shadow-lg hover:shadow-rose-200";
+        return "bg-linear-to-br from-rose-50 via-pink-100 to-red-50 border-l-4 border-rose-500 hover:shadow-lg hover:shadow-rose-200";
       default:
-        return "bg-gradient-to-br from-slate-50 via-slate-100 to-gray-50 border-l-4 border-slate-500 hover:shadow-lg hover:shadow-slate-200";
+        return "bg-linear-to-br from-slate-50 via-slate-100 to-gray-50 border-l-4 border-slate-500 hover:shadow-lg hover:shadow-slate-200";
     }
   };
 
   const getNotificationBgColor = (type) => {
     switch (type) {
       case "payment":
-        return "bg-gradient-to-br from-blue-500 to-cyan-500";
+        return "bg-linear-to-br from-blue-500 to-cyan-500";
       case "booking":
-        return "bg-gradient-to-br from-emerald-500 to-teal-500";
+        return "bg-linear-to-br from-emerald-500 to-teal-500";
       case "pass":
-        return "bg-gradient-to-br from-purple-500 to-pink-500";
+        return "bg-linear-to-br from-purple-500 to-pink-500";
       case "wallet":
-        return "bg-gradient-to-br from-amber-500 to-orange-500";
+        return "bg-linear-to-br from-amber-500 to-orange-500";
       case "pickup":
       case "delivery":
-        return "bg-gradient-to-br from-orange-500 to-red-500";
+        return "bg-linear-to-br from-orange-500 to-red-500";
       case "user_registered":
-        return "bg-gradient-to-br from-indigo-500 to-blue-500";
+        return "bg-linear-to-br from-indigo-500 to-blue-500";
       case "document_verification":
-        return "bg-gradient-to-br from-rose-500 to-red-500";
+        return "bg-linear-to-br from-rose-500 to-red-500";
       default:
-        return "bg-gradient-to-br from-slate-500 to-gray-500";
+        return "bg-linear-to-br from-slate-500 to-gray-500";
     }
   };
 
@@ -300,7 +300,7 @@ export default function Notifications() {
                         )}
                       </div>
                       {!notif.read && (
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 mt-2 shrink-0 animate-pulse shadow-lg" />
+                        <div className="w-3 h-3 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 mt-2 shrink-0 animate-pulse shadow-lg" />
                       )}
                     </div>
 
@@ -308,7 +308,7 @@ export default function Notifications() {
 
                     {/* Data display if exists */}
                     {notif.data && Object.keys(notif.data).length > 0 && (
-                      <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg p-4 mb-3 text-xs border border-slate-200">
+                      <div className="bg-linear-to-r from-slate-50 to-slate-100 rounded-lg p-4 mb-3 text-xs border border-slate-200">
                         {Object.entries(notif.data).map(([key, value]) => (
                           <div key={key} className="flex justify-between text-slate-700 py-1.5 border-b border-slate-200 last:border-b-0">
                             <span className="font-semibold capitalize text-slate-600">{key.replace(/_/g, " ")}:</span>

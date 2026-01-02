@@ -75,7 +75,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -204,7 +204,7 @@ export default function Settings() {
         <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-8 shadow-md">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Other Settings</h2>
           <div className="space-y-4">
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+            <div className="p-6 bg-linear-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
               <h3 className="font-bold text-slate-900 mb-2">Notification Settings</h3>
               <p className="text-sm text-slate-600">Manage email and SMS notifications for bookings and payments.</p>
               <button className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition">
@@ -212,7 +212,7 @@ export default function Settings() {
               </button>
             </div>
 
-            <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+            <div className="p-6 bg-linear-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
               <h3 className="font-bold text-slate-900 mb-2">Service Configuration</h3>
               <p className="text-sm text-slate-600">Add, edit, or remove car wash services offered on the platform.</p>
               <button className="mt-3 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm transition">
@@ -220,7 +220,7 @@ export default function Settings() {
               </button>
             </div>
 
-            <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
+            <div className="p-6 bg-linear-to-br from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
               <h3 className="font-bold text-slate-900 mb-2">Pricing Configuration</h3>
               <p className="text-sm text-slate-600">Set pricing for different services and manage add-ons.</p>
               <button className="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm transition">

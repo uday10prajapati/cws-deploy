@@ -455,9 +455,9 @@ export default function RevenueReports() {
             </h2>
             <div className="space-y-3">
               {topVillages.map((village, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-transparent rounded-lg border border-blue-200 hover:border-blue-300 transition">
+                <div key={index} className="flex items-center justify-between p-4 bg-linear-to-r from-blue-50 to-transparent rounded-lg border border-blue-200 hover:border-blue-300 transition">
                   <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-sm">
                       {index + 1}
                     </div>
                     <div>
@@ -482,9 +482,9 @@ export default function RevenueReports() {
             </h2>
             <div className="space-y-3">
               {topCities.map((city, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-transparent rounded-lg border border-green-200 hover:border-green-300 transition">
+                <div key={index} className="flex items-center justify-between p-4 bg-linear-to-r from-green-50 to-transparent rounded-lg border border-green-200 hover:border-green-300 transition">
                   <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center font-bold text-sm">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-green-500 to-green-600 text-white flex items-center justify-center font-bold text-sm">
                       {index + 1}
                     </div>
                     <div>
@@ -536,7 +536,7 @@ export default function RevenueReports() {
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-blue-500 to-emerald-500"
+                            className="h-full bg-linear-to-r from-blue-500 to-emerald-500"
                             style={{
                               width: `${(parseFloat(village.revenue) / parseFloat(villageRevenueData[0]?.revenue)) * 100}%`
                             }}
@@ -587,7 +587,7 @@ export default function RevenueReports() {
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                            className="h-full bg-linear-to-r from-green-500 to-emerald-500"
                             style={{
                               width: `${(parseFloat(city.revenue) / parseFloat(cityRevenueData[0]?.revenue)) * 100}%`
                             }}
@@ -600,7 +600,7 @@ export default function RevenueReports() {
                     </td>
                     <td className="text-center py-3 px-4">
                       <span className={`inline-block w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-sm ${
-                        index < 3 ? "bg-gradient-to-r from-yellow-400 to-yellow-600" : "bg-slate-400"
+                        index < 3 ? "bg-linear-to-r from-yellow-400 to-yellow-600" : "bg-slate-400"
                       }`}>
                         {index + 1}
                       </span>

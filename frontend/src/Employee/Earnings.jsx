@@ -154,7 +154,7 @@ export default function Earnings() {
         const result = await response.json();
         if (result.success && result.user) {
           return {
-            name: result.user.full_name || result.user.email || "N/A",
+            name: result.user.name || result.user.email || "N/A",
             phone: result.user.phone || "N/A"
           };
         }

@@ -469,7 +469,7 @@ router.get("/booking/:booking_id", async (req, res) => {
     if (booking.customer_id) {
       const { data: customer } = await supabase
         .from("profiles")
-        .select("id, full_name, phone, email")
+        .select("id, name, phone, email")
         .eq("id", booking.customer_id)
         .single();
       customerInfo = customer;

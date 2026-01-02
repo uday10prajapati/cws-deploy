@@ -131,16 +131,16 @@ export default function ProfilePage() {
   const loadEmployeeData = async (uid) => {
     try {
       // Fetch employee/washer statistics
-      const [todayRes, earningsRes, performanceRes] = await Promise.all([
-        fetch(`http://localhost:5000/employee/today-bookings/${uid}`).then(r => r.json()).catch(() => ({})),
-        fetch(`http://localhost:5000/employee/earnings/${uid}`).then(r => r.json()).catch(() => ({})),
-        fetch(`http://localhost:5000/employee/performance/${uid}`).then(r => r.json()).catch(() => ({})),
+      // Note: Using correct endpoint paths
+      const [bookingsRes, earningsRes] = await Promise.all([
+        fetch(`http://localhost:5000/employee/bookings/${uid}`).then(r => r.json()).catch(() => ({})),
+        fetch(`http://localhost:5000/earnings/employee/${uid}`).then(r => r.json()).catch(() => ({})),
       ]);
 
       setEmployeeStats({
-        todayBookings: todayRes.data || [],
+        todayBookings: bookingsRes.bookings || [],
         earnings: earningsRes.data || {},
-        performance: performanceRes.data || {},
+        performance: {},
       });
     } catch (err) {
       console.error("Error loading employee data:", err);
@@ -150,16 +150,16 @@ export default function ProfilePage() {
   const loadRiderData = async (uid) => {
     try {
       // Fetch rider statistics
-      const [todayRes, earningsRes, performanceRes] = await Promise.all([
-        fetch(`http://localhost:5000/rider/today-deliveries/${uid}`).then(r => r.json()).catch(() => ({})),
-        fetch(`http://localhost:5000/rider/earnings/${uid}`).then(r => r.json()).catch(() => ({})),
-        fetch(`http://localhost:5000/rider/performance/${uid}`).then(r => r.json()).catch(() => ({})),
+      // Note: Using available endpoints
+      const [bookingsRes, earningsRes] = await Promise.all([
+        fetch(`http://localhost:5000/employee/bookings/${uid}`).then(r => r.json()).catch(() => ({})),
+        fetch(`http://localhost:5000/earnings/employee/${uid}`).then(r => r.json()).catch(() => ({})),
       ]);
 
       setEmployeeStats({
-        todayBookings: todayRes.data || [],
+        todayBookings: bookingsRes.bookings || [],
         earnings: earningsRes.data || {},
-        performance: performanceRes.data || {},
+        performance: {},
       });
     } catch (err) {
       console.error("Error loading rider data:", err);
@@ -223,7 +223,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p>Loading profile...</p>
@@ -234,7 +234,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900 flex items-center justify-center">
         <p>Please log in to view your profile</p>
       </div>
     );
@@ -437,7 +437,7 @@ export default function ProfilePage() {
             <>
               {/* ADMIN STATISTICS */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Today's Bookings</p>
@@ -446,7 +446,7 @@ export default function ProfilePage() {
                     <FiBarChart2 className="text-4xl text-blue-300" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Active Washers</p>
@@ -455,7 +455,7 @@ export default function ProfilePage() {
                     <FiTrendingUp className="text-4xl text-green-300" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Total Users</p>
@@ -464,7 +464,7 @@ export default function ProfilePage() {
                     <FiUser className="text-4xl text-purple-300" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Completion Rate</p>
@@ -508,7 +508,7 @@ export default function ProfilePage() {
             <>
               {/* STATISTICS */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Today's {userRole === "rider" ? "Deliveries" : "Bookings"}</p>
@@ -517,7 +517,7 @@ export default function ProfilePage() {
                     <FiClock className="text-4xl text-blue-300" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Today's Earnings</p>
@@ -526,7 +526,7 @@ export default function ProfilePage() {
                     <FiDollarSign className="text-4xl text-emerald-300" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6 shadow-md">
+                <div className="bg-linear-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-600 text-sm">Performance Rating</p>

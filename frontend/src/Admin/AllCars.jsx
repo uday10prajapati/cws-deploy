@@ -23,9 +23,20 @@ export default function AllCars() {
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
   const [userTaluko, setUserTaluko] = useState(null);
+  const [userCity, setUserCity] = useState(null);
   const [isSubAdmin, setIsSubAdmin] = useState(false);
+  const [isHR, setIsHR] = useState(false);
+  
+  // Washer assignment states
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [availableWashers, setAvailableWashers] = useState([]);
+  const [selectedWasher, setSelectedWasher] = useState(null);
+  const [assigningWasher, setAssigningWasher] = useState(false);
+  const [modalSelectedCity, setModalSelectedCity] = useState("");
+  const [modalSelectedTaluko, setModalSelectedTaluko] = useState("");
 
-  useRoleBasedRedirect(["admin", "sub-admin"]);
+  useRoleBasedRedirect(["admin", "sub-admin", "hr"]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -33,27 +44,42 @@ export default function AllCars() {
       if (auth?.user) {
         setUser(auth.user);
         
-        // Fetch user profile to get taluko and role
+        // Fetch user profile to get taluko, city, and role
         const { data: profile } = await supabase
           .from("profiles")
-          .select("taluko, role")
+          .select("taluko, city, role, assigned_city")
           .eq("id", auth.user.id)
           .single();
         
         if (profile) {
-          setUserTaluko(profile.taluko);
           setIsSubAdmin(profile.role === "sub-admin");
+          setIsHR(profile.role === "hr");
           
-          // Auto-fill taluko filter for sub-admins
+          // Sub-admin: Auto-fill taluko filter
           if (profile.role === "sub-admin" && profile.taluko) {
+            setUserTaluko(profile.taluko);
             setSelectedTaluko(profile.taluko);
             setTalukoInput(profile.taluko);
+          }
+          
+          // HR: Auto-fill city filter
+          if (profile.role === "hr" && profile.assigned_city) {
+            setUserCity(profile.assigned_city);
+            setSelectedCity(profile.assigned_city);
+            setCityInput(profile.assigned_city);
           }
         }
       }
     };
     loadUser();
   }, []);
+
+  // Re-filter cars whenever user's taluko or city changes
+  useEffect(() => {
+    if (cars.length > 0) {
+      applyFilters(searchTerm, selectedTaluko || userTaluko, selectedCity || userCity, selectedState);
+    }
+  }, [userTaluko, userCity, isSubAdmin, isHR]);
 
   /* LOAD ALL CARS WITH USER DETAILS */
   useEffect(() => {
@@ -183,12 +209,17 @@ export default function AllCars() {
         car.owner_state?.toLowerCase().includes(search) ||
         car.locations?.some(loc => loc.toLowerCase().includes(search));
 
-      // Check location filters using profile data
+      // Check location filters based on role
       let matchLocation = true;
-      if (taluko || city || state) {
-        const talukoMatch = isSubAdmin 
-          ? car.owner_taluko?.toLowerCase() === userTaluko?.toLowerCase()
-          : !taluko || car.owner_taluko?.toLowerCase().includes(taluko.toLowerCase());
+      if (isHR && userCity) {
+        // HR: Show only cars from assigned city
+        matchLocation = car.owner_city?.toLowerCase() === userCity?.toLowerCase();
+      } else if (isSubAdmin && userTaluko) {
+        // Sub-admin: Show only cars from assigned taluko
+        matchLocation = car.owner_taluko?.toLowerCase() === userTaluko?.toLowerCase();
+      } else if (taluko || city || state) {
+        // Admin: Can filter by any taluko, city, state
+        const talukoMatch = !taluko || car.owner_taluko?.toLowerCase().includes(taluko.toLowerCase());
         const cityMatch = !city || car.owner_city?.toLowerCase() === city.toLowerCase();
         const stateMatch = !state || car.owner_state?.toLowerCase() === state.toLowerCase();
         matchLocation = talukoMatch && cityMatch && stateMatch;
@@ -224,6 +255,80 @@ export default function AllCars() {
   const filteredTalukas = talukoOptions.filter(t => t.toLowerCase().startsWith(talukoInput.toLowerCase()));
   const filteredCities = cityOptions.filter(c => c.toLowerCase().startsWith(cityInput.toLowerCase()));
   const filteredStates = stateOptions.filter(s => s.toLowerCase().startsWith(stateInput.toLowerCase()));
+
+  // Open assign washer modal
+  const openAssignModal = async (car) => {
+    setSelectedCar(car);
+    setModalSelectedCity("");
+    setModalSelectedTaluko("");
+    setSelectedWasher(null);
+    setAvailableWashers([]);
+    setShowAssignModal(true);
+  };
+
+  // Fetch washers for selected taluko
+  const handleTalukoChangeInModal = async (taluko) => {
+    setModalSelectedTaluko(taluko);
+    setSelectedWasher(null);
+    setAvailableWashers([]);
+    
+    try {
+      // Fetch washers from the selected taluko
+      const { data: washers, error } = await supabase
+        .from("profiles")
+        .select("id, name, phone")
+        .eq("role", "employee")
+        .eq("employee_type", "washer")
+        .eq("taluko", taluko);
+      
+      if (error) {
+        console.error("Error fetching washers:", error);
+        setAvailableWashers([]);
+      } else {
+        setAvailableWashers(washers || []);
+      }
+    } catch (err) {
+      console.error("Exception fetching washers:", err);
+      setAvailableWashers([]);
+    }
+  };
+
+  // Assign car to washer
+  const assignCarToWasher = async () => {
+    if (!selectedCar || !selectedWasher) {
+      alert("Please select a washer");
+      return;
+    }
+
+    setAssigningWasher(true);
+    try {
+      const response = await fetch("http://localhost:5000/admin/assign-car-to-washer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          car_id: selectedCar.id,
+          washer_id: selectedWasher.id,
+          assigned_by_role: user?.role || "admin",
+          assigned_by_name: user?.name || "Admin",
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(`✅ Car assigned to ${selectedWasher.name} successfully!`);
+        setShowAssignModal(false);
+        setSelectedCar(null);
+        setSelectedWasher(null);
+      } else {
+        alert("❌ Failed to assign car: " + result.message);
+      }
+    } catch (error) {
+      console.error("Error assigning car:", error);
+      alert("❌ Error assigning car");
+    } finally {
+      setAssigningWasher(false);
+    }
+  };
 
   const stats = [
     {
@@ -261,7 +366,7 @@ export default function AllCars() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -280,7 +385,7 @@ export default function AllCars() {
           {stats.map((stat, index) => (
             <div
               key={stat.title}
-              className={`bg-gradient-to-br ${stat.color} border ${stat.borderColor} rounded-xl p-6 shadow-lg hover:shadow-xl transition-all`}
+              className={`bg-linear-to-br ${stat.color} border ${stat.borderColor} rounded-xl p-6 shadow-lg hover:shadow-xl transition-all`}
             >
               <p className="text-slate-600 text-sm font-semibold mb-2">{stat.title}</p>
               <p className={`text-3xl font-bold ${stat.textColor}`}>{stat.value}</p>
@@ -305,11 +410,11 @@ export default function AllCars() {
           {/* Taluko Filter */}
           <div className="relative">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Taluko {isSubAdmin && <span className="text-xs text-blue-600">(📍 Assigned)</span>}
+              Taluko {isSubAdmin && <span className="text-xs text-blue-600">(📍 Assigned)</span>} {isHR && <span className="text-xs text-green-600">(📍 City View)</span>}
             </label>
             <input
               type="text"
-              placeholder="Select or type taluko..."
+              placeholder={isHR ? "Talukas in your city..." : "Select or type taluko..."}
               value={talukoInput}
               onChange={(e) => {
                 setTalukoInput(e.target.value);
@@ -317,11 +422,11 @@ export default function AllCars() {
               }}
               onFocus={() => setShowTalukoSuggestions(true)}
               onBlur={() => setTimeout(() => setShowTalukoSuggestions(false), 150)}
-              disabled={isSubAdmin}
-              className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm ${isSubAdmin ? "opacity-75 cursor-not-allowed bg-slate-50" : ""}`}
-              title={isSubAdmin ? `You can only view cars from ${userTaluko}` : ""}
+              disabled={isSubAdmin || isHR}
+              className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm ${(isSubAdmin || isHR) ? "opacity-75 cursor-not-allowed bg-slate-50" : ""}`}
+              title={isSubAdmin ? `You can only view cars from ${userTaluko}` : isHR ? `You can view talukas in ${userCity}` : ""}
             />
-            {showTalukoSuggestions && filteredTalukas.length > 0 && !isSubAdmin && (
+            {showTalukoSuggestions && filteredTalukas.length > 0 && !isSubAdmin && !isHR && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
                 {filteredTalukas.map((taluko) => (
                   <div
@@ -337,7 +442,7 @@ export default function AllCars() {
                 ))}
               </div>
             )}
-            {selectedTaluko && !isSubAdmin && (
+            {selectedTaluko && !isSubAdmin && !isHR && (
               <button
                 onClick={() => {
                   setSelectedTaluko("");
@@ -349,14 +454,26 @@ export default function AllCars() {
                 ✕
               </button>
             )}
+            {isSubAdmin && (
+              <span className="text-xs text-slate-500 mt-1 block">
+                📍 Showing only {userTaluko} cars
+              </span>
+            )}
+            {isHR && (
+              <span className="text-xs text-slate-500 mt-1 block">
+                📍 Showing all talukas in {userCity}
+              </span>
+            )}
           </div>
 
           {/* City Filter */}
           <div className="relative">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">City</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              City {isHR && <span className="text-xs text-green-600">(📍 Assigned)</span>}
+            </label>
             <input
               type="text"
-              placeholder="Select or type city..."
+              placeholder={isHR ? "Your assigned city" : "Select or type city..."}
               value={cityInput}
               onChange={(e) => {
                 setCityInput(e.target.value);
@@ -364,9 +481,11 @@ export default function AllCars() {
               }}
               onFocus={() => setShowCitySuggestions(true)}
               onBlur={() => setTimeout(() => setShowCitySuggestions(false), 150)}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm"
+              disabled={isHR}
+              className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm ${isHR ? "opacity-75 cursor-not-allowed bg-slate-50" : ""}`}
+              title={isHR ? `You can only view cars from ${userCity}` : ""}
             />
-            {showCitySuggestions && filteredCities.length > 0 && (
+            {showCitySuggestions && filteredCities.length > 0 && !isHR && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
                 {filteredCities.map((city) => (
                   <div
@@ -382,7 +501,7 @@ export default function AllCars() {
                 ))}
               </div>
             )}
-            {selectedCity && (
+            {selectedCity && !isHR && (
               <button
                 onClick={() => {
                   setSelectedCity("");
@@ -459,10 +578,9 @@ export default function AllCars() {
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Car Details</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Owner</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Plate</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold text-slate-900">Bookings</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold text-slate-900">Completed</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-900">Revenue</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Last Service</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">City</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Taluko</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-slate-900">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -503,23 +621,19 @@ export default function AllCars() {
                           {car.number_plate || "N/A"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <p className="font-bold text-slate-900">{car.total_bookings}</p>
-                        <p className="text-xs text-slate-500">Total</p>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <p className="font-bold text-green-600">{car.completed_bookings}</p>
-                        <p className="text-xs text-slate-500">Completed</p>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <p className="font-bold text-slate-900">₹{car.total_revenue.toLocaleString()}</p>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-slate-900 font-medium">{car.owner_city || "N/A"}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-slate-700">
-                          {car.last_service 
-                            ? new Date(car.last_service).toLocaleDateString() 
-                            : "N/A"}
-                        </p>
+                        <p className="text-sm text-slate-900 font-medium">{car.owner_taluko || "N/A"}</p>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => openAssignModal(car)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"
+                        >
+                          Assign Washer
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -603,7 +717,7 @@ export default function AllCars() {
                   </div>
 
                   {/* ACTIVE PASS SECTION */}
-                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-lg">
+                  <div className="mb-4 p-3 bg-linear-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-lg">
                     <p className="text-[10px] text-slate-600 uppercase tracking-wide font-semibold">Active Pass</p>
                     {car.monthlyPass && car.monthlyPass.active ? (
                       <div>
@@ -639,6 +753,132 @@ export default function AllCars() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Washer Assignment Modal */}
+        {showAssignModal && selectedCar && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 max-h-screen overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900">Assign Washer to Car</h3>
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="text-slate-500 hover:text-slate-700 text-xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <span className="font-semibold">Car:</span> {selectedCar.car_name}
+                </p>
+                <p className="text-sm text-slate-700">
+                  <span className="font-semibold">Plate:</span> {selectedCar.number_plate}
+                </p>
+              </div>
+
+              {/* Step 1: City Dropdown */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  Step 1: Select City
+                </label>
+                <select
+                  value={modalSelectedCity}
+                  onChange={(e) => {
+                    setModalSelectedCity(e.target.value);
+                    setModalSelectedTaluko("");
+                    setAvailableWashers([]);
+                    setSelectedWasher(null);
+                  }}
+                  className="w-full px-4 py-2 border-2 border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                >
+                  <option value="">-- Select a City --</option>
+                  {cityOptions && cityOptions.length > 0 ? (
+                    cityOptions.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No cities available</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Step 2: Taluko Dropdown - Shows only after city selected */}
+              {modalSelectedCity && (
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Step 2: Select Taluko in {modalSelectedCity}
+                  </label>
+                  <select
+                    value={modalSelectedTaluko}
+                    onChange={(e) => handleTalukoChangeInModal(e.target.value)}
+                    className="w-full px-4 py-2 border-2 border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                  >
+                    <option value="">-- Select a Taluko --</option>
+                    {talukoOptions
+                      .filter((taluko) => {
+                        const talukosInCity = [...new Set(cars.filter(c => c.owner_city === modalSelectedCity).map(c => c.owner_taluko))];
+                        return talukosInCity.includes(taluko);
+                      })
+                      .map((taluko) => (
+                        <option key={taluko} value={taluko}>
+                          {taluko}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Step 3: Washer Dropdown - Shows only after taluko selected */}
+              {modalSelectedTaluko && (
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Step 3: Select Washer in {modalSelectedTaluko}
+                  </label>
+                  {availableWashers.length > 0 ? (
+                    <select
+                      value={selectedWasher?.id || ""}
+                      onChange={(e) => {
+                        const washer = availableWashers.find(w => w.id === e.target.value);
+                        setSelectedWasher(washer || null);
+                      }}
+                      className="w-full px-4 py-2 border-2 border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      <option value="">-- Select a Washer --</option>
+                      {availableWashers.map((washer) => (
+                        <option key={washer.id} value={washer.id}>
+                          {washer.name} ({washer.phone})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="bg-amber-50 border-2 border-amber-300 text-amber-800 p-3 rounded-lg text-sm">
+                      Loading washers in {modalSelectedTaluko}...
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4 border-t border-slate-200">
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="flex-1 px-4 py-2 border-2 border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 transition text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={assignCarToWasher}
+                  disabled={!selectedWasher || assigningWasher}
+                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition text-sm font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {assigningWasher ? "Assigning..." : "Assign Washer"}
+                </button>
+              </div>
             </div>
           </div>
         )}

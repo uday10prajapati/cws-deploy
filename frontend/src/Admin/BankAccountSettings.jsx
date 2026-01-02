@@ -186,7 +186,7 @@ export default function BankAccountSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
       
       <main className="flex-1 overflow-auto">

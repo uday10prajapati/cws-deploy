@@ -40,7 +40,7 @@ export default function AlternativePayment() {
     if (data?.session?.user) {
       const user = data.session.user;
       setCustomerEmail(user.email || "");
-      setCustomerName(user.user_metadata?.full_name || "");
+      setCustomerName(user.user_metadata?.name || "");
     }
   };
 
@@ -340,7 +340,7 @@ export default function AlternativePayment() {
 
   if (verified) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
         <div className="max-w-2xl mx-auto">
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-8 text-center shadow-md">
             <FiCheck className="text-6xl text-emerald-600 mx-auto mb-4" />
@@ -364,7 +364,7 @@ export default function AlternativePayment() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold text-slate-900 mb-8">💳 Payment Methods</h1>
 
@@ -384,7 +384,7 @@ export default function AlternativePayment() {
                   onClick={() => setSelectedMethod(method.id)}
                   className={`p-6 rounded-lg border-2 transition text-left shadow-md ${
                     selectedMethod === method.id
-                      ? "bg-blue-50 border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100"
+                      ? "bg-blue-50 border-blue-300 bg-linear-to-br from-blue-50 to-blue-100"
                       : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-lg"
                   }`}
                 >

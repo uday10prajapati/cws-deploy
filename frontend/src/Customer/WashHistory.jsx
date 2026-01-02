@@ -134,14 +134,14 @@ export default function WashHistory() {
   };
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -151,7 +151,7 @@ export default function WashHistory() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
                 <FiTruck />
               </span>
               <span>Wash History</span>
@@ -202,7 +202,7 @@ export default function WashHistory() {
                 className="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-200 hover:shadow-xl transition"
               >
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6">
+                <div className="bg-linear-to-r from-blue-600 to-cyan-500 text-white p-6">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h3 className="text-xl md:text-2xl font-bold flex items-center gap-2">

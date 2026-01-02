@@ -63,7 +63,7 @@ router.get("/car/:car_id", async (req, res) => {
       
       // Customer Details (from profiles table)
       customerId: car.customer_id,
-      customerName: customer?.full_name || authUser.data?.user?.user_metadata?.name || "N/A",
+      customerName: customer?.name || authUser.data?.user?.user_metadata?.name || "N/A",
       customerEmail: authUser.data?.user?.email || "N/A",
       customerMobile: customer?.phone || authUser.data?.user?.user_metadata?.phone || "N/A",
       customerAddress: customer?.address || "N/A",

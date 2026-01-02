@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import ApprovalPanel from "./ApprovalPanel";
@@ -26,13 +26,16 @@ import {
 import { FaCar } from "react-icons/fa";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState("dashboard");
   const [userTaluko, setUserTaluko] = useState(null);
+  const [userCity, setUserCity] = useState(null);
   const [isSubAdmin, setIsSubAdmin] = useState(false);
+  const [isHR, setIsHR] = useState(false);
 
   /* 🔥 USE ROLE-BASED REDIRECT HOOK */
-  useRoleBasedRedirect(["admin", "sub-admin"]);
+  useRoleBasedRedirect(["admin", "sub-admin", "hr"]);
   const [dashboardData, setDashboardData] = useState(null);
   const [recentBookingsData, setRecentBookingsData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,16 +50,24 @@ export default function AdminDashboard() {
       if (auth?.user) {
         setUser(auth.user);
         
-        // Fetch user profile to get taluko and role
+        // Fetch user profile to get taluko, city, and role
         const { data: profile } = await supabase
           .from("profiles")
-          .select("taluko, role")
+          .select("taluko, city, role, assigned_city")
           .eq("id", auth.user.id)
           .single();
         
         if (profile) {
           setUserTaluko(profile.taluko);
           setIsSubAdmin(profile.role === "sub-admin");
+          setIsHR(profile.role === "hr");
+          
+          // HR has assigned_city, Sub-admin has taluko, Admin has neither
+          if (profile.role === "hr" && profile.assigned_city) {
+            setUserCity(profile.assigned_city);
+          } else if (profile.role === "sub-admin") {
+            setUserTaluko(profile.taluko);
+          }
         }
       }
     };
@@ -65,20 +76,25 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-  }, [userTaluko, isSubAdmin]);
+  }, [userTaluko, userCity, isSubAdmin, isHR]);
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Build query string for taluko if sub-admin
-      const talukoQuery = isSubAdmin && userTaluko ? `?taluko=${encodeURIComponent(userTaluko)}` : "";
+      // Build query string for taluko/city based on role
+      let filterQuery = "";
+      if (isSubAdmin && userTaluko) {
+        filterQuery = `?taluko=${encodeURIComponent(userTaluko)}`;
+      } else if (isHR && userCity) {
+        filterQuery = `?city=${encodeURIComponent(userCity)}`;
+      }
       
       const [overviewRes, bookingsRes, trendRes, locRes, perfRes, satRes] = await Promise.all([
         fetch("http://localhost:5000/admin/analytics/overview").then((r) => r.json()),
         fetch("http://localhost:5000/admin/recent-bookings").then((r) => r.json()),
         fetch("http://localhost:5000/admin/booking-trend").then((r) => r.json()).catch(() => ({ success: false })),
         fetch("http://localhost:5000/admin/location-stats").then((r) => r.json()).catch(() => ({ success: false })),
-        fetch(`http://localhost:5000/admin/washer-performance${talukoQuery}`).then((r) => r.json()).catch(() => ({ success: false })),
+        fetch(`http://localhost:5000/admin/washer-performance${filterQuery}`).then((r) => r.json()).catch(() => ({ success: false })),
         fetch("http://localhost:5000/admin/satisfaction-metrics").then((r) => r.json()).catch(() => ({ success: false })),
       ]);
 
@@ -118,14 +134,14 @@ export default function AdminDashboard() {
   };
 
   const stats = [
-    { 
-      title: "Today's Bookings", 
-      value: dashboardData?.today.bookings || "0", 
-      change: `+${dashboardData?.today.bookings || "0"} services completed`,
-      icon: <FiTruck />,
-      colors: "from-blue-600 to-cyan-600",
-      bgGradient: "from-blue-50 to-cyan-50"
-    },
+    // { 
+    //   title: "Today's Bookings", 
+    //   value: dashboardData?.today.bookings || "0", 
+    //   change: `+${dashboardData?.today.bookings || "0"} services completed`,
+    //   icon: <FiTruck />,
+    //   colors: "from-blue-600 to-cyan-600",
+    //   bgGradient: "from-blue-50 to-cyan-50"
+    // },
     { 
       title: "Active Washers", 
       value: dashboardData?.today.washers || "0", 
@@ -154,10 +170,12 @@ export default function AdminDashboard() {
 
   const quickActions = [
     { to: "/admin/approvals", icon: FiAlertCircle, label: "Approvals", colors: "from-red-600 to-pink-600", bg: "from-red-50 to-pink-50", border: "border-red-200" },
-    { to: "/admin/bookings", icon: FiClipboard, label: "Bookings", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" },
+    // { to: "/admin/bookings", icon: FiClipboard, label: "Bookings", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" },
     { to: "/admin/users", icon: FiUsers, label: "Users", colors: "from-purple-600 to-pink-600", bg: "from-purple-50 to-pink-50", border: "border-purple-200" },
     { to: "/admin/earnings", icon: FiDollarSign, label: "Earnings", colors: "from-emerald-600 to-green-600", bg: "from-emerald-50 to-green-50", border: "border-emerald-200" },
     { to: "/admin/analytics", icon: FiTrendingUp, label: "Analytics", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
+    ...(isSubAdmin ? [{ to: "/admin/taluka-details", icon: FiMapPin, label: "Taluka Details", colors: "from-blue-600 to-cyan-600", bg: "from-blue-50 to-cyan-50", border: "border-blue-200" }] : []),
+    ...(isHR ? [{ to: "/admin/city-details", icon: FiMapPin, label: "City Details", colors: "from-green-600 to-emerald-600", bg: "from-green-50 to-emerald-50", border: "border-green-200" }] : []),
     { to: "/admin/settings", icon: FiSettings, label: "Settings", colors: "from-indigo-600 to-purple-600", bg: "from-indigo-50 to-purple-50", border: "border-indigo-200" },
   ];
 
@@ -173,7 +191,7 @@ export default function AdminDashboard() {
   const adminMenu = [
     { name: "Dashboard", icon: <FiHome />, link: "/admin-dashboard", id: "dashboard" },
     { name: "Approvals", icon: <FiAlertCircle />, link: null, id: "approvals" },
-    { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings", id: "bookings" },
+    // { name: "Bookings", icon: <FiClipboard />, link: "/admin/bookings", id: "bookings" },
     { name: "Users", icon: <FiUsers />, link: "/admin/users", id: "users" },
     { name: "Riders", icon: <FiUsers />, link: "/admin/riders", id: "riders" },
     { name: "Earnings", icon: <FiDollarSign />, link: "/admin/earnings", id: "earnings" },
@@ -183,7 +201,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -191,12 +209,28 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
         {/* Welcome Section */}
         <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight">
-            Admin Dashboard 🎯
-          </h1>
-          <p className="text-slate-600 text-base">
-            Manage bookings, users, and track your business metrics in real-time
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight">
+                Admin Dashboard 🎯
+              </h1>
+              <p className="text-slate-600 text-base">
+                Manage bookings, users, and track your business metrics in real-time
+              </p>
+            </div>
+            {isSubAdmin && (
+              <div className="bg-blue-50 border border-blue-300 rounded-lg px-4 py-3 text-right">
+                <p className="text-sm font-semibold text-blue-900">📍 Taluko Access</p>
+                <p className="text-xs text-blue-700 mt-1">Limited to: <strong>{userTaluko}</strong></p>
+              </div>
+            )}
+            {isHR && (
+              <div className="bg-green-50 border border-green-300 rounded-lg px-4 py-3 text-right">
+                <p className="text-sm font-semibold text-green-900">📍 City Access</p>
+                <p className="text-xs text-green-700 mt-1">Limited to: <strong>{userCity}</strong></p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 🎯 QUICK ACTIONS */}
@@ -205,9 +239,9 @@ export default function AdminDashboard() {
             <Link
               key={label}
               to={to}
-              className={`group rounded-xl p-5 border ${border} bg-gradient-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
+              className={`group rounded-xl p-5 border ${border} bg-linear-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
             >
-              <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
+              <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-linear-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
                 <Icon />
               </div>
               <p className="text-sm font-bold text-slate-900">{label}</p>
@@ -216,21 +250,21 @@ export default function AdminDashboard() {
         </div>
 
         {/* 📊 STAT CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
           {stats.map((item) => (
             <div
               key={item.title}
-              className={`bg-gradient-to-br ${item.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
+              className={`bg-linear-to-br ${item.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
             >
               <div className="flex items-center justify-between mb-4">
                 <p className="text-slate-700 text-sm font-semibold tracking-wide">
                   {item.title}
                 </p>
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${item.colors} text-white flex items-center justify-center text-xl opacity-90`}>
+                <div className={`w-12 h-12 rounded-lg bg-linear-to-r ${item.colors} text-white flex items-center justify-center text-xl opacity-90`}>
                   {item.icon}
                 </div>
               </div>
-              <p className={`text-4xl font-black bg-gradient-to-r ${item.colors} bg-clip-text text-transparent`}>
+              <p className={`text-4xl font-black bg-linear-to-r ${item.colors} bg-clip-text text-transparent`}>
                 {item.value}
               </p>
               <p className="text-slate-600 text-xs font-medium mt-3 leading-relaxed">
@@ -240,23 +274,35 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* DATA FILTER NOTICE */}
+        {(isSubAdmin || isHR) && (
+          <div className={`mb-6 p-4 rounded-lg border ${isSubAdmin ? 'bg-blue-50 border-blue-300' : 'bg-green-50 border-green-300'}`}>
+            <p className={`text-sm font-semibold ${isSubAdmin ? 'text-blue-900' : 'text-green-900'}`}>
+              {isSubAdmin ? `📍 Showing data for Taluko: ${userTaluko}` : `📍 Showing data for City: ${userCity}`}
+            </p>
+            <p className={`text-xs ${isSubAdmin ? 'text-blue-700' : 'text-green-700'} mt-1`}>
+              {isSubAdmin ? `Your access is limited to ${userTaluko}. All metrics below reflect only data from this taluko.` : `Your access is limited to ${userCity}. All metrics below reflect only data from this city.`}
+            </p>
+          </div>
+        )}
+
         {/* 📈 CHARTS SECTION */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           {/* Booking Trend Chart */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
                 <FiTrendingUp />
               </div>
               Booking Trends
             </h3>
-            <div className="h-64 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 flex items-center justify-center">
+            <div className="h-64 bg-linear-to-br from-blue-50 to-cyan-50 rounded-xl p-4 flex items-center justify-center">
               {bookingTrendData.length > 0 ? (
                 <div className="w-full h-full flex items-end gap-2 justify-center px-2">
                   {bookingTrendData.slice(-7).map((item, idx) => (
                     <div key={idx} className="flex-1 flex flex-col items-center group">
                       <div
-                        className="w-full bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t-lg transition-all hover:from-blue-600 hover:to-cyan-500 group-hover:shadow-lg"
+                        className="w-full bg-linear-to-t from-blue-500 to-cyan-400 rounded-t-lg transition-all hover:from-blue-600 hover:to-cyan-500 group-hover:shadow-lg"
                         style={{ height: `${(item.count / Math.max(...bookingTrendData.map(x => x.count))) * 100}%` }}
                       />
                       <p className="text-xs text-slate-600 mt-2 text-center">{item.day}</p>
@@ -272,7 +318,7 @@ export default function AdminDashboard() {
           {/* Location Distribution Chart */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-linear-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center">
                 <FiMapPin />
               </div>
               Top Locations
@@ -290,7 +336,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all group-hover:from-purple-600 group-hover:to-pink-600"
+                          className="h-full bg-linear-to-r from-purple-500 to-pink-500 rounded-full transition-all group-hover:from-purple-600 group-hover:to-pink-600"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -307,9 +353,9 @@ export default function AdminDashboard() {
         {/* 🏆 PERFORMANCE & SATISFACTION */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           {/* Washer Performance */}
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-lg">
+          <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-linear-to-r from-amber-600 to-orange-600 text-white flex items-center justify-center">
                 <FiAward />
               </div>
               Top Performers
@@ -337,9 +383,9 @@ export default function AdminDashboard() {
           </div>
 
           {/* Customer Satisfaction */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 shadow-lg">
+          <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 shadow-lg">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-linear-to-r from-green-600 to-emerald-600 text-white flex items-center justify-center">
                 <FiStar />
               </div>
               Satisfaction Metrics
@@ -375,10 +421,10 @@ export default function AdminDashboard() {
         {/* 📈 TEAM OVERVIEW SECTION */}
         <div className="mb-10">
           {/* Users & Washers */}
-          <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all max-w-2xl">
+          <div className="bg-linear-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all max-w-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-center text-2xl">
+                <div className="w-12 h-12 rounded-lg bg-linear-to-r from-emerald-600 to-green-600 text-white flex items-center justify-center text-2xl">
                   <FiUsers />
                 </div>
                 Team Overview
@@ -406,11 +452,91 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 📝 Recent Bookings */}
+        {/* 📍 ACCESS DETAILS CARDS - Show based on role */}
+        {(isSubAdmin || isHR) && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Access Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* CITY DETAILS CARD - Sub-Admin Only */}
+              {isSubAdmin && (
+                <Link
+                  to="/admin/city-details"
+                  className="group bg-linear-to-br from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3 mb-2">
+                        <div className="w-14 h-14 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                          <FiMapPin />
+                        </div>
+                        City Details
+                      </h3>
+                      <p className="text-sm text-slate-600">View comprehensive city-wide metrics</p>
+                    </div>
+                    <span className="text-3xl group-hover:translate-x-2 transition-transform">→</span>
+                  </div>
+                  <div className="space-y-3 bg-white/50 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-slate-700">Access Level:</span>
+                      <span className="text-sm font-bold text-blue-600">📊 City-Wide</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-slate-700">View Users, Cars & Bookings:</span>
+                      <span className="text-sm font-bold text-blue-600">✅ Enabled</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-slate-700">Taluka Breakdown:</span>
+                      <span className="text-sm font-bold text-blue-600">✅ Included</span>
+                    </div>
+                  </div>
+                </Link>
+              )}
+
+              {/* TALUKA DETAILS CARD - Sub-Admin & HR */}
+              <Link
+                to="/admin/taluka-details"
+                className="group bg-linear-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3 mb-2">
+                      <div className="w-14 h-14 rounded-lg bg-linear-to-r from-green-600 to-emerald-600 text-white flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                        <FiMapPin />
+                      </div>
+                      Taluka Details
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      {isSubAdmin 
+                        ? "Manage taluka-specific operations and metrics" 
+                        : "View taluka data and employee tracking"}
+                    </p>
+                  </div>
+                  <span className="text-3xl group-hover:translate-x-2 transition-transform">→</span>
+                </div>
+                <div className="space-y-3 bg-white/50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Taluka:</span>
+                    <span className="text-sm font-bold text-green-600">📍 {userTaluko || userCity}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">View Users & Washers:</span>
+                    <span className="text-sm font-bold text-green-600">✅ Enabled</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-slate-700">Booking Analytics:</span>
+                    <span className="text-sm font-bold text-green-600">✅ Included</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* 📝 Recent Bookings
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
                 <FiClipboard />
               </div>
               Recent Bookings
@@ -470,7 +596,7 @@ export default function AdminDashboard() {
               </table>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* SECTIONS */}
         {activeSection === "approvals" && <ApprovalPanel />}

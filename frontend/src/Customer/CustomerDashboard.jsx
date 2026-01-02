@@ -339,9 +339,9 @@ export default function CustomerDashboard() {
   // Fetch loyalty data from customer_loyalty_points table
   const fetchLoyaltyData = async (customerId) => {
     try {
-      // First try to fetch from loyalty_points table
+      // First try to fetch from customer_loyalty_points table
       const { data: loyaltyRecord, error: loyaltyError } = await supabase
-        .from("loyalty_points")
+        .from("customer_loyalty_points")
         .select("total_points, cars_washed, last_wash_date")
         .eq("customer_id", customerId)
         .single();
@@ -594,7 +594,7 @@ export default function CustomerDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -613,7 +613,7 @@ export default function CustomerDashboard() {
             {/* <div className="mt-6 md:mt-0 flex gap-3">
               <Link
                 to="/bookings"
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                className="px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
               >
                 <FiTruck size={20} /> Book a Wash
               </Link>
@@ -633,9 +633,9 @@ export default function CustomerDashboard() {
               <Link
                 key={label}
                 to={to}
-                className={`group rounded-xl p-5 border ${border} bg-gradient-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
+                className={`group rounded-xl p-5 border ${border} bg-linear-to-br ${bg} shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-center cursor-pointer`}
               >
-                <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
+                <div className={`text-3xl mb-3 mx-auto w-12 h-12 flex items-center justify-center rounded-lg bg-linear-to-r ${colors} text-white group-hover:scale-110 transition-transform`}>
                   <Icon />
                 </div>
                 <p className="text-sm font-bold text-slate-900">{label}</p>
@@ -656,17 +656,17 @@ export default function CustomerDashboard() {
               return (
                 <div
                   key={item.title}
-                  className={`bg-gradient-to-br ${colors.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
+                  className={`bg-linear-to-br ${colors.bgGradient} rounded-2xl p-6 shadow-lg border border-opacity-30 hover:shadow-xl hover:scale-105 transition-all duration-300`}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-slate-700 text-sm font-semibold tracking-wide">
                       {item.title}
                     </p>
-                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${colors.bg} text-white flex items-center justify-center text-xl opacity-90`}>
+                    <div className={`w-12 h-12 rounded-lg bg-linear-to-r ${colors.bg} text-white flex items-center justify-center text-xl opacity-90`}>
                       {item.icon}
                     </div>
                   </div>
-                  <p className={`text-4xl font-black bg-gradient-to-r ${colors.bg} bg-clip-text text-transparent`}>
+                  <p className={`text-4xl font-black bg-linear-to-r ${colors.bg} bg-clip-text text-transparent`}>
                     {item.value}
                   </p>
                   <p className="text-slate-600 text-xs font-medium mt-3 leading-relaxed">
@@ -680,7 +680,7 @@ export default function CustomerDashboard() {
           {/* 💳 WALLET & MONTHLY PASS STATUS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
             {/* Promotional Carousel */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all overflow-hidden relative">
+            <div className="bg-linear-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all overflow-hidden relative">
               <style>{`
                 @keyframes scroll-right-to-left {
                   0% {
@@ -702,7 +702,7 @@ export default function CustomerDashboard() {
               
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">
                     <FiTrendingUp />
                   </div>
                   Special Offers
@@ -710,7 +710,7 @@ export default function CustomerDashboard() {
               </div>
 
               {/* Carousel Container */}
-              <div className="relative w-full h-48 overflow-hidden rounded-xl bg-gradient-to-r from-slate-800 to-slate-700">
+              <div className="relative w-full h-48 overflow-hidden rounded-xl bg-linear-to-r from-slate-800 to-slate-700">
                 <div className="absolute inset-0 flex">
                   {[
                     { title: "50% Off Premium Wash", color: "from-blue-500 to-cyan-500", icon: "🚗" },
@@ -721,7 +721,7 @@ export default function CustomerDashboard() {
                   ].map((item, index) => (
                     <div
                       key={index}
-                      className="carousel-item flex-shrink-0 w-full h-48 bg-gradient-to-br px-8 py-6 flex flex-col items-center justify-center text-center"
+                      className="carousel-item shrink-0 w-full h-48 bg-linear-to-br px-8 py-6 flex flex-col items-center justify-center text-center"
                       style={{
                         backgroundImage: `linear-gradient(135deg, var(--color-1), var(--color-2))`,
                         "--color-1": index === 0 ? "#0369a1" : index === 1 ? "#7c3aed" : index === 2 ? "#059669" : index === 3 ? "#ea580c" : "#4f46e5",
@@ -760,7 +760,7 @@ export default function CustomerDashboard() {
 
               {/* <Link
                 to="/transactions"
-                className="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105 w-full text-center"
+                className="inline-block mt-6 px-6 py-3 bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105 w-full text-center"
               >
                 + Add Money
               </Link> */}
@@ -768,17 +768,17 @@ export default function CustomerDashboard() {
 
             {/* Monthly Pass Status */}
             <div
-              className="bg-gradient-to-br from-slate-900 to-slate-800 border border-amber-500/40 rounded-xl p-5 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden"
+              className="bg-linear-to-br from-slate-900 to-slate-800 border border-amber-500/40 rounded-xl p-5 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden"
               style={{
                 boxShadow: "0 0 20px rgba(255,193,7,0.15)",
               }}
             >
               {/* Decorative element */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-3xl"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-amber-500/10 to-transparent rounded-full blur-3xl"></div>
               
               <div className="relative z-10 flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 text-white flex items-center justify-center text-xl">
+                  <div className="w-10 h-10 rounded-lg bg-linear-to-r from-amber-600 to-amber-500 text-white flex items-center justify-center text-xl">
                     <FiAward />
                   </div>
                   Monthly Pass
@@ -802,7 +802,7 @@ export default function CustomerDashboard() {
                   </p>
                   <Link
                     to="/monthly-pass"
-                    className="inline-block px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg"
+                    className="inline-block px-4 py-2 bg-linear-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg"
                   >
                     Get Pass Now
                   </Link>
@@ -826,7 +826,7 @@ export default function CustomerDashboard() {
                   {/* PROGRESS BAR */}
                   <div className="w-full bg-slate-700 rounded-full h-3 mb-4 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-amber-400 to-amber-500 h-3 rounded-full transition-all duration-500"
+                      className="bg-linear-to-r from-amber-400 to-amber-500 h-3 rounded-full transition-all duration-500"
                       style={{
                         width: `${
                           ((currentPass.total_washes -
@@ -853,7 +853,7 @@ export default function CustomerDashboard() {
 
                   <Link
                     to="/monthly-pass"
-                    className="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105"
+                    className="inline-block mt-6 px-6 py-3 bg-linear-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-lg font-bold text-sm transition-all hover:shadow-lg hover:scale-105"
                   >
                     Renew Pass
                   </Link>
@@ -865,7 +865,7 @@ export default function CustomerDashboard() {
           {/* 🔔 NOTIFICATIONS */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-lg mb-8">
             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-sm">
                 <FiBell />
               </div>
               Recent Notifications
@@ -893,11 +893,11 @@ export default function CustomerDashboard() {
           </div>
 
           {/* 🎁 OFFERS & PROMOTIONS */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 shadow-xl mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-pink-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="bg-linear-to-br from-slate-900 to-slate-800 rounded-xl p-5 shadow-xl mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-pink-500/10 to-transparent rounded-full blur-3xl"></div>
             
             <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2 relative z-10">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 text-white flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-r from-pink-600 to-rose-600 text-white flex items-center justify-center text-sm">
                 <FiGift />
               </div>
               Active Offers & Promotions
@@ -907,11 +907,11 @@ export default function CustomerDashboard() {
               {offers.map((offer) => (
                 <div
                   key={offer.id}
-                  className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-300 rounded-lg p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group"
+                  className="bg-linear-to-br from-pink-50 to-rose-50 border border-pink-300 rounded-lg p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <span className="text-3xl">{offer.icon}</span>
-                    <span className="text-xs bg-gradient-to-r from-pink-600 to-rose-600 text-white px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-xs bg-linear-to-r from-pink-600 to-rose-600 text-white px-2 py-0.5 rounded-full font-bold">
                       {offer.discount}
                     </span>
                   </div>
@@ -924,7 +924,7 @@ export default function CustomerDashboard() {
                       {offer.code}
                     </span>
                   </p>
-                  <button className="w-full px-3 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg">
+                  <button className="w-full px-3 py-2 bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white rounded-lg font-bold text-xs transition-all hover:shadow-lg">
                     Claim Now
                   </button>
                 </div>
@@ -935,7 +935,7 @@ export default function CustomerDashboard() {
           {/* 🚗 MY CARS */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-sm">
                 <FaCar />
               </div>
               My Cars
@@ -947,7 +947,7 @@ export default function CustomerDashboard() {
                 <p className="text-slate-600 text-lg font-semibold mb-4">No cars added yet</p>
                 <Link
                   to="/my-cars"
-                  className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg font-bold transition-all hover:shadow-lg"
+                  className="inline-block px-6 py-3 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg font-bold transition-all hover:shadow-lg"
                 >
                   Add Your First Car
                 </Link>
@@ -957,7 +957,7 @@ export default function CustomerDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                      <tr className="bg-linear-to-r from-blue-600 to-cyan-600 text-white">
                         <th className="px-6 py-4 text-left text-sm font-bold">Car Name</th>
                         <th className="px-6 py-4 text-left text-sm font-bold">License Plate</th>
                         <th className="px-6 py-4 text-left text-sm font-bold">Location</th>
@@ -993,7 +993,7 @@ export default function CustomerDashboard() {
                             {/* Car Name */}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
                                   <FaCar size={18} />
                                 </div>
                                 <div>
@@ -1013,7 +1013,7 @@ export default function CustomerDashboard() {
                             {/* Location */}
                             <td className="px-6 py-4">
                               <div className="flex items-start gap-2">
-                                <FiMapPin size={16} className="text-blue-600 mt-1 flex-shrink-0" />
+                                <FiMapPin size={16} className="text-blue-600 mt-1 shrink-0" />
                                 <div>
                                   <p className="font-semibold text-slate-900">{customerAddress || "Not Specified"}</p>
                                   <p className="text-xs text-slate-600">{car.location || "N/A"}</p>
@@ -1042,7 +1042,7 @@ export default function CustomerDashboard() {
                             <td className="px-6 py-4 text-center">
                               <Link
                                 to="/my-cars"
-                                className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg font-semibold text-xs transition-all hover:shadow-lg"
+                                className="inline-block px-4 py-2 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg font-semibold text-xs transition-all hover:shadow-lg"
                               >
                                 Manage
                               </Link>
@@ -1077,9 +1077,9 @@ export default function CustomerDashboard() {
               </div>
 
               {/* Service Details */}
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-5 mb-6 border border-blue-200">
+              <div className="bg-linear-to-r from-blue-50 to-cyan-50 rounded-xl p-5 mb-6 border border-blue-200">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center">
                     <FaCar />
                   </div>
                   <div>
@@ -1114,7 +1114,7 @@ export default function CustomerDashboard() {
                 </div>
                 {rating > 0 && (
                   <p className="text-center mt-5 text-lg font-bold">
-                    <span className="bg-gradient-to-r from-yellow-500 to-amber-500 bg-clip-text text-transparent">
+                    <span className="bg-linear-to-r from-yellow-500 to-amber-500 bg-clip-text text-transparent">
                       {rating} out of 5 stars
                     </span>
                   </p>

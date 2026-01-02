@@ -927,7 +927,7 @@ export default function Location() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading location...</p>
@@ -938,7 +938,7 @@ export default function Location() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <FiAlertCircle className="text-5xl text-red-600 mx-auto" />
           <h2 className="text-2xl font-bold text-slate-900">Booking Not Found</h2>
@@ -957,7 +957,7 @@ export default function Location() {
   const statusConfig = getStatusBadge();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
 
       {/* Main Content */}

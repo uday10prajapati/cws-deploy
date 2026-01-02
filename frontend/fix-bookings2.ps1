@@ -15,7 +15,7 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
         $newLines += '          <h2 className="text-4xl font-extrabold text-slate-900 flex items-center gap-3 mb-2">'
         $i++ # Skip next line
         # Add the gradient icon container
-        $newLines += '            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">'
+        $newLines += '            <div className="w-12 h-12 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">'
         $newLines += '              <FaCar />'
         $newLines += '            </div>'
     } elseif ($line -match 'text-slate-400 text-sm mt-1') {

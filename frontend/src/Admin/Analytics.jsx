@@ -13,7 +13,7 @@ export default function Analytics() {
   const [ratingsData, setRatingsData] = useState(null);
   const [overviewData, setOverviewData] = useState(null);
 
-  useRoleBasedRedirect("admin");
+  useRoleBasedRedirect("admin", "sub-admin");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -65,7 +65,7 @@ export default function Analytics() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -92,7 +92,7 @@ export default function Analytics() {
         {/* OVERVIEW CARDS */}
         {overviewData && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Today's Bookings</p>
                 <FiBarChart2 className="text-blue-600 text-xl" />
@@ -103,7 +103,7 @@ export default function Analytics() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Active Washers</p>
                 <FiTrendingUp className="text-green-600 text-xl" />
@@ -112,7 +112,7 @@ export default function Analytics() {
               <p className="text-xs text-slate-600 mt-2">Currently active</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Total Bookings</p>
                 <FiPieChart className="text-purple-600 text-xl" />
@@ -123,7 +123,7 @@ export default function Analytics() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-600 text-sm font-semibold">Total Users</p>
                 <FiTrendingUp className="text-amber-600 text-xl" />
@@ -149,7 +149,7 @@ export default function Analytics() {
                 {bookingsData.dailyData?.map((day, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-1 shrink-0" style={{ minWidth: "20px" }}>
                     <div
-                      className="w-full bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                      className="w-full bg-linear-to-t from-blue-500 to-cyan-400 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                       style={{
                         height: `${(day.count / Math.max(...bookingsData.dailyData.map((d) => d.count), 1)) * 200}px`,
                         minHeight: "4px",
@@ -224,7 +224,7 @@ export default function Analytics() {
                   return (
                     <div key={idx} className="flex flex-col items-center gap-1 shrink-0" style={{ minWidth: "20px" }}>
                       <div
-                        className="w-full bg-gradient-to-t from-green-500 to-emerald-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
+                        className="w-full bg-linear-to-t from-green-500 to-emerald-500 rounded-t hover:opacity-80 transition group relative cursor-pointer"
                         style={{
                           height: `${(day.amount / maxAmount) * 200}px`,
                           minHeight: "4px",

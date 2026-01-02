@@ -209,7 +209,7 @@ export default function EmergencyWashRequest() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
         <NavbarNew />
         <div className="flex justify-center items-center py-32">
           <FaSpinner className="w-8 h-8 animate-spin text-blue-500" />
@@ -219,7 +219,7 @@ export default function EmergencyWashRequest() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* Navbar */}
       <NavbarNew />
 
@@ -687,7 +687,7 @@ function RequestDetailModal({ request, onClose }) {
             <div className="border-t border-slate-200 pt-4">
               <h3 className="font-semibold text-slate-900 mb-4 text-lg">Payment Summary</h3>
               
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-5 space-y-3">
+              <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-5 space-y-3">
                 <div className="flex justify-between items-center pb-3 border-b border-blue-200">
                   <div>
                     <p className="text-sm font-semibold text-slate-800">Service Fee</p>
@@ -698,7 +698,7 @@ function RequestDetailModal({ request, onClose }) {
 
                 <div className="flex justify-between items-center pt-1">
                   <p className="text-sm font-bold text-slate-900">Total Amount</p>
-                  <p className="text-2xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                  <p className="text-2xl font-black bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                     ₹{TOTAL_AMOUNT.toFixed(2)}
                   </p>
                 </div>
@@ -707,7 +707,7 @@ function RequestDetailModal({ request, onClose }) {
               <button
                 onClick={handlePayment}
                 disabled={paying}
-                className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                className="w-full mt-4 px-6 py-3 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               >
                 {paying ? "Processing..." : `Pay ₹${TOTAL_AMOUNT.toFixed(2)}`}
               </button>

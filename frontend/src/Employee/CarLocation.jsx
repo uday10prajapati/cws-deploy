@@ -139,7 +139,7 @@ export default function CarLocation() {
         {booking.customer && (
           <div className="flex items-center gap-2 text-slate-300">
             <FiUser size={16} className="text-blue-400" />
-            <span>{booking.customer.full_name}</span>
+            <span>{booking.customer.name}</span>
             {booking.customer.phone && (
               <a href={`tel:${booking.customer.phone}`} className="ml-auto text-blue-400 hover:text-blue-300">
                 <FiPhone size={16} />

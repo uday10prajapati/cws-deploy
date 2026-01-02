@@ -3,7 +3,7 @@ import NavbarNew from "./components/NavbarNew";
 
 export default function AboutUs() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
 
       {/* Main Content */}
@@ -12,7 +12,7 @@ export default function AboutUs() {
           {/* Header */}
           <div className="mb-12">
             <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
-              About <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">CarWash+</span>
+              About <span className="bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">CarWash+</span>
             </h1>
             <p className="text-lg text-slate-600 max-w-3xl">
               Revolutionizing the car wash industry with smart technology, reliable service, and exceptional customer care.
@@ -22,7 +22,7 @@ export default function AboutUs() {
           {/* Mission & Vision Section */}
           <div className="grid md:grid-cols-2 gap-8 mb-16">
             {/* Mission */}
-            <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-blue-100">
+            <div className="bg-linear-to-br from-blue-50 to-slate-50 rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-blue-100">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">🎯</span>
               </div>
@@ -33,7 +33,7 @@ export default function AboutUs() {
             </div>
 
             {/* Vision */}
-            <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-blue-100">
+            <div className="bg-linear-to-br from-blue-50 to-slate-50 rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-blue-100">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">✨</span>
               </div>
@@ -50,7 +50,7 @@ export default function AboutUs() {
             <div className="grid md:grid-cols-3 gap-8">
               {/* Feature 1 */}
               <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-slate-200">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">⚡</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">Fast & Convenient</h3>
@@ -61,7 +61,7 @@ export default function AboutUs() {
 
               {/* Feature 2 */}
               <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-slate-200">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">👨‍💼</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">Professional Team</h3>
@@ -72,7 +72,7 @@ export default function AboutUs() {
 
               {/* Feature 3 */}
               <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-slate-200">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">💰</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">Affordable Pricing</h3>
@@ -83,7 +83,7 @@ export default function AboutUs() {
 
               {/* Feature 4 */}
               <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-slate-200">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">🔒</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">Secure & Safe</h3>
@@ -94,7 +94,7 @@ export default function AboutUs() {
 
               {/* Feature 5 */}
               <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-slate-200">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">📍</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">Live Tracking</h3>
@@ -105,7 +105,7 @@ export default function AboutUs() {
 
               {/* Feature 6 */}
               <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow border border-slate-200">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">⭐</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">Ratings & Reviews</h3>
@@ -119,7 +119,7 @@ export default function AboutUs() {
           {/* Our Services */}
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-slate-900 mb-8">Our Services</h2>
-            <div className="bg-gradient-to-r from-blue-50 to-slate-50 rounded-lg p-8 border border-blue-200">
+            <div className="bg-linear-to-r from-blue-50 to-slate-50 rounded-lg p-8 border border-blue-200">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">🚗</span>
@@ -188,7 +188,7 @@ export default function AboutUs() {
           </section>
 
           {/* Contact Section */}
-          <section className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-12 text-white text-center">
+          <section className="bg-linear-to-r from-blue-600 to-blue-700 rounded-lg p-12 text-white text-center">
             <h2 className="text-3xl font-bold mb-4">Get In Touch</h2>
             <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
               Have questions? We'd love to hear from you. Contact our support team anytime.

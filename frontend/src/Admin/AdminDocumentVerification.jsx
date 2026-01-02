@@ -181,7 +181,7 @@ const AdminDocumentVerification = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
         <NavbarNew />
         <main className="flex-1 overflow-auto">
           <div className="flex items-center justify-center h-96">
@@ -196,7 +196,7 @@ const AdminDocumentVerification = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
       <main className="flex-1 overflow-auto">
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
@@ -417,7 +417,7 @@ const AdminDocumentVerification = () => {
                   onClick={() => loadWasherDocuments(pc.washer_id)}
                   className={`rounded-xl border p-5 cursor-pointer transition hover:shadow-lg hover:-translate-y-1 ${
                     pc.documents_complete
-                      ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200"
+                      ? "bg-linear-to-br from-green-50 to-emerald-50 border-green-200"
                       : "bg-white border-slate-200 hover:border-blue-300"
                   }`}
                 >
@@ -513,7 +513,7 @@ const AdminDocumentVerification = () => {
           </button>
 
           {washerProfile && (
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 mb-6 shadow-lg">
+            <div className="bg-linear-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 mb-6 shadow-lg">
               <h2 className="text-3xl font-bold text-slate-900 mb-2">
                 {washerProfile.first_name} {washerProfile.last_name}
               </h2>
@@ -538,7 +538,7 @@ const AdminDocumentVerification = () => {
                   key={doc.id}
                   className={`rounded-xl border p-6 shadow-lg transition ${
                     doc.verified
-                      ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200"
+                      ? "bg-linear-to-br from-green-50 to-emerald-50 border-green-200"
                       : "bg-white border-slate-200"
                   }`}
                 >

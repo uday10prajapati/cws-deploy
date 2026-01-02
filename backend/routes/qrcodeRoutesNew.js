@@ -20,7 +20,7 @@ router.get("/generate/:carId", async (req, res) => {
     // Fetch car with customer details
     const { data: car, error: carError } = await supabase
       .from("cars")
-      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
+      .select("*, profiles!cars_customer_id_fkey(id, email, phone, name, address, taluko)")
       .eq("id", carId)
       .single();
 
@@ -40,7 +40,7 @@ router.get("/generate/:carId", async (req, res) => {
     const qrData = {
       carId: car.id,
       customerId: customer.id,
-      customerName: customer.full_name,
+      customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
       customerAddress: customer.address || car.number_plate,
@@ -69,7 +69,7 @@ router.get("/generate/:carId", async (req, res) => {
         .update({
           qr_code_data: JSON.stringify(qrData),
           qr_code_image: qrCodeDataUrl,
-          customer_name: customer.full_name,
+          customer_name: customer.name,
           customer_email: customer.email,
           customer_mobile: customer.phone,
           customer_address: customer.address || car.number_plate,
@@ -101,7 +101,7 @@ router.get("/generate/:carId", async (req, res) => {
         customer_id: customer.id,
         qr_code_data: JSON.stringify(qrData),
         qr_code_image: qrCodeDataUrl,
-        customer_name: customer.full_name,
+        customer_name: customer.name,
         customer_email: customer.email,
         customer_mobile: customer.phone,
         customer_address: customer.address || car.number_plate,
@@ -198,7 +198,7 @@ router.post("/start-wash-session", async (req, res) => {
 
     // Check monthly pass status
     const { data: monthlyPass } = await supabase
-      .from("monthly_passes")
+      .from("monthly_pass")
       .select("id, expiry_date")
       .eq("car_id", qrCode.car_id)
       .eq("status", "active")
@@ -427,7 +427,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
     // Fetch car with customer details
     const { data: car, error: carError } = await supabase
       .from("cars")
-      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
+      .select("*, profiles!cars_customer_id_fkey(id, email, phone, name, address, taluko)")
       .eq("id", carId)
       .single();
 
@@ -437,7 +437,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
 
     // Fetch monthly pass details
     const { data: monthlyPass, error: passError } = await supabase
-      .from("monthly_passes")
+      .from("")
       .select("id, expiry_date, status")
       .eq("id", monthlyPassId)
       .single();
@@ -453,7 +453,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
     const qrData = {
       carId: car.id,
       customerId: customer.id,
-      customerName: customer.full_name,
+      customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
       customerAddress: customer.address || car.number_plate,
@@ -483,7 +483,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
         .update({
           qr_code_data: JSON.stringify(qrData),
           qr_code_image: qrCodeDataUrl,
-          customer_name: customer.full_name,
+          customer_name: customer.name,
           customer_email: customer.email,
           customer_mobile: customer.phone,
           customer_address: customer.address || car.number_plate,
@@ -524,7 +524,7 @@ router.post("/auto-create-on-monthly-pass", async (req, res) => {
         monthly_pass_id: monthlyPassId,
         qr_code_data: JSON.stringify(qrData),
         qr_code_image: qrCodeDataUrl,
-        customer_name: customer.full_name,
+        customer_name: customer.name,
         customer_email: customer.email,
         customer_mobile: customer.phone,
         customer_address: customer.address || car.number_plate,
@@ -569,7 +569,7 @@ router.post("/sync-monthly-pass/:carId", async (req, res) => {
     // Fetch car with customer details
     const { data: car, error: carError } = await supabase
       .from("cars")
-      .select("*, profiles!cars_customer_id_fkey(id, email, phone, full_name, address, taluko)")
+      .select("*, profiles!cars_customer_id_fkey(id, email, phone, name, address, taluko)")
       .eq("id", carId)
       .single();
 
@@ -579,7 +579,7 @@ router.post("/sync-monthly-pass/:carId", async (req, res) => {
 
     // Fetch active monthly pass
     const { data: monthlyPass } = await supabase
-      .from("monthly_passes")
+      .from("monthly_pass")
       .select("id, expiry_date, status")
       .eq("car_id", carId)
       .eq("status", "active")
@@ -603,7 +603,7 @@ router.post("/sync-monthly-pass/:carId", async (req, res) => {
     const qrData = {
       carId: car.id,
       customerId: customer.id,
-      customerName: customer.full_name,
+      customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
       customerAddress: customer.address || car.number_plate,

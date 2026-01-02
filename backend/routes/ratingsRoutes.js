@@ -210,7 +210,7 @@ router.post("/add", async (req, res) => {
     // Get customer profile for name
     const { data: customer } = await supabase
       .from("profiles")
-      .select("full_name")
+      .select("name")
       .eq("id", customer_id)
       .single();
 
@@ -221,7 +221,7 @@ router.post("/add", async (req, res) => {
         rating: parseInt(rating),
         rating_comment: rating_comment || "",
         rated_at: new Date().toISOString(),
-        customer_name: customer?.full_name || "Customer",
+        customer_name: customer?.name || "Customer",
       })
       .eq("id", booking_id)
       .select();

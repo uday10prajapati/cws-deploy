@@ -3,8 +3,6 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
 import { initializeStorageBucket } from "../utils/storageHelpers";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
 import {
   FiUpload,
   FiCheck,
@@ -33,7 +31,7 @@ const SalesDocumentUpload = () => {
   const [uploading, setUploading] = useState({});
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-
+   useRoleBasedRedirect(["sales"]);
   useEffect(() => {
     loadUserData();
   }, []);

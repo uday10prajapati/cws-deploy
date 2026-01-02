@@ -5,7 +5,7 @@ $content = [System.IO.File]::ReadAllText($filepath)
 
 # Use regex replacement to update the heading
 $pattern = '(<h2 className=")text-3xl font-bold( flex items-center gap-2">)\s*<FaCar className="text-blue-400" />'
-$replacement = '$1text-4xl font-extrabold text-slate-900$2' + "`n              <div className=`"w-12 h-12 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl`">" + "`n                <FaCar />" + "`n              </div>"
+$replacement = '$1text-4xl font-extrabold text-slate-900$2' + "`n              <div className=`"w-12 h-12 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl`">" + "`n                <FaCar />" + "`n              </div>"
 
 $content = [regex]::Replace($content, $pattern, $replacement, [System.Text.RegularExpressions.RegexOptions]::Singleline)
 

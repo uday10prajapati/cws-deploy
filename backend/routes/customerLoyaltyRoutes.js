@@ -162,7 +162,7 @@ router.post("/loyalty/record-wash", async (req, res) => {
     // Get customer profile for notification
     const { data: customerProfile } = await supabase
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, name, email")
       .eq("id", customer_id)
       .maybeSingle();
 
@@ -229,7 +229,7 @@ router.post("/loyalty/record-wash", async (req, res) => {
         user_id: admin.id,
         type: "customer_loyalty_update",
         title: "Customer Car Washed",
-        message: `${customerProfile?.full_name || "Customer"} car was washed. Customer loyalty points: ${updatedLoyalty.total_points}`,
+        message: `${customerProfile?.name || "Customer"} car was washed. Customer loyalty points: ${updatedLoyalty.total_points}`,
         related_id: customer_id,
         is_read: false,
         created_at: new Date().toISOString()
@@ -388,7 +388,7 @@ router.post("/loyalty/redeem-offer", async (req, res) => {
     // Get customer profile
     const { data: customerProfile } = await supabase
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, name, email")
       .eq("id", customer_id)
       .maybeSingle();
 
@@ -422,7 +422,7 @@ router.post("/loyalty/redeem-offer", async (req, res) => {
         user_id: admin.id,
         type: "loyalty_offer_redeemed",
         title: "Customer Redeemed Offer",
-        message: `${customerProfile?.full_name || "Customer"} redeemed "${offer.offer_title}" (-${offer.points_required} points)`,
+        message: `${customerProfile?.name || "Customer"} redeemed "${offer.offer_title}" (-${offer.points_required} points)`,
         related_id: customer_id,
         is_read: false,
         created_at: new Date().toISOString()
@@ -492,7 +492,7 @@ router.get("/history/:customer_id", async (req, res) => {
       .select(`
         *,
         cars(id, brand, model, number_plate),
-        profiles:washer_id(id, full_name)
+        profiles:washer_id(id, name)
       `)
       .eq("customer_id", customer_id)
       .gte("wash_date", fromDateStr)
@@ -565,7 +565,7 @@ router.get("/admin/leaderboard", async (req, res) => {
       .from("customer_loyalty_points")
       .select(`
         *,
-        profiles:customer_id(id, full_name, email, phone)
+        profiles:customer_id(id, name, email, phone)
       `)
       .order("total_points", { ascending: false });
 

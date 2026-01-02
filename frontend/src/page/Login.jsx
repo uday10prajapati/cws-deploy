@@ -128,11 +128,14 @@ export default function Login() {
     phone: profile.phone,
     role: profile.role,
     employeeType: profile.employee_type,
+    taluko: profile.taluko,
+    city: profile.city,
     loginTime: new Date().toISOString()
   };
   localStorage.setItem("userDetails", JSON.stringify(userDetails));
   localStorage.setItem("userId", user.id);
   localStorage.setItem("userRole", profile.role);
+  localStorage.setItem("userEmployeeType", profile.employee_type || "");
 
   setSlide(true);
   setMessage("Login successful!");
@@ -141,25 +144,27 @@ export default function Login() {
   setTimeout(() => {
     console.log("🔀 Redirecting based on role:", profile.role, "employee_type:", profile.employee_type);
     
-    if (profile.role === "admin" || profile.role === "sub-admin") {
+    if (profile.role === "admin" || profile.role === "sub-admin" || profile.role === "hr") {
       console.log("→ Navigating to admin-dashboard");
       navigate("/admin-dashboard");
+    } else if (profile.role === "sales") {
+      console.log("→ Navigating to sales-dashboard");
+      navigate("/sales-dashboard");
     } else if (profile.role === "employee") {
       // Check employee type for specific routing
       if (profile.employee_type === "washer") {
         console.log("→ Navigating to carwash (washer)");
         navigate("/carwash");
+      } else if (profile.employee_type === "sales") {
+        console.log("→ Navigating to sales-dashboard (sales)");
+        navigate("/sales-dashboard");
       } else if (profile.employee_type === "rider") {
         console.log("→ Navigating to employee-dashboard (rider)");
-        navigate("/employee-dashboard");
-      } else if (profile.employee_type === "sales") {
-        console.log("→ Navigating to employee-dashboard (sales)");
         navigate("/employee-dashboard");
       } else {
         console.log("→ Navigating to employee-dashboard (default)");
         navigate("/employee-dashboard");
       }
-      
     } else {
       console.log("→ Navigating to customer-dashboard");
       navigate("/customer-dashboard");

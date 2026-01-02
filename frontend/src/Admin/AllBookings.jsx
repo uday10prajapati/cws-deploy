@@ -64,7 +64,7 @@ export default function AllBookings() {
                 if (profile && !error) {
                   const enrichedBooking = {
                     ...booking,
-                    customer_name: profile.full_name || profile.name || booking.customer_name || "N/A",
+                    customer_name: profile.name || profile.name || booking.customer_name || "N/A",
                     village: profile.village || booking.village || "",
                     city: profile.city || booking.city || "",
                     state: profile.state || booking.state || "",

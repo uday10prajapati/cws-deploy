@@ -25,7 +25,7 @@ router.get("/loyalty/:washer_id", async (req, res) => {
     // Get washer profile info
     const { data: washerProfile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, name, email")
       .eq("id", washer_id)
       .maybeSingle();
 
@@ -163,7 +163,7 @@ router.post("/loyalty/record-wash", async (req, res) => {
     // Get washer profile for notification data
     const { data: washerProfile } = await supabase
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, name, email")
       .eq("id", washer_id)
       .maybeSingle();
 
@@ -197,7 +197,7 @@ router.post("/loyalty/record-wash", async (req, res) => {
         user_id: admin.id,
         type: "washer_loyalty_update",
         title: "Washer Completed Wash",
-        message: `${washerProfile?.full_name || "Washer"} washed a car. Total points today: ${updatedLoyalty.cars_washed_today} | All-time points: ${updatedLoyalty.total_points}`,
+        message: `${washerProfile?.name || "Washer"} washed a car. Total points today: ${updatedLoyalty.cars_washed_today} | All-time points: ${updatedLoyalty.total_points}`,
         related_id: washer_id,
         is_read: false,
         created_at: new Date().toISOString()
@@ -241,7 +241,7 @@ router.get("/loyalty/leaderboard", async (req, res) => {
       .from("washer_loyalty_points")
       .select(`
         *,
-        profiles:washer_id(id, full_name, email, phone)
+        profiles:washer_id(id, name, email, phone)
       `)
       .order("total_points", { ascending: false });
 
@@ -321,7 +321,7 @@ router.get("/admin/daily-summary", async (req, res) => {
       .from("washer_loyalty_points")
       .select(`
         *,
-        profiles:washer_id(id, full_name, email, phone)
+        profiles:washer_id(id, name, email, phone)
       `)
       .eq("last_wash_date", today)
       .order("cars_washed_today", { ascending: false });

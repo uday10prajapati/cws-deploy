@@ -328,7 +328,7 @@ function PaymentPage({ amount, type, bookingId, passId, onBack, onSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
       
       {/* Payment Header */}
@@ -680,7 +680,7 @@ export default function TransactionsPage() {
         amount: amount,
         customer_id: user.id,
         customer_email: user.email,
-        customer_name: user.user_metadata?.full_name || "Customer",
+        customer_name: user.user_metadata?.name || "Customer",
         customer_phone: user.user_metadata?.phone || "9999999999",
         type: "wallet",
         payment_method: paymentMethod,
@@ -786,13 +786,13 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-10">
           {/* WALLET BALANCE */}
-          {/* <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white shadow-md">
+          {/* <div className="bg-linear-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white shadow-md">
             <div className="text-blue-100 text-sm mb-2 font-medium">Wallet Balance</div>
             <div className="flex items-end justify-between flex-col md:flex-row gap-4">
               <div className="text-4xl font-bold">

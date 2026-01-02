@@ -88,7 +88,7 @@ router.get("/customer/:customerId", async (req, res) => {
       )
       .eq("id", customerId)
       .eq("role", "customer")
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -485,7 +485,7 @@ router.put("/customer/:customerId/request-reactivate", async (req, res) => {
       .from("profiles")
       .select("account_status")
       .eq("id", customerId)
-      .single();
+      .maybeSingle();
 
     if (fetchError) throw fetchError;
 

@@ -876,7 +876,7 @@ function AssignmentModal({ request, washers, onClose, onAssign, assigning }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto border border-blue-200 shadow-xl">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 p-6 flex justify-between items-center">
+        <div className="sticky top-0 bg-linear-to-r from-blue-50 to-blue-100 border-b border-blue-200 p-6 flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Select Washer</h2>
             <p className="text-sm text-slate-600 mt-1">

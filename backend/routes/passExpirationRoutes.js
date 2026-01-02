@@ -105,7 +105,7 @@ router.get("/expired-passes", async (req, res) => {
         valid_till,
         created_at,
         cars(id, brand, model, number_plate, customer_id),
-        profiles:customer_id(id, full_name, email)
+        profiles:customer_id(id, name, email)
       `)
       .lt("valid_till", new Date().toISOString())
       .order("valid_till", { ascending: false });
@@ -149,7 +149,7 @@ router.get("/expiring-soon", async (req, res) => {
         valid_till,
         created_at,
         cars(id, brand, model, number_plate, customer_id),
-        profiles:customer_id(id, full_name, email)
+        profiles:customer_id(id, name, email)
       `)
       .gt("valid_till", today.toISOString())
       .lte("valid_till", sevenDaysFromNow)

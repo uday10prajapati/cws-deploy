@@ -266,7 +266,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
       amount: paymentAmount,
       customer_id: user.id,
       customer_email: user.email,
-      customer_name: user.user_metadata?.full_name || "Customer",
+      customer_name: user.user_metadata?.name || "Customer",
       customer_phone: user.user_metadata?.phone || "9999999999",
       type: "monthly_pass_purchase",
       payment_method: paymentMethod,
@@ -458,7 +458,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
     : "No Active Pass";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -468,7 +468,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/40">
                 <FiCreditCard />
               </span>
               <span>Monthly Pass</span>
@@ -519,7 +519,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                     setSelectedCar(null); // Reset car selection in modal
                     setBuyModalOpen(true);
                   }}
-                  className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg text-sm font-semibold text-white transition shadow-sm hover:shadow-md"
+                  className="mt-4 w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg text-sm font-semibold text-white transition shadow-sm hover:shadow-md"
                 >
                   💳 Buy / Upgrade
                 </button>
@@ -530,7 +530,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
           {/* RIGHT — ACTIVE PLAN */}
           <div className="space-y-4">
             {/* ACTIVE PASS CARD */}
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-md">
+            <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-md">
               <div className="flex items-center justify-between mb-3 gap-2">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
                   <FiAward className="text-amber-500" />
@@ -764,7 +764,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
               <button
                 onClick={buyPlan}
                 disabled={loading || !selectedCar}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition flex items-center justify-center gap-2"
                 title={!selectedCar ? "Please select a car first" : ""}
               >
                 {loading ? (
@@ -1043,7 +1043,7 @@ const [paymentDetails, setPaymentDetails] = useState(null); // stores upi_link, 
                         Back
                       </button>
                       <button
-                        className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
+                        className="flex-1 py-3 bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                       >
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         Processing...

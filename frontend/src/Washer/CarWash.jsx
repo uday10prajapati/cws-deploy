@@ -359,7 +359,7 @@ const CarWash = () => {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Welcome Section */}
-        <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg p-8 text-white shadow-lg">
+        <div className="mb-8 bg-linear-to-r from-blue-600 to-blue-500 rounded-lg p-8 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2">Welcome back, {userDetails?.name || "Washer"}! 👋</h1>
@@ -374,7 +374,7 @@ const CarWash = () => {
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Total Car Wash (Today) */}
-          <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-blue-400">
+          <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-blue-400">
             <div className="flex items-center justify-between mb-2">
               <p className="text-slate-600 text-sm font-medium">Total Car Wash</p>
               <CheckCircle size={20} className="text-blue-600" />
@@ -384,7 +384,7 @@ const CarWash = () => {
           </div>
 
           {/* Amount Earned (Today) */}
-          <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-green-400">
+          <div className="bg-linear-to-br from-green-50 to-white border-2 border-green-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-green-400">
             <div className="flex items-center justify-between mb-2">
               <p className="text-slate-600 text-sm font-medium">Amount Earned</p>
               <TrendingUp size={20} className="text-green-600" />
@@ -394,7 +394,7 @@ const CarWash = () => {
           </div>
 
           {/* This Month */}
-          <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-purple-400">
+          <div className="bg-linear-to-br from-purple-50 to-white border-2 border-purple-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-purple-400">
             <div className="flex items-center justify-between mb-2">
               <p className="text-slate-600 text-sm font-medium">This Month</p>
               <Target size={20} className="text-purple-600" />
@@ -404,7 +404,7 @@ const CarWash = () => {
           </div>
 
           {/* Pending Tasks */}
-          <div className="bg-gradient-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-yellow-400">
+          <div className="bg-linear-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all hover:border-yellow-400">
             <div className="flex items-center justify-between mb-2">
               <p className="text-slate-600 text-sm font-medium">Pending</p>
               <Clock size={20} className="text-yellow-600" />
@@ -419,7 +419,7 @@ const CarWash = () => {
           {/* Start Washing */}
           <button
             onClick={() => navigate("/washer/workflow")}
-            className="bg-gradient-to-br from-green-50 to-white border-2 border-green-200 hover:border-green-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
+            className="bg-linear-to-br from-green-50 to-white border-2 border-green-200 hover:border-green-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-slate-900">Start New Wash</h3>
@@ -436,7 +436,7 @@ const CarWash = () => {
           {/* View All Jobs */}
           {/* <button
             onClick={() => navigate("/washer/jobs")}
-            className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 hover:border-blue-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
+            className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 hover:border-blue-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-slate-900">My Jobs</h3>
@@ -453,7 +453,7 @@ const CarWash = () => {
           {/* Wash History */}
           <button
             onClick={() => navigate("/washer/wash-history")}
-            className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 hover:border-purple-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
+            className="bg-linear-to-br from-purple-50 to-white border-2 border-purple-200 hover:border-purple-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-slate-900">Wash History</h3>
@@ -469,7 +469,7 @@ const CarWash = () => {
         </div>
 
         {/* Performance Summary */}
-        <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm mb-8">
+        <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm mb-8">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Today's Performance</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Completion Rate */}
@@ -528,7 +528,7 @@ const CarWash = () => {
         </div>
 
         {/* Recent Activity */}
-        {/* <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
+        {/* <div className="bg-linear-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Recent Washes</h2>
           {loading ? (
             <div className="text-center py-8">

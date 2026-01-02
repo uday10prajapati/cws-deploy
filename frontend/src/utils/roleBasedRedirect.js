@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Custom hook for role-based redirect
@@ -8,13 +8,19 @@ import { useEffect } from "react";
  */
 export const useRoleBasedRedirect = (requiredRole) => {
   const navigate = useNavigate();
+  const hasChecked = useRef(false);
 
   useEffect(() => {
+    // Only check once per component mount
+    if (hasChecked.current) return;
+    hasChecked.current = true;
+
     const userRole = localStorage.getItem("userRole");
+    const userEmployeeType = localStorage.getItem("userEmployeeType");
 
     // If no role found, redirect to login
     if (!userRole) {
-      navigate("/login");
+      navigate("/login", { replace: true });
       return;
     }
 
@@ -26,20 +32,32 @@ export const useRoleBasedRedirect = (requiredRole) => {
       return;
     }
 
+    // Special case: employee type role checking (for sales, washer, rider)
+    if (userRole === "employee" && requiredRole === "sales" && userEmployeeType === "sales") {
+      return; // Allow access for sales employees to sales dashboard
+    }
+
     // If user has different role, redirect to their dashboard
-    if (userRole === "admin") {
-      navigate("/admin-dashboard");
-    } else if (userRole === "sub-admin") {
-      navigate("/admin-dashboard");
+    if (userRole === "admin" || userRole === "sub-admin" || userRole === "hr") {
+      navigate("/admin-dashboard", { replace: true });
     } else if (userRole === "employee") {
-      navigate("/employee-dashboard");
+      // Redirect based on employee type
+      if (userEmployeeType === "sales") {
+        navigate("/sales-dashboard", { replace: true });
+      } else if (userEmployeeType === "washer") {
+        navigate("/carwash", { replace: true });
+      } else if (userEmployeeType === "rider") {
+        navigate("/employee-dashboard", { replace: true });
+      } else {
+        navigate("/employee-dashboard", { replace: true });
+      }
     } else if (userRole === "customer") {
-      navigate("/customer-dashboard");
+      navigate("/customer-dashboard", { replace: true });
     } else {
       // Unknown role, redirect to login
-      navigate("/login");
+      navigate("/login", { replace: true });
     }
-  }, [requiredRole, navigate]);
+  }, [navigate]);
 };
 
 /**

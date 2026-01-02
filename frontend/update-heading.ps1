@@ -24,7 +24,7 @@ for ($i = 0; $i -lt $totalLines; $i++) {
         $newLines += "        {/* Heading */}"
         $newLines += "        <div>"
         $newLines += '          <h2 className="text-4xl font-extrabold text-slate-900 flex items-center gap-3 mb-2">'
-        $newLines += '            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">'
+        $newLines += '            <div className="w-12 h-12 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">'
         $newLines += '              <FaCar />'
         $newLines += '            </div>'
         $newLines += '            Car Wash Booking'

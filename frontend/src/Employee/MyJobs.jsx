@@ -17,6 +17,8 @@ import {
 } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import { useRoleBasedRedirect } from "../utils/roleBasedRedirect";
+import NavbarNew from "../components/NavbarNew";
+
 
 
 export default function MyJobs() {
@@ -130,103 +132,24 @@ export default function MyJobs() {
   const getStatusIndex = (status) => statusSteps.indexOf(status);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* NAVBAR */}
+      <NavbarNew />
 
-      {/* ▓▓ MOBILE TOP BAR ▓▓ */}
-      <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-4 shadow-lg flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <h1 className="text-xl font-bold bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-          CarWash+
-        </h1>
-        <FiMenu
-          className="text-2xl cursor-pointer"
-          onClick={() => setSidebarOpen(true)}
-        />
-      </div>
+      {/* SIDEBAR */}
 
-      {/* ▓▓ BACKDROP FOR MOBILE ▓▓ */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
 
-      {/* ▓▓ SIDEBAR ▓▓ */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 shadow-2xl 
-          z-50 transition-all duration-300
-          ${collapsed ? "w-16" : "w-56"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        <div
-          className="hidden lg:flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer hover:bg-slate-800"
-          onClick={() => setCollapsed(!collapsed)}
+      {/* MAIN CONTENT */}
+      <main className="lg:ml-64 pt-20 px-4 md:px-6 py-10">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="lg:hidden fixed top-20 left-4 z-30 p-2 bg-white rounded-lg shadow-lg border border-slate-200 hover:bg-slate-50"
         >
-          <span className="font-extrabold text-lg">{collapsed ? "CW" : "CarWash+"}</span>
-          {!collapsed && <FiChevronLeft className="text-slate-400" />}
-        </div>
+          <FiMenu size={24} className="text-slate-700" />
+        </button>
 
-        <nav className="mt-4 px-3 pb-24">
-          {employeeMenu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.link}
-              className={`
-                flex items-center gap-4 px-3 py-2 rounded-lg mb-2 font-medium transition-all 
-                ${
-                  location.pathname === item.link
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-blue-400"
-                }
-                ${collapsed ? "justify-center" : ""}
-              `}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="text-sm">{item.name}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOUT */}
-        <div
-          onClick={handleLogout}
-          className={`
-            absolute bottom-6 left-3 right-3 bg-red-600 hover:bg-red-700 
-            px-4 py-2 rounded-lg cursor-pointer flex items-center gap-3
-            ${collapsed ? "justify-center" : ""}
-          `}
-        >
-          <FiLogOut className="text-lg" />
-          {!collapsed && "Logout"}
-        </div>
-      </aside>
-
-      {/* ▓▓ MAIN CONTENT AREA ▓▓ */}
-      <div className={`flex-1 transition-all duration-300 mt-14 lg:mt-0 ${collapsed ? "lg:ml-16" : "lg:ml-56"}`}>
-
-        {/* NAVBAR (Desktop Only) */}
-        <header className="hidden lg:flex h-16 bg-slate-900/90 border-b border-blue-500/20 items-center justify-between px-8 sticky top-0 z-20 shadow-lg">
-          <h1 className="text-2xl font-bold">My Jobs</h1>
-
-          <div className="flex items-center gap-6">
-            <FiBell className="text-xl text-slate-300 hover:text-blue-400 cursor-pointer" />
-
-            {user && (
-              <img
-                src={`https://ui-avatars.com/api/?name=${user.email}&background=3b82f6&color=fff`}
-                className="w-10 h-10 rounded-full border-2 border-blue-500"
-                alt="User"
-              />
-            )}
-          </div>
-        </header>
-
-        {/* ▓▓ PAGE CONTENT ▓▓ */}
-        <main className="p-4 md:p-8 space-y-6">
-
+        <div className="max-w-7xl mx-auto">
           {/* STATISTICS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-slate-900/80 border border-orange-500/30 rounded-xl p-6 shadow-lg">
@@ -472,8 +395,8 @@ export default function MyJobs() {
               )}
             </>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

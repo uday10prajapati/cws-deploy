@@ -65,9 +65,11 @@ export default function Signup() {
       return;
     }
 
+    // If employee role but no employeeType selected, still allow signup as general employee
+    const formData = { ...form };
     if (form.role === "employee" && !form.employeeType) {
-      setMessage("Please select a position.");
-      return;
+      // Optional: employeeType will be empty, treated as general employee
+      formData.employeeType = "";
     }
 
     setMessage("Sending OTP...");
@@ -299,11 +301,23 @@ export default function Signup() {
                     </button>
                   </div>
 
-                  {/* EMPLOYEE SUB-ROLE SELECTION */}
+                  {/* EMPLOYEE SUB-ROLE SELECTION (OPTIONAL) */}
                   {form.role === "employee" && (
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-700 font-medium">Select position:</label>
+                      <label className="text-xs text-slate-700 font-medium">Select position (optional):</label>
                       <div className="space-y-1">
+                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-slate-200 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-all">
+                          <input
+                            type="radio"
+                            name="employeeType"
+                            value=""
+                            checked={form.employeeType === ""}
+                            onChange={(e) => setForm({ ...form, employeeType: e.target.value })}
+                            className="w-3 h-3"
+                          />
+                          <span className="ml-2 text-slate-900 text-xs md:text-sm">👤 General Employee</span>
+                        </label>
+
                         <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all">
                           <input
                             type="radio"
@@ -314,18 +328,6 @@ export default function Signup() {
                             className="w-3 h-3"
                           />
                           <span className="ml-2 text-slate-900 text-xs md:text-sm">🧹 Car Washer</span>
-                        </label>
-
-                        <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all">
-                          <input
-                            type="radio"
-                            name="employeeType"
-                            value="rider"
-                            checked={form.employeeType === "rider"}
-                            onChange={(e) => setForm({ ...form, employeeType: e.target.value })}
-                            className="w-3 h-3"
-                          />
-                          <span className="ml-2 text-slate-900 text-xs md:text-sm">🏍️ Rider</span>
                         </label>
 
                         <label className="flex items-center p-1.5 md:p-2 rounded-2xl border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-all">

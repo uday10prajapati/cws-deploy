@@ -115,11 +115,11 @@ const CustomerLoyaltyDashboard = () => {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       <NavbarNew />
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 shadow-md">
+        <div className="bg-linear-to-r from-blue-600 to-blue-700 rounded-2xl p-8 shadow-md">
           <div className="flex items-center justify-between mb-6 flex-col md:flex-row gap-4">
             <div className="flex items-center gap-4">
               <FiAward size={48} className="text-white" />
@@ -314,7 +314,7 @@ const CustomerLoyaltyDashboard = () => {
                 {offers.available.map(offer => (
                   <div
                     key={offer.id}
-                    className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-5 hover:shadow-md transition"
+                    className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-5 hover:shadow-md transition"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -426,7 +426,7 @@ const CustomerLoyaltyDashboard = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-slate-700">
-                          {wash.profiles?.full_name || "N/A"}
+                          {wash.profiles?.name || "N/A"}
                         </td>
                         <td className="px-4 py-3">
                           <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold text-xs">

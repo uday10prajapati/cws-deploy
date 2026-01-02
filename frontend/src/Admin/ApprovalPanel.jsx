@@ -106,7 +106,7 @@ export default function ApprovalPanel() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100">
       {/* NAVBAR */}
       <NavbarNew />
 
@@ -136,7 +136,7 @@ export default function ApprovalPanel() {
           <FiLoader className="text-3xl text-blue-600 animate-spin" />
         </div>
       ) : pendingRequests.length === 0 ? (
-        <div className="p-8 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl text-center">
+        <div className="p-8 bg-linear-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl text-center">
           <p className="text-slate-900 font-medium">✅ No pending requests</p>
           <p className="text-slate-600 text-sm mt-1">
             All employee signup requests have been processed

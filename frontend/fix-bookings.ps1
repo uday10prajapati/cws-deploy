@@ -19,7 +19,7 @@ $newHeading = '      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 space
         {/* Heading */}
         <div>
           <h2 className="text-4xl font-extrabold text-slate-900 flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 rounded-lg bg-linear-to-r from-blue-600 to-cyan-600 text-white flex items-center justify-center text-2xl">
               <FaCar />
             </div>
             Car Wash Booking
