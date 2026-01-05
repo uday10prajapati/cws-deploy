@@ -416,6 +416,24 @@ const CarWash = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Emergency Wash Requests */}
+          <button
+            onClick={() => navigate("/washer/emergency-wash")}
+            className="bg-linear-to-br from-red-50 to-white border-2 border-red-200 hover:border-red-400 rounded-lg p-6 shadow-sm hover:shadow-md transition-all text-left group relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-20 h-20 bg-red-100 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <h3 className="text-xl font-bold text-slate-900">Emergency Washes</h3>
+              <div className="bg-red-100 group-hover:bg-red-200 p-3 rounded-lg transition-colors">
+                <AlertCircle size={24} className="text-red-600" />
+              </div>
+            </div>
+            <p className="text-slate-600 text-sm relative z-10">View your assigned emergency wash requests</p>
+            <div className="mt-4 inline-flex items-center gap-2 text-red-600 font-semibold relative z-10">
+              View Requests <ArrowRight size={16} />
+            </div>
+          </button>
+
           {/* Start Washing */}
           <button
             onClick={() => navigate("/washer/workflow")}

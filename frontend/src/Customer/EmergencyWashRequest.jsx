@@ -30,10 +30,15 @@ export default function EmergencyWashRequest() {
     description: "",
     latitude: null,
     longitude: null,
+    taluko: "",
+    area: "",
+    customer_name: "",
+    customer_phone: "",
   });
 
   const [userCars, setUserCars] = useState([]);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   // Fetch user's cars and emergency wash requests
   useEffect(() => {
@@ -46,6 +51,24 @@ export default function EmergencyWashRequest() {
       const userId = JSON.parse(localStorage.getItem("userDetails"))?.id;
 
       if (!userId) return;
+
+      // Fetch user's profile for taluko, area, name, phone
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("taluko, area, name, phone")
+        .eq("id", userId)
+        .single();
+
+      if (profileData) {
+        setUserProfile(profileData);
+        setFormData(prev => ({
+          ...prev,
+          taluko: profileData.taluko || "",
+          area: profileData.area || "",
+          customer_name: profileData.name || "",
+          customer_phone: profileData.phone || "",
+        }));
+      }
 
       // Fetch user's cars from backend API
       try {
@@ -158,6 +181,10 @@ export default function EmergencyWashRequest() {
             description: formData.description,
             latitude: formData.latitude,
             longitude: formData.longitude,
+            taluko: formData.taluko,
+            area: formData.area,
+            customer_name: formData.customer_name,
+            customer_phone: formData.customer_phone,
             status: "Pending",
           },
         ])
@@ -166,7 +193,7 @@ export default function EmergencyWashRequest() {
       if (error) throw error;
 
       setRequests(prev => [data[0], ...prev]);
-      setFormData({ car_id: "", car_plate: "", car_model: "", address: "", description: "", latitude: null, longitude: null });
+      setFormData({ car_id: "", car_plate: "", car_model: "", address: "", description: "", latitude: null, longitude: null, taluko: userProfile?.taluko || "", area: userProfile?.area || "", customer_name: userProfile?.name || "", customer_phone: userProfile?.phone || "" });
       setShowForm(false);
       
       // Show payment modal after successful request creation

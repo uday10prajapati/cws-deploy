@@ -10,6 +10,7 @@ import WWashHistory from "./Washer/WashHistory.jsx";
 import WasherWorkflow from "./Washer/WasherWorkflow.jsx";
 import WasherDocumentUpload from "./Washer/WasherDocumentUpload.jsx";
 import DemoVideos from "./Washer/DemoVideos.jsx";
+import WasherEmergencyWash from "./Washer/WasherEmergencyWash.jsx";
 import SalesDocumentUpload from "./Sales/SalesDocumentUpload.jsx";
 import SalesDashboard from "./Sales/SalesDashboard.jsx";
 import SalesWork from "./Sales/SalesWork.jsx";
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/washer/workflow" element={<WasherWorkflow />} />
         <Route path="/washer/documents" element={<WasherDocumentUpload />} />
         <Route path="/washer/demo-videos" element={<DemoVideos />} />
+        <Route path="/washer/emergency-wash" element={<WasherEmergencyWash />} />
         <Route path="/sales/documents" element={<SalesDocumentUpload />} />
         <Route path="/sales-dashboard" element={<SalesDashboard />} />
         <Route path="/sales-work" element={<SalesWork />} />

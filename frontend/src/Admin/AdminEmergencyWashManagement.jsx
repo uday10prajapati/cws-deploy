@@ -9,7 +9,7 @@ export default function AdminEmergencyWashManagement() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("Pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -206,11 +206,13 @@ export default function AdminEmergencyWashManagement() {
     }
   };
 
-  // Fetch washers by matching customer city with washer area
-  const fetchWashersByCity = async (city) => {
+  // Fetch washers by matching customer taluko with washer taluko/area
+  const fetchWashersByTaluko = async (taluko) => {
     try {
+      console.log("🔍 Searching for washers with taluko:", taluko);
+      
       const response = await fetch(
-        `http://localhost:5000/washers/match-customer-city/${encodeURIComponent(city)}`
+        `http://localhost:5000/washers/match-customer-city/${encodeURIComponent(taluko)}`
       );
       
       if (!response.ok) {
@@ -219,34 +221,64 @@ export default function AdminEmergencyWashManagement() {
       
       const data = await response.json();
       
+      console.log("📊 API Response:", data);
+      
       // Ensure data is an array
       if (Array.isArray(data)) {
+        console.log("✅ Found washers:", data.length);
         setAvailableWashers(data);
+        if (data.length === 0) {
+          console.warn("⚠️ No washers found for taluko:", taluko);
+          alert(`No washers found for taluko: "${taluko}"\n\nPlease ensure:\n1. Washers have their taluko field filled in their profile\n2. The washer's taluko matches: "${taluko}"\n3. Washer account is active`);
+        }
       } else if (data && typeof data === 'object') {
-        // If it's an error object, log it
-        console.error("API returned error object:", data);
-        setAvailableWashers([]);
-        alert("Error fetching washers: " + (data.message || "Unknown error"));
+        // Check if it's an error response
+        if (data.success === false) {
+          console.error("❌ API returned error:", data.error);
+          setAvailableWashers([]);
+          alert("Error fetching washers for taluko '" + taluko + "':\n" + (data.error || "Unknown error"));
+        } else if (Array.isArray(data.data)) {
+          // Handle wrapper response
+          console.log("✅ Found washers (wrapped):", data.data.length);
+          setAvailableWashers(data.data);
+          if (data.data.length === 0) {
+            alert(`No washers found for taluko: "${taluko}"`);
+          }
+        } else {
+          console.warn("⚠️ Unexpected response format:", data);
+          setAvailableWashers([]);
+          alert(`No washers available for taluko: "${taluko}"`);
+        }
       } else {
+        console.warn("⚠️ Unexpected response type:", typeof data);
         setAvailableWashers([]);
+        alert(`No washers available for taluko: "${taluko}"`);
       }
     } catch (error) {
-      console.error("Error fetching washers:", error);
+      console.error("❌ Error fetching washers:", error);
       setAvailableWashers([]);
-      alert("Failed to fetch washers in this city: " + error.message);
+      alert("Failed to fetch washers for taluko '" + taluko + "':\n" + error.message);
     }
   };
 
   // Handle request selection for assignment
   const handleSelectRequest = async (request) => {
     setSelectedRequestForAssignment(request);
-    // Use customer_city from user profile, fallback to request.city
-    const cityToSearch = request.customer_city || request.city;
+    // Use customer's taluko to find washers
+    const talukoToSearch = request.customer_taluko || request.taluko;
     
-    if (cityToSearch) {
-      await fetchWashersByCity(cityToSearch);
+    console.log("📍 Request taluko info:", {
+      customer_taluko: request.customer_taluko,
+      request_taluko: request.taluko,
+      searching_for: talukoToSearch
+    });
+    
+    if (talukoToSearch) {
+      await fetchWashersByTaluko(talukoToSearch);
     } else {
-      alert("Unable to find city information for this request");
+      alert("❌ Unable to find taluko/area information for this request.\n\nRequest data:\n" + 
+        "Customer Taluko: " + (request.customer_taluko || "N/A") + "\n" +
+        "Request Taluko: " + (request.taluko || "N/A"));
     }
     setShowAssignmentModal(true);
   };
@@ -257,52 +289,57 @@ export default function AdminEmergencyWashManagement() {
 
     try {
       setAssigningWasher(true);
+      
+      console.log("🚀 Assigning request to washer:", {
+        requestId: selectedRequestForAssignment.id,
+        washerId: washer.id,
+        washerName: washer.name
+      });
 
-      // Update request status
+      // Update request status in database
       const { error: updateError } = await supabase
         .from("emergency_wash_requests")
         .update({
           status: "Assigned",
-          assigned_to: washer.user_id,
+          assigned_to: washer.id,
           updated_at: new Date(),
         })
         .eq("id", selectedRequestForAssignment.id);
 
-      if (updateError) throw updateError;
+      console.log("💾 Update response - Error:", updateError);
+      
+      if (updateError) {
+        console.error("❌ Update failed:", updateError);
+        throw updateError;
+      }
 
-      // Create notification for washer
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert([
-          {
-            user_id: washer.user_id,
-            title: "New Emergency Wash Assignment",
-            message: `You have been assigned a new emergency wash request at ${selectedRequestForAssignment.address}`,
-            type: "assignment",
-            reference_id: selectedRequestForAssignment.id,
-            is_read: false,
-            created_at: new Date(),
-          },
-        ]);
+      console.log("✅ Request updated successfully!");
 
-      if (notificationError) console.warn("Notification error (non-critical):", notificationError);
-
-      // Update local state
+      // Update local state - change status to "Assigned"
       setRequests(prev =>
         prev.map(req =>
           req.id === selectedRequestForAssignment.id
-            ? { ...req, status: "Assigned", assigned_to: washer.user_id }
+            ? { ...req, status: "Assigned", assigned_to: washer.id }
             : req
         )
       );
 
       alert(`Wash assigned to ${washer.name} successfully!`);
+      
+      // Close modal and reset state
       setShowAssignmentModal(false);
       setSelectedRequestForAssignment(null);
       setAvailableWashers([]);
+      
+      // Refresh from database to verify the update worked
+      setTimeout(() => {
+        console.log("🔄 Refreshing requests from database to verify...");
+        fetchRequests();
+      }, 800);
+      
     } catch (error) {
-      console.error("Error assigning wash:", error);
-      alert("Failed to assign wash");
+      console.error("❌ Error assigning wash:", error);
+      alert(`Failed to assign wash: ${error.message}`);
     } finally {
       setAssigningWasher(false);
     }
@@ -586,6 +623,9 @@ export default function AdminEmergencyWashManagement() {
                         <p className="text-slate-600 text-sm mt-1 flex items-center gap-1">
                           <FiMapPin size={14} /> {request.address}
                         </p>
+                        <p className="text-slate-500 text-xs mt-2">
+                          <span className="font-medium">Customer:</span> {request.customer_name || "N/A"} | <span className="font-medium">Taluko:</span> {request.customer_taluko || request.taluko || "N/A"}
+                        </p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                         request.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
@@ -678,6 +718,29 @@ function DetailModal({ request, onClose, onStatusChange, onUploadClick }) {
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Customer Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-slate-900 mb-3">Customer Information</h3>
+            <div className="grid md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-slate-600 font-medium">Name</p>
+                <p className="text-slate-900">{request.customer_name || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-600 font-medium">Phone</p>
+                <p className="text-slate-900">{request.customer_phone || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-600 font-medium">Taluko/Area</p>
+                <p className="text-slate-900 font-semibold text-blue-700">{request.customer_taluko || request.taluko || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-600 font-medium">Area</p>
+                <p className="text-slate-900">{request.area || "N/A"}</p>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Info */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -912,20 +975,24 @@ function AssignmentModal({ request, washers, onClose, onAssign, assigning }) {
                     <FiPhone size={14} /> {washer.phone}
                   </p>
                   <p className="text-slate-600 text-sm flex items-center gap-1 mt-1">
-                    <FiMapPin size={14} /> {washer.distance?.toFixed(2) || 0} km away
+                    <FiMapPin size={14} /> {washer.address}
                   </p>
+                  {washer.taluko && (
+                    <p className="text-slate-600 text-sm mt-1">
+                      <span className="font-medium">Taluko:</span> {washer.taluko}
+                    </p>
+                  )}
+                  {washer.area && (
+                    <p className="text-slate-600 text-sm mt-1">
+                      <span className="font-medium">Area:</span> {washer.area}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-yellow-500 font-semibold text-lg">★ {washer.rating || "N/A"}</div>
                   <p className="text-slate-600 text-xs">Rating</p>
                 </div>
               </div>
-
-              {washer.service_area && (
-                <p className="text-slate-600 text-sm mb-3">
-                  Service Area: <span className="font-medium">{washer.service_area}</span>
-                </p>
-              )}
 
               <button
                 onClick={() => onAssign(washer)}

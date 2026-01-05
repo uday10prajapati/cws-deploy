@@ -33,11 +33,10 @@ router.get("/by-location", async (req, res) => {
         address,
         area,
         city,
-        latitude,
-        longitude
+        taluko
       `)
       .eq("employee_type", "washer")
-      .eq("account_status", true);
+      .eq("account_status", "active");
 
     // If area is provided, filter by area
     if (area) {
@@ -73,8 +72,7 @@ router.get("/by-location", async (req, res) => {
         address: washer.address,
         area: washer.area,
         city: washer.city,
-        latitude: washer.latitude,
-        longitude: washer.longitude,
+        taluko: washer.taluko,
         rating: rating?.[0]?.rating || 4.5,
       });
     }
@@ -99,7 +97,7 @@ router.get("/by-location", async (req, res) => {
  */
 router.get("/by-area/:area", async (req, res) => {
   try {
-    const { area } = req.query;
+    const { area } = req.params;
 
     if (!area) {
       return res.status(400).json({
@@ -118,11 +116,10 @@ router.get("/by-area/:area", async (req, res) => {
         address,
         area,
         city,
-        latitude,
-        longitude
+        taluko
       `)
       .eq("employee_type", "washer")
-      .eq("account_status", true)
+      .eq("account_status", "active")
       .ilike("area", `%${area}%`);
 
     if (error) {
@@ -150,8 +147,7 @@ router.get("/by-area/:area", async (req, res) => {
         address: washer.address,
         area: washer.area,
         city: washer.city,
-        latitude: washer.latitude,
-        longitude: washer.longitude,
+        taluko: washer.taluko,
         rating: rating?.[0]?.rating || 4.5,
       });
     }
@@ -168,12 +164,12 @@ router.get("/by-area/:area", async (req, res) => {
 
 /**
  * @GET /washers/match-customer-city/:customerCity
- * Get washers where washer.area matches customer.city
+ * Get washers where washer.area/city/taluko matches customer's taluko
  * Used by admin to assign washers to requests based on customer location
  */
 router.get("/match-customer-city/:customerCity", async (req, res) => {
   try {
-    const { customerCity } = req.query;
+    const { customerCity } = req.params;
 
     if (!customerCity) {
       return res.status(400).json({
@@ -182,7 +178,9 @@ router.get("/match-customer-city/:customerCity", async (req, res) => {
       });
     }
 
-    // Query profiles table for washers whose area matches customer's city
+    console.log(`🔍 Searching for washers matching: "${customerCity}"`);
+
+    // Query profiles table for washers whose area/city/taluko matches customer's city
     const { data: washers, error } = await supabase
       .from("profiles")
       .select(`
@@ -192,19 +190,38 @@ router.get("/match-customer-city/:customerCity", async (req, res) => {
         address,
         area,
         city,
-        latitude,
-        longitude
+        taluko,
+        employee_type,
+        account_status
       `)
       .eq("employee_type", "washer")
-      .eq("account_status", true)
-      .ilike("area", `%${customerCity}%`);
+      .eq("account_status", "active")
+      .or(`area.ilike.%${customerCity}%,city.ilike.%${customerCity}%,taluko.ilike.%${customerCity}%`);
 
     if (error) {
-      console.error("Error fetching washers by customer city:", error);
+      console.error("❌ Error fetching washers by customer city:", error);
       return res.status(400).json({
         success: false,
         error: error.message,
       });
+    }
+
+    console.log(`✅ Found ${washers?.length || 0} washers for "${customerCity}"`);
+    
+    // If no washers found, log all available washers for debugging
+    if (!washers || washers.length === 0) {
+      const { data: allWashers } = await supabase
+        .from("profiles")
+        .select("id, name, area, city, taluko, employee_type, account_status")
+        .eq("employee_type", "washer")
+        .eq("account_status", "active");
+      
+      console.warn(`⚠️ No washers found. Available washers in system:`, allWashers?.map(w => ({
+        name: w.name,
+        area: w.area,
+        city: w.city,
+        taluko: w.taluko
+      })));
     }
 
     // Get ratings for each washer
@@ -224,15 +241,14 @@ router.get("/match-customer-city/:customerCity", async (req, res) => {
         address: washer.address,
         area: washer.area,
         city: washer.city,
-        latitude: washer.latitude,
-        longitude: washer.longitude,
+        taluko: washer.taluko,
         rating: rating?.[0]?.rating || 4.5,
       });
     }
 
     return res.status(200).json(washersWithRatings);
   } catch (err) {
-    console.error("Washer customer city match error:", err);
+    console.error("❌ Washer customer city match error:", err);
     return res.status(500).json({
       success: false,
       error: err.message,
@@ -257,5 +273,95 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+/**
+ * @GET /washers/emergency-requests/:taluko
+ * Get emergency wash requests for a specific taluko
+ * Used by HR and sub-admin to see requests in their assigned area
+ */
+router.get("/emergency-requests/:taluko", async (req, res) => {
+  try {
+    const { taluko } = req.params;
+
+    if (!taluko) {
+      return res.status(400).json({
+        success: false,
+        error: "Taluko parameter is required",
+      });
+    }
+
+    // Query emergency_wash_requests table for requests in this taluko
+    const { data: requests, error } = await supabase
+      .from("emergency_wash_requests")
+      .select("*")
+      .ilike("taluko", `%${taluko}%`)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching emergency requests by taluko:", error);
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: requests || [],
+      count: (requests || []).length,
+    });
+  } catch (err) {
+    console.error("Emergency requests by taluko error:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
+
+/**
+ * @GET /washers/emergency-requests/status/:status
+ * Get emergency wash requests by status
+ * Used by admin to view pending/assigned/completed requests
+ */
+router.get("/emergency-requests-by-status/:status", async (req, res) => {
+  try {
+    const { status } = req.params;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: "Status parameter is required",
+      });
+    }
+
+    // Query emergency_wash_requests table for requests with this status
+    const { data: requests, error } = await supabase
+      .from("emergency_wash_requests")
+      .select("*")
+      .eq("status", status)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching emergency requests by status:", error);
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: requests || [],
+      count: (requests || []).length,
+    });
+  } catch (err) {
+    console.error("Emergency requests by status error:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
 
 export default router;

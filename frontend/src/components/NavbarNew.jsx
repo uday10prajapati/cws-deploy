@@ -130,6 +130,7 @@ export default function NavbarNew() {
   /* WASHER MENU */
   const washerMainMenu = [
     { label: "Dashboard", link: "/carwash", icon: <FiHome /> },
+    { label: "Emergency Wash", link: "/washer/emergency-wash", icon: <FiWind /> },
     { label: "WashHistory", link: "/washer/wash-history", icon: <FiClipboard /> },
     { label: "My Work", link: "/washer/workflow", icon: <FiTruck /> },
     { label: "Docs", link: "/washer/documents", icon: <FiAlertCircle /> },
