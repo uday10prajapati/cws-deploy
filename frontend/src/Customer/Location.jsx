@@ -936,23 +936,7 @@ export default function Location() {
     );
   }
 
-  if (!booking) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <FiAlertCircle className="text-5xl text-red-600 mx-auto" />
-          <h2 className="text-2xl font-bold text-slate-900">Booking Not Found</h2>
-          <p className="text-slate-600">Unable to load booking details</p>
-          <button
-            onClick={() => navigate("/bookings")}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
-          >
-            Back to Bookings
-          </button>
-        </div>
-      </div>
-    );
-  }
+ 
 
   const statusConfig = getStatusBadge();
 
