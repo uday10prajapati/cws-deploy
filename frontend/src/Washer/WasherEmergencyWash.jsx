@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import NavbarNew from "../components/NavbarNew";
-import { FiCheckCircle, FiClock, FiUser, FiPhone, FiMapPin, FiCamera, FiX, FiCheck } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiUser, FiPhone, FiMapPin, FiCamera, FiX, FiCheck, FiNavigation } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
 
 export default function WasherEmergencyWash() {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -425,25 +427,41 @@ export default function WasherEmergencyWash() {
 
                 {/* Status Update Buttons */}
                 {selectedRequest.status !== "Completed" && (
-                  <div className="flex gap-3">
-                    {selectedRequest.status === "Assigned" && (
-                      <button
-                        onClick={() => handleUpdateStatus(selectedRequest.id, "In Progress")}
-                        className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
-                      >
-                        Start Wash
-                      </button>
-                    )}
-                    {selectedRequest.status === "In Progress" && (
-                      <button
-                        onClick={() => setShowCompleteModal(true)}
-                        className="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <FiCheckCircle /> Complete & Upload Photos
-                      </button>
-                    )}
-                  </div>
-                )}
+  <>
+    <div className="flex gap-3">
+      {selectedRequest.status === "Assigned" && (
+        <button
+          onClick={() => handleUpdateStatus(selectedRequest.id, "In Progress")}
+          className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+        >
+          Start Wash
+        </button>
+      )}
+      {selectedRequest.status === "In Progress" && (
+        <button
+          onClick={() => setShowCompleteModal(true)}
+          className="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+        >
+          <FiCheckCircle /> Complete & Upload Photos
+        </button>
+      )}
+    </div>
+
+    {/* Start Tracking Button */}
+    {selectedRequest.status === "In Progress" && (
+      <button
+        onClick={() => {
+          navigate(`/washer/emergency-wash/track?requestId=${selectedRequest.id}`);
+        }}
+        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 mt-3 shadow-md hover:shadow-lg"
+      >
+        <FiNavigation className="text-lg" />
+        Start Live Tracking
+      </button>
+    )}
+  </>
+)}
+
               </div>
 
               {/* Customer Information */}

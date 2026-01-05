@@ -627,7 +627,7 @@ export default function CustomerDashboard() {
               { to: "/monthly-pass", icon: FiAward, label: "My Pass", colors: "from-amber-600 to-orange-600", bg: "from-amber-50 to-orange-50", border: "border-amber-200" },
               { to: "/my-cars", icon: FaCar, label: "My Cars", colors: "from-green-600 to-emerald-600", bg: "from-green-50 to-emerald-50", border: "border-green-200" },
               { to: "/transactions", icon: FiCreditCard, label: "Transactions", colors: "from-pink-600 to-rose-600", bg: "from-pink-50 to-rose-50", border: "border-pink-200" },
-              { to: "/location", icon: FiMapPin, label: "Location", colors: "from-indigo-600 to-purple-600", bg: "from-indigo-50 to-purple-50", border: "border-indigo-200" },
+              // { to: "/location", icon: FiMapPin, label: "Location", colors: "from-indigo-600 to-purple-600", bg: "from-indigo-50 to-purple-50", border: "border-indigo-200" },
               { to: "/emergency-wash", icon: FiAlertCircle, label: "Quick Wash", colors: "from-red-600 to-pink-600", bg: "from-red-50 to-pink-50", border: "border-red-200" },
             ].map(({ to, icon: Icon, label, colors, bg, border }) => (
               <Link

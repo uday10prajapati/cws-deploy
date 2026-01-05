@@ -11,6 +11,7 @@ import WasherWorkflow from "./Washer/WasherWorkflow.jsx";
 import WasherDocumentUpload from "./Washer/WasherDocumentUpload.jsx";
 import DemoVideos from "./Washer/DemoVideos.jsx";
 import WasherEmergencyWash from "./Washer/WasherEmergencyWash.jsx";
+import WasherEmergencyWashTracking from "./Washer/WasherEmergencyWashTracking.jsx";
 import SalesDocumentUpload from "./Sales/SalesDocumentUpload.jsx";
 import SalesDashboard from "./Sales/SalesDashboard.jsx";
 import SalesWork from "./Sales/SalesWork.jsx";
@@ -57,6 +58,7 @@ import SubGeneralTalukaAssignment from "./Employee/SubGeneralTalukaAssignment.js
 import HRGeneralSalesmanAssignment from "./Employee/HRGeneralSalesmanAssignment.jsx";
 import AboutUs from "./AboutUs.jsx";
 import EmergencyWashRequest from "./Customer/EmergencyWashRequest.jsx";
+import CustomerEmergencyWashLiveTracking from "./Customer/CustomerEmergencyWashLiveTracking.jsx";
 import AdminEmergencyWashManagement from "./Admin/AdminEmergencyWashManagement.jsx";
 import EmployeeEmergencyWash from "./Employee/EmployeeEmergencyWash.jsx";
 import ApprovalPanel from "./Admin/ApprovalPanel.jsx";
@@ -87,6 +89,7 @@ export default function App() {
         <Route path="/washer/documents" element={<WasherDocumentUpload />} />
         <Route path="/washer/demo-videos" element={<DemoVideos />} />
         <Route path="/washer/emergency-wash" element={<WasherEmergencyWash />} />
+        <Route path="/washer/emergency-wash/track" element={<WasherEmergencyWashTracking />} />
         <Route path="/sales/documents" element={<SalesDocumentUpload />} />
         <Route path="/sales-dashboard" element={<SalesDashboard />} />
         <Route path="/sales-work" element={<SalesWork />} />
@@ -134,6 +137,7 @@ export default function App() {
         <Route path="/scan-customer-qr" element={<ScanCustomerQR />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/emergency-wash" element={<EmergencyWashRequest />} />
+        <Route path="/emergency-wash/track" element={<CustomerEmergencyWashLiveTracking />} />
         <Route path="/admin/emergency-wash" element={<AdminEmergencyWashManagement />} />
         <Route path="/employee/emergency-wash" element={<EmployeeEmergencyWash />} />
         <Route path="/admin/approvals" element={<ApprovalPanel />} />

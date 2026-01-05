@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { FiPlus, FiCamera, FiX, FiCheck, FiClock } from "react-icons/fi";
+import { FiPlus, FiCamera, FiX, FiCheck, FiClock, FiMap } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
 import NavbarNew from "../components/NavbarNew";
 
@@ -502,6 +503,7 @@ export default function EmergencyWashRequest() {
 
 // Detail Modal Component
 function RequestDetailModal({ request, onClose }) {
+  const navigate = useNavigate();
   const [transactionId, setTransactionId] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [paying, setPaying] = useState(false);
@@ -685,6 +687,21 @@ function RequestDetailModal({ request, onClose }) {
               </div>
             )}
           </div>
+
+          {/* Track Washer Button - Show when request is assigned and in progress */}
+          {request.status !== "Cancelled" && request.status !== "Pending" && (
+            <div className="border-t border-slate-200 pt-4">
+              <button
+                onClick={() => {
+                  navigate(`/emergency-wash/track?requestId=${request.id}`);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+              >
+                <FiMap className="text-lg" />
+                Track Washer on Map
+              </button>
+            </div>
+          )}
 
           {/* Location Coordinates - Removed (using area-based location) */}
 
